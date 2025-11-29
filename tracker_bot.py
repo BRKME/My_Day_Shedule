@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Telegram бот для отслеживания выполнения задач - ЭТАП 2
-Полноценный чек-лист с inline-кнопками
+Telegram бот для отслеживания выполнения задач - ФИНАЛЬНАЯ ВЕРСИЯ
+Этапы 3 и 4: Прогресс-бары + Итоги дня/недели
 """
 
 import asyncio
@@ -41,17 +41,27 @@ class TaskTrackerBot:
         for line in lines:
             line = line.strip()
             
-            # Определяем секцию
-            if '☀️ Утренние задачи:' in line:
+            # Определяем секцию (убираем HTML теги для проверки)
+            clean_line = line.replace('<b>', '').replace('</b>', '')
+            
+            if '☀️ Утренние задачи' in clean_line or 'Утренние задачи' in clean_line:
                 current_section = 'morning'
                 continue
-            elif '🌤️ Дневные задачи:' in line:
+            elif '🌤️ Дневные задачи' in clean_line or 'Дневные задачи' in clean_line:
                 current_section = 'day'
                 continue
-            elif 'Вечерние задачи:' in line or '🌙 Вечерние' in line:
+            elif '🌙' in clean_line and 'Вечерн' in clean_line:
+                # Вечернее сообщение может быть "🌙 Вечерний план" или "Вечерние задачи"
                 current_section = 'evening'
                 continue
-            elif '⛔' in line or '🎯' in line or '💡' in line or '🙏' in line or '🎉' in line:
+            elif 'Вечерние задачи' in clean_line:
+                current_section = 'evening'
+                continue
+            elif '⛔' in line or 'Нельзя' in line:
+                # "Нельзя делать" - это не период, пропускаем
+                current_section = None
+                continue
+            elif '🎯' in line or '💡' in line or '🙏' in line or '🎉' in line:
                 # Конец задач
                 current_section = None
                 continue
@@ -153,16 +163,109 @@ class TaskTrackerBot:
         
         # Прогресс
         percentage = int((total_done / total_tasks * 100)) if total_tasks > 0 else 0
-        msg += f"📊 <b>Прогресс:</b> {total_done}/{total_tasks} ({percentage}%)\n"
+        bar = self.get_progress_bar(percentage)
+        msg += f"📊 <b>Прогресс:</b> {bar} {total_done}/{total_tasks} ({percentage}%)\n"
         
         return msg
+    
+    def update_original_message_with_progress(self, original_text, tasks, completed):
+        """ЭТАП 3: Обновляет исходное сообщение с прогресс-барами"""
+        lines = original_text.split('\n')
+        updated_lines = []
+        current_section = None
+        task_counters = {'morning': 0, 'day': 0, 'evening': 0}
+        
+        for line in lines:
+            clean_line = line.replace('<b>', '').replace('</b>', '')
+            
+            # Определяем секцию
+            if '☀️ Утренние задачи' in clean_line:
+                current_section = 'morning'
+                updated_lines.append(line)
+                continue
+            elif '🌤️ Дневные задачи' in clean_line:
+                current_section = 'day'
+                
+                # Добавляем прогресс-бар для утра ПЕРЕД дневными задачами
+                if tasks['morning']:
+                    morning_done = len(completed.get('morning', []))
+                    morning_total = len(tasks['morning'])
+                    morning_perc = int((morning_done / morning_total * 100)) if morning_total > 0 else 0
+                    morning_bar = self.get_progress_bar(morning_perc)
+                    updated_lines.append(f"\n📊 <b>Утро:</b> {morning_bar} {morning_done}/{morning_total} ({morning_perc}%)\n")
+                
+                updated_lines.append(line)
+                continue
+            elif 'Вечерние задачи' in clean_line or ('🌙' in clean_line and 'Вечерн' in clean_line):
+                current_section = 'evening'
+                
+                # Добавляем прогресс-бар для дня ПЕРЕД вечерними задачами
+                if tasks['day']:
+                    day_done = len(completed.get('day', []))
+                    day_total = len(tasks['day'])
+                    day_perc = int((day_done / day_total * 100)) if day_total > 0 else 0
+                    day_bar = self.get_progress_bar(day_perc)
+                    updated_lines.append(f"\n📊 <b>День:</b> {day_bar} {day_done}/{day_total} ({day_perc}%)\n")
+                
+                updated_lines.append(line)
+                continue
+            elif '⛔' in line or 'Нельзя' in line:
+                current_section = None
+                
+                # Добавляем прогресс-бар для вечера ПЕРЕД "Нельзя"
+                if tasks['evening']:
+                    evening_done = len(completed.get('evening', []))
+                    evening_total = len(tasks['evening'])
+                    evening_perc = int((evening_done / evening_total * 100)) if evening_total > 0 else 0
+                    evening_bar = self.get_progress_bar(evening_perc)
+                    updated_lines.append(f"\n📊 <b>Вечер:</b> {evening_bar} {evening_done}/{evening_total} ({evening_perc}%)\n")
+                
+                updated_lines.append(line)
+                continue
+            elif '🎯' in line and 'миссия' in line.lower():
+                current_section = None
+                
+                # Если нет вечера, но есть другие - добавляем общий прогресс
+                total_done = len(completed.get('morning', [])) + len(completed.get('day', [])) + len(completed.get('evening', []))
+                total_tasks = len(tasks['morning']) + len(tasks['day']) + len(tasks['evening'])
+                
+                if total_tasks > 0:
+                    total_perc = int((total_done / total_tasks * 100))
+                    total_bar = self.get_progress_bar(total_perc, length=10)
+                    updated_lines.append(f"\n🎯 <b>Общий прогресс:</b> {total_bar} {total_done}/{total_tasks} ({total_perc}%)")
+                    updated_lines.append(f"💪 <b>Баллы:</b> {total_done} из {total_tasks}\n")
+                
+                updated_lines.append(line)
+                continue
+            
+            # Обрабатываем задачи
+            if current_section and line.startswith('•'):
+                idx = task_counters[current_section]
+                is_done = idx in completed.get(current_section, [])
+                
+                if is_done:
+                    # Добавляем галочку перед задачей
+                    updated_lines.append(f"• ☑ {line[1:].strip()}")
+                else:
+                    updated_lines.append(line)
+                
+                task_counters[current_section] += 1
+            else:
+                updated_lines.append(line)
+        
+        return '\n'.join(updated_lines)
     
     def load_stats(self):
         """Загружает статистику из файла"""
         try:
             if os.path.exists(self.stats_file):
                 with open(self.stats_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    content = f.read()
+                    # Убираем _info и _format если они есть
+                    data = json.loads(content)
+                    # Фильтруем только реальные даты
+                    stats = {k: v for k, v in data.items() if k not in ['_info', '_format'] and '-' in k}
+                    return stats
             return {}
         except Exception as e:
             logger.error(f"❌ Ошибка загрузки статистики: {e}")
@@ -221,6 +324,149 @@ class TaskTrackerBot:
         elif percentage >= 50:
             return "📈 Слабовато, но завтра лучше!"
         return "💪 Не сдавайся! Завтра новый день!"
+    
+    async def send_daily_summary(self):
+        """ЭТАП 4: Отправляет итоги дня в 23:00"""
+        stats = self.load_stats()
+        today_key = self.get_today_key()
+        
+        if today_key not in stats:
+            logger.info("📊 Нет данных за сегодня для итогов")
+            return
+        
+        today_data = stats[today_key]
+        
+        # Формируем сообщение
+        message = f"🌙 <b>ИТОГИ ДНЯ - {datetime.now().strftime('%d.%m.%Y')}</b>\n\n"
+        message += "━━━━━━━━━━━━━━━━━━\n\n"
+        
+        # Статистика по периодам
+        if 'morning' in today_data and today_data['morning'].get('total', 0) > 0:
+            morning = today_data['morning']
+            morning_done = len(morning.get('completed', []))
+            morning_total = morning.get('total', 0)
+            perc = int((morning_done / morning_total * 100)) if morning_total > 0 else 0
+            bar = self.get_progress_bar(perc)
+            message += f"☀️ Утро: {bar} {morning_done}/{morning_total} ({perc}%)\n"
+        
+        if 'day' in today_data and today_data['day'].get('total', 0) > 0:
+            day = today_data['day']
+            day_done = len(day.get('completed', []))
+            day_total = day.get('total', 0)
+            perc = int((day_done / day_total * 100)) if day_total > 0 else 0
+            bar = self.get_progress_bar(perc)
+            message += f"🌤️ День: {bar} {day_done}/{day_total} ({perc}%)\n"
+        
+        if 'evening' in today_data and today_data['evening'].get('total', 0) > 0:
+            evening = today_data['evening']
+            evening_done = len(evening.get('completed', []))
+            evening_total = evening.get('total', 0)
+            perc = int((evening_done / evening_total * 100)) if evening_total > 0 else 0
+            bar = self.get_progress_bar(perc)
+            message += f"🌙 Вечер: {bar} {evening_done}/{evening_total} ({perc}%)\n"
+        
+        message += "\n━━━━━━━━━━━━━━━━━━\n"
+        message += f"🎯 <b>РЕЗУЛЬТАТ ДНЯ:</b>\n"
+        message += f"💯 {today_data.get('points', 0)}/{today_data.get('max_points', 0)} задач ({today_data.get('percentage', 0)}%)\n"
+        message += f"🏆 Баллы: {today_data.get('points', 0)} из {today_data.get('max_points', 0)}\n\n"
+        
+        stars = self.get_stars(today_data.get('percentage', 0))
+        if stars:
+            message += f"{stars} "
+        message += self.get_motivation(today_data.get('percentage', 0))
+        
+        message += "\n\nЗавтра будет ещё лучше! 💪"
+        
+        # Отправляем
+        await self.send_telegram_message(message)
+        logger.info(f"📊 Итоги дня отправлены: {today_data.get('percentage', 0)}%")
+    
+    async def send_weekly_summary(self):
+        """ЭТАП 4: Отправляет итоги недели в воскресенье 23:00"""
+        stats = self.load_stats()
+        
+        # Получаем последние 7 дней
+        today = datetime.now()
+        week_data = []
+        
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            day_key = day.strftime("%Y-%m-%d")
+            day_name = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][day.weekday()]
+            
+            if day_key in stats:
+                percentage = stats[day_key].get('percentage', 0)
+                week_data.append({
+                    'name': day_name,
+                    'percentage': percentage,
+                    'date': day.strftime('%d.%m')
+                })
+            else:
+                week_data.append({
+                    'name': day_name,
+                    'percentage': 0,
+                    'date': day.strftime('%d.%m')
+                })
+        
+        # Формируем сообщение
+        week_start = (today - timedelta(days=6)).strftime('%d.%m')
+        week_end = today.strftime('%d.%m')
+        
+        message = f"📈 <b>ИТОГИ НЕДЕЛИ</b>\n"
+        message += f"{week_start} - {week_end}.{today.year}\n\n"
+        message += "━━━━━━━━━━━━━━━━━━\n\n"
+        
+        total_percentage = 0
+        streak = 0
+        current_streak = 0
+        
+        for day_data in week_data:
+            perc = day_data['percentage']
+            bar = self.get_progress_bar(perc)
+            stars = self.get_stars(perc)
+            message += f"{day_data['name']}: {bar} {perc}% {stars}\n"
+            
+            total_percentage += perc
+            
+            # Считаем streak (дни подряд с 70%+)
+            if perc >= 70:
+                current_streak += 1
+                streak = max(streak, current_streak)
+            else:
+                current_streak = 0
+        
+        avg_percentage = int(total_percentage / 7) if week_data else 0
+        
+        message += "\n━━━━━━━━━━━━━━━━━━\n"
+        message += f"📊 Средний результат: {avg_percentage}%\n"
+        message += f"🔥 Дней подряд 70%+: {streak}\n\n"
+        
+        if avg_percentage >= 80:
+            message += "🏆 Отличная неделя!\nТак держать! 💪"
+        elif avg_percentage >= 70:
+            message += "✨ Хорошая неделя!\nПродолжай в том же духе! 💪"
+        elif avg_percentage >= 60:
+            message += "👍 Неплохая неделя!\nЕщё чуть-чуть! 💪"
+        else:
+            message += "📈 Есть над чем работать!\nСледующая неделя будет лучше! 💪"
+        
+        await self.send_telegram_message(message)
+        logger.info(f"📊 Итоги недели отправлены: средний {avg_percentage}%")
+    
+    async def check_schedule(self):
+        """Проверяет расписание для отправки итогов"""
+        now = datetime.now()
+        
+        # Итоги дня в 23:00
+        if now.hour == 23 and now.minute == 0:
+            logger.info("⏰ Время для итогов дня")
+            await self.send_daily_summary()
+            
+            # Итоги недели в воскресенье
+            if now.weekday() == 6:  # Воскресенье
+                logger.info("⏰ Время для итогов недели")
+                await asyncio.sleep(60)  # Подождём минуту после итогов дня
+                await self.send_weekly_summary()
     
     async def send_telegram_message(self, message):
         """Отправляет сообщение в Telegram"""
@@ -324,11 +570,29 @@ class TaskTrackerBot:
         # Парсим задачи
         tasks = self.parse_tasks(original_message)
         
+        # Загружаем существующий прогресс за сегодня
+        today_key = self.get_today_key()
+        stats = self.load_stats()
+        
         # Инициализируем состояние для этого сообщения
         if message_id not in self.message_state:
+            # Проверяем есть ли уже данные за сегодня
+            if today_key in stats:
+                # Загружаем существующие выполненные задачи
+                existing = stats[today_key]
+                completed = {
+                    'morning': existing.get('morning', {}).get('completed', []),
+                    'day': existing.get('day', {}).get('completed', []),
+                    'evening': existing.get('evening', {}).get('completed', [])
+                }
+                logger.info(f"📊 Загружен существующий прогресс за {today_key}")
+            else:
+                # Новый день, начинаем с нуля
+                completed = {'morning': [], 'day': [], 'evening': []}
+            
             self.message_state[message_id] = {
                 'tasks': tasks,
-                'completed': {'morning': [], 'day': [], 'evening': []},
+                'completed': completed,
                 'original_text': original_message
             }
         
@@ -373,6 +637,23 @@ class TaskTrackerBot:
         # Загружаем статистику
         stats = self.load_stats()
         
+        # ВАЖНО: Объединяем с существующими данными за сегодня!
+        if today_key in stats:
+            # Уже есть данные за сегодня - объединяем
+            existing = stats[today_key]
+            
+            # Объединяем выполненные задачи (убираем дубликаты)
+            for period in ['morning', 'day', 'evening']:
+                existing_completed = set(existing.get(period, {}).get('completed', []))
+                new_completed = set(state['completed'][period])
+                # Объединяем множества
+                combined_completed = list(existing_completed | new_completed)
+                
+                # Обновляем
+                state['completed'][period] = combined_completed
+                
+            logger.info(f"📊 Объединены данные за {today_key}")
+        
         # Считаем общие показатели
         total_completed = (
             len(state['completed']['morning']) +
@@ -387,7 +668,7 @@ class TaskTrackerBot:
         
         percentage = int((total_completed / total_tasks * 100)) if total_tasks > 0 else 0
         
-        # Сохраняем данные за сегодня
+        # Сохраняем объединённые данные за сегодня
         stats[today_key] = {
             'morning': {
                 'completed': state['completed']['morning'],
@@ -408,8 +689,24 @@ class TaskTrackerBot:
         
         # Сохраняем в файл
         if self.save_stats(stats):
-            # Возвращаем исходное сообщение
-            await self.cancel_update(message_id)
+            # ЭТАП 3: Обновляем исходное сообщение с прогресс-барами
+            updated_text = self.update_original_message_with_progress(
+                state['original_text'],
+                state['tasks'],
+                state['completed']
+            )
+            
+            # Создаём кнопку "Обновить прогресс"
+            keyboard = {
+                'inline_keyboard': [
+                    [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}]
+                ]
+            }
+            
+            await self.edit_message(message_id, updated_text, keyboard)
+            
+            # Очищаем состояние
+            del self.message_state[message_id]
             
             # Отправляем подтверждение
             confirm_msg = f"✅ <b>Прогресс сохранён!</b>\n\n"
@@ -457,7 +754,7 @@ class TaskTrackerBot:
             return []
     
     async def health_check(self, request):
-        """HTTP endpoint для Render health check"""
+        """HTTP endpoint для Railway health check"""
         return web.Response(text="OK", status=200)
     
     async def run(self):
@@ -465,20 +762,28 @@ class TaskTrackerBot:
         logger.info("🤖 Tracker Bot запущен!")
         logger.info("📊 Слушаю обновления...")
         
-        # Запускаем HTTP сервер для Render
+        # Запускаем HTTP сервер для Railway
         app = web.Application()
         app.router.add_get('/', self.health_check)
         app.router.add_get('/health', self.health_check)
         
-        port = int(os.environ.get('PORT', 10000))
+        port = int(os.environ.get('PORT', 8080))
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, '0.0.0.0', port)
         await site.start()
         logger.info(f"🌐 HTTP сервер запущен на порту {port}")
         
+        last_schedule_check = datetime.now()
+        
         while True:
             try:
+                # Проверяем расписание каждую минуту
+                now = datetime.now()
+                if (now - last_schedule_check).seconds >= 60:
+                    await self.check_schedule()
+                    last_schedule_check = now
+                
                 # Получаем обновления
                 updates = await self.get_updates()
                 
