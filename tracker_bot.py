@@ -44,25 +44,27 @@ class TaskTrackerBot:
             # Определяем секцию (убираем HTML теги для проверки)
             clean_line = line.replace('<b>', '').replace('</b>', '')
             
-            if '☀️ Утренние задачи' in clean_line or 'Утренние задачи' in clean_line:
+            # НАЧАЛО СЕКЦИЙ (включаем парсинг)
+            if '☀️' in clean_line and 'Утренн' in clean_line:
                 current_section = 'morning'
                 continue
-            elif '🌤️ Дневные задачи' in clean_line or 'Дневные задачи' in clean_line:
+            elif '🌤️' in clean_line and 'Дневн' in clean_line:
                 current_section = 'day'
                 continue
-            elif '🌙' in clean_line and 'Вечерн' in clean_line:
-                # Вечернее сообщение может быть "🌙 Вечерний план" или "Вечерние задачи"
+            elif ('🌙' in clean_line and 'Вечерн' in clean_line) or 'Вечерние задачи' in clean_line:
                 current_section = 'evening'
                 continue
-            elif 'Вечерние задачи' in clean_line:
-                current_section = 'evening'
-                continue
-            elif '⛔' in line or 'Нельзя' in line:
-                # "Нельзя делать" - это не период, пропускаем
-                current_section = None
-                continue
-            elif '🎯' in line or '💡' in line or '🙏' in line or '🎉' in line:
-                # Конец задач
+            
+            # КОНЕЦ СЕКЦИЙ (выключаем парсинг) - все возможные варианты!
+            elif any(marker in clean_line for marker in [
+                '⛔', '⛔️',  # Оба варианта эмодзи
+                'Нельзя делать',
+                '🎯 Твоя миссия',
+                '💡 Мудрость',
+                '🙏 Утренняя молитва',
+                '🎉 СЕГОДНЯ',
+                '📅 События'
+            ]):
                 current_section = None
                 continue
             
