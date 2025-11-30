@@ -30,7 +30,7 @@ class TaskTrackerBot:
     def parse_tasks(self, message_text):
         """Парсит задачи из сообщения notifier.py"""
         tasks = {
-            'morning': [],
+            'morning': [],  # Оставляем для обратной совместимости, но не используем
             'day': [],
             'evening': []
         }
@@ -45,10 +45,7 @@ class TaskTrackerBot:
             clean_line = line.replace('<b>', '').replace('</b>', '')
             
             # НАЧАЛО СЕКЦИЙ (включаем парсинг)
-            if '☀️' in clean_line and 'Утренн' in clean_line:
-                current_section = 'morning'
-                continue
-            elif '🌤️' in clean_line and 'Дневн' in clean_line:
+            if '☀️' in clean_line and 'Дневн' in clean_line:
                 current_section = 'day'
                 continue
             elif ('🌙' in clean_line and 'Вечерн' in clean_line) or 'Вечерние задачи' in clean_line:
@@ -74,32 +71,20 @@ class TaskTrackerBot:
                 if task_text:
                     tasks[current_section].append(task_text)
         
-        logger.info(f"📋 Распарсено задач: утро={len(tasks['morning'])}, день={len(tasks['day'])}, вечер={len(tasks['evening'])}")
+        logger.info(f"📋 Распарсено задач: день={len(tasks['day'])}, вечер={len(tasks['evening'])}")
         return tasks
     
     def create_checklist_keyboard(self, tasks, completed):
         """Создаёт inline-клавиатуру с задачами"""
         keyboard = []
         
-        # Утренние задачи
-        if tasks['morning']:
-            keyboard.append([{'text': '☀️ УТРЕННИЕ ЗАДАЧИ', 'callback_data': 'header'}])
-            for idx, task in enumerate(tasks['morning']):
-                is_done = idx in completed.get('morning', [])
-                emoji = '☑️' if is_done else '☐'
-                # Обрезаем длинный текст для кнопки
-                short_task = task[:35] + '...' if len(task) > 35 else task
-                keyboard.append([{
-                    'text': f'{emoji} {idx+1}. {short_task}',
-                    'callback_data': f'toggle_morning_{idx}'
-                }])
-        
         # Дневные задачи
         if tasks['day']:
-            keyboard.append([{'text': '🌤️ ДНЕВНЫЕ ЗАДАЧИ', 'callback_data': 'header'}])
+            keyboard.append([{'text': '☀️ ДНЕВНЫЕ ЗАДАЧИ', 'callback_data': 'header'}])
             for idx, task in enumerate(tasks['day']):
                 is_done = idx in completed.get('day', [])
-                emoji = '☑️' if is_done else '☐'
+                emoji = '⭐' if is_done else '☐'
+                # Обрезаем длинный текст для кнопки
                 short_task = task[:35] + '...' if len(task) > 35 else task
                 keyboard.append([{
                     'text': f'{emoji} {idx+1}. {short_task}',
@@ -111,7 +96,7 @@ class TaskTrackerBot:
             keyboard.append([{'text': '🌙 ВЕЧЕРНИЕ ЗАДАЧИ', 'callback_data': 'header'}])
             for idx, task in enumerate(tasks['evening']):
                 is_done = idx in completed.get('evening', [])
-                emoji = '☑️' if is_done else '☐'
+                emoji = '⭐' if is_done else '☐'
                 short_task = task[:35] + '...' if len(task) > 35 else task
                 keyboard.append([{
                     'text': f'{emoji} {idx+1}. {short_task}',
@@ -133,18 +118,8 @@ class TaskTrackerBot:
         total_tasks = 0
         total_done = 0
         
-        if tasks['morning']:
-            msg += "☀️ <b>УТРЕННИЕ:</b>\n"
-            for idx, task in enumerate(tasks['morning']):
-                emoji = '⭐' if idx in completed.get('morning', []) else '☐'
-                msg += f"{emoji} {task}\n"
-                total_tasks += 1
-                if idx in completed.get('morning', []):
-                    total_done += 1
-            msg += "\n"
-        
         if tasks['day']:
-            msg += "🌤️ <b>ДНЕВНЫЕ:</b>\n"
+            msg += "☀️ <b>ДНЕВНЫЕ:</b>\n"
             for idx, task in enumerate(tasks['day']):
                 emoji = '⭐' if idx in completed.get('day', []) else '☐'
                 msg += f"{emoji} {task}\n"
@@ -204,22 +179,8 @@ class TaskTrackerBot:
             clean_line = line.replace('<b>', '').replace('</b>', '')
             
             # Определяем секцию
-            if '☀️' in clean_line and 'Утренн' in clean_line:
-                current_section = 'morning'
-                updated_lines.append(line)
-                continue
-            elif '🌤️' in clean_line and 'Дневн' in clean_line:
+            if '☀️' in clean_line and 'Дневн' in clean_line:
                 current_section = 'day'
-                
-                # Добавляем прогресс-бар для утра ПЕРЕД дневными задачами
-                if tasks['morning']:
-                    morning_done = len(completed.get('morning', []))
-                    morning_total = len(tasks['morning'])
-                    morning_perc = int((morning_done / morning_total * 100)) if morning_total > 0 else 0
-                    morning_bar = self.get_progress_bar(morning_perc)
-                    updated_lines.append(f"📊 <b>Утро:</b> {morning_bar} {morning_done}/{morning_total} ({morning_perc}%)")
-                    updated_lines.append("")  # Пустая строка
-                
                 updated_lines.append(line)
                 continue
             elif 'Вечерние задачи' in clean_line or ('🌙' in clean_line and 'Вечерн' in clean_line):
