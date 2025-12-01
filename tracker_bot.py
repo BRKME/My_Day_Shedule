@@ -16,11 +16,13 @@ import re
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+import os
+
 class TaskTrackerBot:
     def __init__(self):
         self.telegram_token = os.getenv('TELEGRAM_TOKEN', '')
         if not self.telegram_token:
-            raise ValueError("❌ TELEGRAM_TOKEN не найден!")
+            raise ValueError("❌ TELEGRAM_TOKEN не найден в переменных окружения!")
         self.chat_id = "350766421"
         self.stats_file = "stats.json"
         self.last_update_id = 0
