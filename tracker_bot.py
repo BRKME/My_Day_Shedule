@@ -20,16 +20,19 @@ import os
 
 class TaskTrackerBot:
     def __init__(self):
-        self.telegram_token = os.getenv('TELEGRAM_TOKEN', '')
-        if not self.telegram_token:
-            raise ValueError("❌ TELEGRAM_TOKEN не найден в переменных окружения!")
-        self.chat_id = "350766421"
-        self.stats_file = "stats.json"
-        self.last_update_id = 0
-        
-        # Хранилище текущего состояния для каждого сообщения
-        # {message_id: {'morning': [0,1,2], 'day': [0], 'evening': [], 'original_text': '...'}}
-        self.message_state = {}
+    self.telegram_token = os.getenv('TELEGRAM_TOKEN')
+    if not self.telegram_token:
+        raise ValueError("TELEGRAM_TOKEN не найден в переменных окружения!")
+
+    self.chat_id = os.getenv('TELEGRAM_CHAT_ID')
+    if not self.chat_id:
+        raise ValueError("TELEGRAM_CHAT_ID не найден в переменных окружения!")
+
+    logger.info(f"Tracker Bot запущен | Чат ID: {self.chat_id}")
+
+    self.stats_file = "stats.json"
+    self.last_update_id = 0
+    self.message_state = {}
         
     def parse_tasks(self, message_text):
         """Парсит задачи из сообщения notifier.py"""
