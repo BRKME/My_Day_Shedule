@@ -804,7 +804,7 @@ class TaskTrackerBot:
         app.router.add_get('/', self.health_check)
         app.router.add_get('/health', self.health_check)
         
-        port = int(os.environ.get('PORT', 443))
+        port = 443   # ← ЖЁСТКО 443 — это 100% сработает
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, '0.0.0.0', port)
