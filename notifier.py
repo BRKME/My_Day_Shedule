@@ -540,8 +540,13 @@ class PersonalScheduleNotifier:
         def create_progress_button(self):
         """Создаёт inline кнопку для обновления прогресса"""
         return {
-            'inline_keyboard': [
-                [{'text': 'Обновить прогресс', 'callback_data': 'update_progress'}]
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Обновить прогресс",
+                        "callback_data": "update_progress"
+                    }
+                ]
             ]
         }
 
