@@ -351,11 +351,11 @@ class TelegramService:
         self.chat_id = chat_id
         self.base_url = f"https://api.telegram.org/bot{token}"
     
-    def create_progress_button(self) -> Dict[str, Any]:
+        def create_progress_button(self) -> Dict[str, Any]:
         """Создать кнопку для прогресса"""
         return {
             'inline_keyboard': [
-                [{'text': 'Обновить прогресс', 'callback_data': 'save_progress'}]
+                [{'text': 'Отметить прогресс', 'callback_data': 'save'}]
             ]
         }
     
