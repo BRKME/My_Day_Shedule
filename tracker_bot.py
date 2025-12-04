@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Task Tracker Bot v3.0 — FINAL PRODUCTION READY
-Работает с любым написанием "задачи/задача", галочки работают, всё идеально!
+Task Tracker Bot v3.0 — WITH DEBUG LOGS
+Добавлены логи для диагностики галочек
 """
 
 import asyncio
@@ -167,9 +167,11 @@ class TaskTrackerBot:
     def parse_tasks(self, text: str) -> Dict[str, List[str]]:
         tasks = {'day': [], 'cant_do': [], 'evening': []}
         safe = '\n'.join(html.escape(l.strip()) for l in text.splitlines() if l.strip())
+        logger.info(f"Parsing text: {text[:100]}...")  # DEBUG
         for sec, pat in SECTION_PATTERNS.items():
             m = pat.search(safe)
             if m:
+                logger.info(f"Match for {sec}: {m.group(1)[:100]}...")  # DEBUG
                 for line in m.group(1).split('\n'):
                     line = line.strip()
                     if line.startswith('•'):
@@ -195,6 +197,7 @@ class TaskTrackerBot:
                 for i, task in enumerate(tasks[key]):
                     emoji = '✅' if i in done.get(key, set()) else '⬜'
                     data = f"toggle_{prefix}_{i}"
+                    logger.info(f"Callback data for {task}: {data} (len: {len(data.encode())})")  # DEBUG
                     kb.append([{'text': f'{emoji} {i+1}. {self.truncate(task)}', 'callback_data': data}])
         kb.append([{'text': 'Сохранить прогресс', 'callback_data': 'save'},
                    {'text': 'Отменить', 'callback_data': 'cancel'}])
@@ -221,6 +224,7 @@ class TaskTrackerBot:
         return '\n'.join(lines)
 
     async def process_message(self, text: str):
+        logger.info(f"Processing message: {text[:100]}...")  # DEBUG
         tasks = self.parse_tasks(text)
         if not any(tasks.values()):
             logger.info("No tasks found — ignoring")
@@ -228,7 +232,8 @@ class TaskTrackerBot:
         msg = self.message_text(tasks, {})
         kb = self.keyboard(tasks, {})
         client = TelegramAPIClient(self.token, self.chat_id)
-        await client.send(msg, reply_markup=kb)
+        result = await client.send(msg, reply_markup=kb)
+        logger.info(f"Message sent, result: {result}")  # DEBUG
 
     async def handle_callback(self, query):
         data = query.get('data', '')
@@ -238,32 +243,40 @@ class TaskTrackerBot:
         old_text = msg.get('text', '')
         client = TelegramAPIClient(self.token, self.chat_id)
 
+        logger.info(f"Callback received: data={data}, msg_id={msg_id}")  # DEBUG
+
         if data == 'save':
+            logger.info("Save pressed")  # DEBUG
             await client.answer_cb(qid, text="Прогресс сохранён!")
             new_text = old_text.replace("Отметь выполненные задачи:", "ПРОГРЕСС СОХРАНЁН\n\nВЫПОЛНЕННЫЕ ЗАДАЧИ:")
-            await client.edit(msg_id, new_text)
-            logger.info(f"Progress saved for {msg_id}")
+            result = await client.edit(msg_id, new_text)
+            logger.info(f"Save result: {result}")  # DEBUG
             return
 
         if data == 'cancel':
+            logger.info("Cancel pressed")  # DEBUG
             await client.answer_cb(qid, text="Отменено")
-            await client.edit(msg_id, "ОБНОВЛЕНИЕ ОТМЕНЕНО")
+            result = await client.edit(msg_id, "ОБНОВЛЕНИЕ ОТМЕНЕНО")
+            logger.info(f"Cancel result: {result}")  # DEBUG
             return
 
         if data.startswith('toggle_'):
+            logger.info(f"Toggle pressed: {data}")  # DEBUG
             prefix = data.split('_')[1]
             idx = int(data.split('_')[-1])
             section_map = {'day': 'day', 'cant': 'cant_do', 'eve': 'evening'}
             section = section_map.get(prefix)
             if not section:
+                logger.error(f"Unknown section: {prefix}")  # DEBUG
                 return
 
             key = f"{msg_id}_{section}"
             state = await self.state.get(key)
             state.symmetric_difference_update([idx])
             await self.state.set(key, state)
+            logger.info(f"State updated for {key}: {state}")  # DEBUG
 
-            # ←←← ВСЁ СОСТОЯНИЕ ВСЕХ СЕКЦИЙ ←←←
+            # ВСЁ СОСТОЯНИЕ ВСЕХ СЕКЦИЙ
             full_done = {}
             for sec in ['day', 'cant_do', 'evening']:
                 saved = await self.state.get(f"{msg_id}_{sec}")
@@ -276,11 +289,13 @@ class TaskTrackerBot:
             new_kb = self.keyboard(tasks, full_done)
 
             await client.answer_cb(qid)
-            await client.edit(msg_id, new_text, reply_markup=new_kb)
+            result = await client.edit(msg_id, new_text, reply_markup=new_kb)
+            logger.info(f"Toggle edit result: {result}")  # DEBUG
 
     async def webhook_handler(self, request: web.Request) -> web.Response:
         try:
             client_ip = (request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote)
+            logger.info(f"Webhook from IP: {client_ip}")  # DEBUG
             if not any(ipaddress.ip_address(client_ip) in net for net in TELEGRAM_IP_RANGES):
                 logger.warning(f"Blocked IP: {client_ip}")
                 return web.Response(status=403)
@@ -289,6 +304,7 @@ class TaskTrackerBot:
                 return web.Response(status=429)
 
             update = await request.json()
+            logger.info(f"Update type: {list(update.keys())}")  # DEBUG
 
             if 'callback_query' in update:
                 await self.handle_callback(update['callback_query'])
