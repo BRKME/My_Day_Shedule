@@ -133,45 +133,42 @@ class TaskTrackerBot:
     
     def format_checklist_message(self, tasks, completed):
         """Форматирует текст сообщения с чек-листом"""
-        msg = "✅ <b>Отметь выполненные задачи:</b>\n\n"
+        msg = "✅ <b>Отметь выполненные задачи:</b>\n"
         
         total_tasks = 0
         total_done = 0
         
         if tasks['day']:
-            msg += "☀️ <b>ДНЕВНЫЕ:</b>\n"
+            msg += "\n☀️ <b>ДНЕВНЫЕ:</b>\n"
             for idx, task in enumerate(tasks['day']):
                 emoji = '⭐' if idx in completed.get('day', []) else '☆'
                 msg += f"{emoji} {task}\n"
                 total_tasks += 1
                 if idx in completed.get('day', []):
                     total_done += 1
-            msg += "\n"
         
         if tasks['cant_do']:
-            msg += "⛔ <b>НЕЛЬЗЯ ДЕЛАТЬ:</b>\n"
+            msg += "\n⛔ <b>НЕЛЬЗЯ ДЕЛАТЬ:</b>\n"
             for idx, task in enumerate(tasks['cant_do']):
                 emoji = '⭐' if idx in completed.get('cant_do', []) else '☆'
                 msg += f"{emoji} НЕ {task}\n"
                 total_tasks += 1
                 if idx in completed.get('cant_do', []):
                     total_done += 1
-            msg += "\n"
         
         if tasks['evening']:
-            msg += "🌙 <b>ВЕЧЕРНИЕ:</b>\n"
+            msg += "\n🌙 <b>ВЕЧЕРНИЕ:</b>\n"
             for idx, task in enumerate(tasks['evening']):
                 emoji = '⭐' if idx in completed.get('evening', []) else '☆'
                 msg += f"{emoji} {task}\n"
                 total_tasks += 1
                 if idx in completed.get('evening', []):
                     total_done += 1
-            msg += "\n"
         
         # Прогресс
         percentage = int((total_done / total_tasks * 100)) if total_tasks > 0 else 0
         bar = self.get_progress_bar(percentage)
-        msg += f"📊 <b>Прогресс:</b> {bar} {total_done}/{total_tasks} ({percentage}%)\n"
+        msg += f"\n📊 <b>Прогресс:</b> {bar} {total_done}/{total_tasks} ({percentage}%)\n"
         
         return msg
     
@@ -269,12 +266,18 @@ class TaskTrackerBot:
                 idx = task_counters[current_section]
                 is_done = idx in completed.get(current_section, [])
                 
+                # Получаем чистый текст задачи (без • и звёздочек)
+                task_text = line[1:].strip()  # Убираем •
+                task_text = task_text.replace('⭐ ', '').replace(' ⭐', '').replace('⭐', '')  # Убираем ВСЕ звёздочки
+                task_text = task_text.replace('☆ ', '').replace(' ☆', '').replace('☆', '')  # И пустые тоже
+                task_text = task_text.strip()  # Убираем лишние пробелы
+                
                 if is_done:
-                    # Добавляем звёздочку перед выполненной задачей
-                    task_text = line[1:].strip()  # Убираем •
+                    # Добавляем только ОДНУ звёздочку
                     updated_lines.append(f"• ⭐ {task_text}")
                 else:
-                    updated_lines.append(line)
+                    # Без звёздочки
+                    updated_lines.append(f"• {task_text}")
                 
                 task_counters[current_section] += 1
             else:
@@ -678,7 +681,7 @@ class TaskTrackerBot:
             existing = stats[today_key]
             
             # Объединяем выполненные задачи (убираем дубликаты)
-            for period in ['morning', 'day', 'evening']:
+            for period in ['morning', 'day', 'cant_do', 'evening']:
                 existing_completed = set(existing.get(period, {}).get('completed', []))
                 new_completed = set(state['completed'][period])
                 # Объединяем множества
@@ -693,11 +696,13 @@ class TaskTrackerBot:
         total_completed = (
             len(state['completed']['morning']) +
             len(state['completed']['day']) +
+            len(state['completed']['cant_do']) +
             len(state['completed']['evening'])
         )
         total_tasks = (
             len(state['tasks']['morning']) +
             len(state['tasks']['day']) +
+            len(state['tasks']['cant_do']) +
             len(state['tasks']['evening'])
         )
         
@@ -712,6 +717,10 @@ class TaskTrackerBot:
             'day': {
                 'completed': state['completed']['day'],
                 'total': len(state['tasks']['day'])
+            },
+            'cant_do': {
+                'completed': state['completed']['cant_do'],
+                'total': len(state['tasks']['cant_do'])
             },
             'evening': {
                 'completed': state['completed']['evening'],
@@ -744,13 +753,7 @@ class TaskTrackerBot:
             # Очищаем состояние
             del self.message_state[message_id]
             
-            # Отправляем подтверждение
-            confirm_msg = f"✅ <b>Прогресс сохранён!</b>\n\n"
-            confirm_msg += f"📊 Сегодня: {total_completed}/{total_tasks} задач ({percentage}%)\n"
-            confirm_msg += f"💪 Отличная работа!"
-            
-            await self.send_telegram_message(confirm_msg)
-            
+            # Логируем (без отправки нового сообщения)
             logger.info(f"💾 Прогресс сохранён: {percentage}%")
     
     async def cancel_update(self, message_id):
@@ -830,7 +833,7 @@ class TaskTrackerBot:
                         keyboard = self.create_checklist_keyboard(tasks, {})
                         
                         # Формируем текст
-                        response_text = self.format_progress_message(tasks, {})
+                        response_text = self.format_checklist_message(tasks, {})
                         
                         # Отправляем ответ с кнопками
                         await self.send_message(response_text, keyboard)
