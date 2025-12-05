@@ -796,8 +796,33 @@ class TaskTrackerBot:
         try:
             update = await request.json()
             
+            # Обрабатываем обычное сообщение
+            if 'message' in update:
+                message = update['message']
+                chat_id = str(message.get('chat', {}).get('id', ''))
+                
+                # Проверяем что это наш чат
+                if chat_id == self.chat_id and 'text' in message:
+                    message_text = message['text']
+                    
+                    # Проверяем что в сообщении есть задачи
+                    if any(keyword in message_text for keyword in ['☀️', '⛔', '🌙', 'Дневн', 'Нельзя', 'Вечерн']):
+                        logger.info("📨 Получено сообщение с задачами")
+                        
+                        # Парсим задачи
+                        tasks = self.parse_tasks(message_text)
+                        
+                        # Создаём клавиатуру
+                        keyboard = self.create_checklist_keyboard(tasks, {})
+                        
+                        # Формируем текст
+                        response_text = self.format_progress_message(tasks, {})
+                        
+                        # Отправляем ответ с кнопками
+                        await self.send_message(response_text, keyboard)
+            
             # Обрабатываем callback_query
-            if 'callback_query' in update:
+            elif 'callback_query' in update:
                 callback_query = update['callback_query']
                 callback_data = callback_query.get('data', '')
                 callback_query_id = callback_query.get('id', '')
