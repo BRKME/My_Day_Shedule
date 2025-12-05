@@ -64,8 +64,7 @@ class TaskTrackerBot:
             
             # КОНЕЦ СЕКЦИЙ (выключаем парсинг)
             elif any(marker in clean_line for marker in [
-                '🎯 Твоя миссия',
-                '💡 Мудрость',
+                'Мудрость дня',
                 '🙏 Утренняя молитва',
                 '🎉 СЕГОДНЯ',
                 '📅 События'
@@ -244,15 +243,10 @@ class TaskTrackerBot:
                 
                 updated_lines.append(line)
                 continue
-            elif '💡' in clean_line and 'мудрость' in clean_line.lower():
-                # Добавляем пустую строку перед мудростью
-                updated_lines.append("")
-                updated_lines.append(line)
-                continue
-            elif '🎯' in clean_line and 'миссия' in clean_line.lower():
+            elif 'мудрость' in clean_line.lower() and 'дня' in clean_line.lower():
                 current_section = None
                 
-                # Добавляем общий прогресс ПЕРЕД "Твоя миссия"
+                # Добавляем общий прогресс ПЕРЕД "Мудрость дня"
                 total_done = len(completed.get('morning', [])) + len(completed.get('day', [])) + len(completed.get('cant_do', [])) + len(completed.get('evening', []))
                 total_tasks = len(tasks['morning']) + len(tasks['day']) + len(tasks['cant_do']) + len(tasks['evening'])
                 
@@ -260,8 +254,9 @@ class TaskTrackerBot:
                     total_perc = int((total_done / total_tasks * 100))
                     total_bar = self.get_progress_bar(total_perc, length=10)
                     updated_lines.append(f"🎯 <b>Общий прогресс:</b> {total_bar} {total_done}/{total_tasks} ({total_perc}%)")
-                    # Строка "Баллы" убрана
                 
+                # Пустая строка перед мудростью
+                updated_lines.append("")
                 updated_lines.append(line)
                 continue
             
@@ -608,40 +603,48 @@ class TaskTrackerBot:
     
     async def show_checklist(self, message_id, original_message):
         """Показывает чек-лист для отметки задач"""
-        # Парсим задачи
+        
+        # Если состояние уже существует, используем сохранённый оригинал
+        if message_id in self.message_state:
+            # Используем уже сохранённые данные
+            state = self.message_state[message_id]
+            text = self.format_checklist_message(state['tasks'], state['completed'])
+            keyboard = self.create_checklist_keyboard(state['tasks'], state['completed'])
+            await self.edit_message(message_id, text, keyboard)
+            return
+        
+        # Первый вызов - парсим задачи из оригинального сообщения
         tasks = self.parse_tasks(original_message)
         
         # Загружаем существующий прогресс за сегодня
         today_key = self.get_today_key()
         stats = self.load_stats()
         
-        # Инициализируем состояние для этого сообщения
-        if message_id not in self.message_state:
-            # Проверяем есть ли уже данные за сегодня
-            if today_key in stats:
-                # Загружаем существующие выполненные задачи
-                existing = stats[today_key]
-                completed = {
-                    'morning': existing.get('morning', {}).get('completed', []),
-                    'day': existing.get('day', {}).get('completed', []),
-                    'cant_do': existing.get('cant_do', {}).get('completed', []),
-                    'evening': existing.get('evening', {}).get('completed', [])
-                }
-                logger.info(f"📊 Загружен существующий прогресс за {today_key}")
-            else:
-                # Новый день, начинаем с нуля
-                completed = {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
-            
-            self.message_state[message_id] = {
-                'tasks': tasks,
-                'completed': completed,
-                'original_text': original_message
+        # Проверяем есть ли уже данные за сегодня
+        if today_key in stats:
+            # Загружаем существующие выполненные задачи
+            existing = stats[today_key]
+            completed = {
+                'morning': existing.get('morning', {}).get('completed', []),
+                'day': existing.get('day', {}).get('completed', []),
+                'cant_do': existing.get('cant_do', {}).get('completed', []),
+                'evening': existing.get('evening', {}).get('completed', [])
             }
+            logger.info(f"📊 Загружен существующий прогресс за {today_key}")
+        else:
+            # Новый день, начинаем с нуля
+            completed = {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
+        
+        # Сохраняем состояние
+        self.message_state[message_id] = {
+            'tasks': tasks,
+            'completed': completed,
+            'original_text': original_message  # Сохраняем ОРИГИНАЛ
+        }
         
         # Формируем сообщение и клавиатуру
-        state = self.message_state[message_id]
-        text = self.format_checklist_message(state['tasks'], state['completed'])
-        keyboard = self.create_checklist_keyboard(state['tasks'], state['completed'])
+        text = self.format_checklist_message(tasks, completed)
+        keyboard = self.create_checklist_keyboard(tasks, completed)
         
         await self.edit_message(message_id, text, keyboard)
     
