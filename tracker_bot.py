@@ -798,6 +798,9 @@ class TaskTrackerBot:
         try:
             update = await request.json()
             
+            # ЛОГИРУЕМ ВСЕ WEBHOOK ДЛЯ ОТЛАДКИ
+            logger.info(f"🔔 Webhook получен: {list(update.keys())}")
+            
             # Обрабатываем обычное сообщение или channel_post
             message = update.get('message') or update.get('channel_post')
             
