@@ -639,7 +639,8 @@ class TaskTrackerBot:
         self.message_state[message_id] = {
             'tasks': tasks,
             'completed': completed,
-            'original_text': original_message  # Сохраняем ОРИГИНАЛ
+            'original_text': original_message,  # Сохраняем ЧИСТЫЙ оригинал
+            'clean_original': original_message  # Дублируем для безопасности
         }
         
         # Формируем сообщение и клавиатуру
@@ -741,8 +742,10 @@ class TaskTrackerBot:
         # Сохраняем в файл
         if self.save_stats(stats):
             # ЭТАП 3: Обновляем исходное сообщение с прогресс-барами
+            # ВАЖНО: используем clean_original, а НЕ original_text!
+            clean_text = state.get('clean_original', state['original_text'])
             updated_text = self.update_original_message_with_progress(
-                state['original_text'],
+                clean_text,
                 state['tasks'],
                 state['completed']
             )
@@ -757,8 +760,8 @@ class TaskTrackerBot:
             
             await self.edit_message(message_id, updated_text, keyboard)
             
-            # НЕ очищаем состояние - оно нужно для повторного открытия!
-            # Обновляем original_text на актуальный (с прогресс-барами)
+            # НЕ перезаписываем clean_original - он остаётся чистым!
+            # Обновляем только original_text для отображения
             self.message_state[message_id]['original_text'] = updated_text
             
             # Логируем (без отправки нового сообщения)
