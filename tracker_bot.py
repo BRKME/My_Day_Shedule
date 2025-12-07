@@ -212,34 +212,14 @@ class TaskTrackerBot:
             elif 'Вечерние задачи' in clean_line or ('🌙' in clean_line and 'Вечерн' in clean_line):
                 current_section = 'evening'
                 
-                # Добавляем прогресс-бар для дня ПЕРЕД вечерними задачами
-                if tasks['day']:
-                    day_done = len(completed.get('day', []))
-                    day_total = len(tasks['day'])
-                    day_perc = int((day_done / day_total * 100)) if day_total > 0 else 0
-                    day_bar = self.get_progress_bar(day_perc)
-                    updated_lines.append(f"📊 <b>День:</b> {day_bar} {day_done}/{day_total} ({day_perc}%)")
-                    updated_lines.append("")  # Пустая строка
+                # НЕ добавляем прогресс-бар здесь - будет общий в конце
                 
                 updated_lines.append(line)
                 continue
             elif any(marker in clean_line for marker in ['⛔', '⛔️', 'Нельзя делать']):
-                current_section = 'cant_do'  # Теперь парсим задачи в этой секции!
+                current_section = 'cant_do'
                 
-                # Добавляем прогресс-бар для дня+нельзя ПЕРЕД секцией "Нельзя"
-                day_done = len(completed.get('day', []))
-                cant_do_done = len(completed.get('cant_do', []))
-                day_total = len(tasks['day'])
-                cant_do_total = len(tasks['cant_do'])
-                
-                combined_done = day_done + cant_do_done
-                combined_total = day_total + cant_do_total
-                
-                if combined_total > 0:
-                    combined_perc = int((combined_done / combined_total * 100))
-                    combined_bar = self.get_progress_bar(combined_perc)
-                    updated_lines.append(f"📊 <b>День:</b> {combined_bar} {combined_done}/{combined_total} ({combined_perc}%)")
-                    updated_lines.append("")  # Пустая строка
+                # НЕ добавляем прогресс-бар здесь - будет общий в конце
                 
                 updated_lines.append(line)
                 continue
