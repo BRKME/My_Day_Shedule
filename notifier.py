@@ -23,10 +23,10 @@ class PersonalScheduleNotifier:
             raise ValueError("❌ TELEGRAM_CHAT_ID не найден в переменных окружения!")
         
         # Ссылка на молитву на GitHub Pages
-        self.prayer_url = "https://brkme.github.io/My_Day/prayer.html"
+        self.prayer_url = "https://brkme.github.io/OK_My_Day_Shedule/prayer.html"
         
         # Ссылка на семейный совет на GitHub Pages
-        self.ss_url = "https://brkme.github.io/My_Day/ss.html"
+        self.ss_url = "https://brkme.github.io/OK_My_Day_Shedule/ss.html"
         
         self.wisdoms = [
     # Действие и начало дела
