@@ -27,11 +27,12 @@ class TaskTrackerBot:
             raise ValueError("❌ TELEGRAM_CHAT_ID не найден в переменных окружения!")
         
         self.stats_file = "stats.json"
+        self.message_state_file = "message_states.json"
         self.last_update_id = 0
         
         # Хранилище текущего состояния для каждого сообщения
         # {message_id: {'morning': [0,1,2], 'day': [0], 'evening': [], 'original_text': '...'}}
-        self.message_state = {}
+        self.message_state = self.load_message_states()
         
     def parse_tasks(self, message_text):
         """Парсит задачи из сообщения notifier.py"""
@@ -289,6 +290,32 @@ class TaskTrackerBot:
             return True
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения статистики: {e}")
+            return False
+    
+    def load_message_states(self):
+        """Загружает состояния сообщений из файла"""
+        try:
+            if os.path.exists(self.message_state_file):
+                with open(self.message_state_file, 'r', encoding='utf-8') as f:
+                    # Преобразуем строковые ключи обратно в int
+                    data = json.load(f)
+                    return {int(k): v for k, v in data.items()}
+            return {}
+        except Exception as e:
+            logger.error(f"❌ Ошибка загрузки состояний сообщений: {e}")
+            return {}
+    
+    def save_message_states(self):
+        """Сохраняет состояния сообщений в файл"""
+        try:
+            # Преобразуем int ключи в строки для JSON
+            data = {str(k): v for k, v in self.message_state.items()}
+            with open(self.message_state_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            logger.info("✅ Состояния сообщений сохранены")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Ошибка сохранения состояний сообщений: {e}")
             return False
     
     def get_today_key(self):
@@ -623,6 +650,9 @@ class TaskTrackerBot:
             'clean_original': original_message  # Дублируем для безопасности
         }
         
+        # Сохраняем в файл
+        self.save_message_states()
+        
         # Формируем сообщение и клавиатуру
         text = self.format_checklist_message(tasks, completed)
         keyboard = self.create_checklist_keyboard(tasks, completed)
@@ -645,6 +675,9 @@ class TaskTrackerBot:
         else:
             completed.append(task_idx)
             logger.info(f"☑ Задача {period}[{task_idx}] отмечена")
+        
+        # Сохраняем в файл
+        self.save_message_states()
         
         # Обновляем сообщение
         text = self.format_checklist_message(state['tasks'], state['completed'])
@@ -734,7 +767,7 @@ class TaskTrackerBot:
             keyboard = {
                 'inline_keyboard': [
                     [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
-                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day/prayer.html'}]
+                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/OK_My_Day_Shedule/prayer.html'}]
                 ]
             }
             
@@ -743,6 +776,9 @@ class TaskTrackerBot:
             # НЕ перезаписываем clean_original - он остаётся чистым!
             # Обновляем только original_text для отображения
             self.message_state[message_id]['original_text'] = updated_text
+            
+            # Сохраняем в файл
+            self.save_message_states()
             
             # Логируем (без отправки нового сообщения)
             logger.info(f"💾 Прогресс сохранён: {percentage}%")
@@ -756,7 +792,7 @@ class TaskTrackerBot:
             keyboard = {
                 'inline_keyboard': [
                     [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
-                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day/prayer.html'}]
+                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/OK_My_Day_Shedule/prayer.html'}]
                 ]
             }
             
@@ -765,6 +801,8 @@ class TaskTrackerBot:
             # При отмене - очищаем состояние
             if message_id in self.message_state:
                 del self.message_state[message_id]
+                # Сохраняем в файл
+                self.save_message_states()
     
     async def get_updates(self):
         """Получает обновления от Telegram (long polling)"""
