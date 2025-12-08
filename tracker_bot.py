@@ -52,13 +52,13 @@ class TaskTrackerBot:
             clean_line = line.replace('<b>', '').replace('</b>', '')
             
             # НАЧАЛО СЕКЦИЙ (включаем парсинг)
-            if '☀️' in clean_line and 'Дневн' in clean_line:
+            if ('📋' in clean_line or '☀️' in clean_line) and 'Дневн' in clean_line:
                 current_section = 'day'
                 continue
             elif any(marker in clean_line for marker in ['⛔', '⛔️', 'Нельзя делать']):
                 current_section = 'cant_do'
                 continue
-            elif ('🌙' in clean_line and 'Вечерн' in clean_line) or 'Вечерние задачи' in clean_line:
+            elif ('🌙' in clean_line and 'Вечерн' in clean_line) or ('📋' in clean_line and 'Вечерн' in clean_line) or 'Вечерние задачи' in clean_line:
                 current_section = 'evening'
                 continue
             
@@ -205,11 +205,11 @@ class TaskTrackerBot:
             clean_line = line.replace('<b>', '').replace('</b>', '')
             
             # Определяем секцию
-            if '☀️' in clean_line and 'Дневн' in clean_line:
+            if ('📋' in clean_line or '☀️' in clean_line) and 'Дневн' in clean_line:
                 current_section = 'day'
                 updated_lines.append(line)
                 continue
-            elif 'Вечерние задачи' in clean_line or ('🌙' in clean_line and 'Вечерн' in clean_line):
+            elif 'Вечерние задачи' in clean_line or ('🌙' in clean_line and 'Вечерн' in clean_line) or ('📋' in clean_line and 'Вечерн' in clean_line):
                 current_section = 'evening'
                 
                 # НЕ добавляем прогресс-бар здесь - будет общий в конце
@@ -815,7 +815,7 @@ class TaskTrackerBot:
                     logger.info(f"✅ Chat ID совпал! Проверяю текст...")
                     
                     # Проверяем что в сообщении есть задачи
-                    if any(keyword in message_text for keyword in ['☀️', '⛔', '🌙', 'Дневн', 'Нельзя', 'Вечерн']):
+                    if any(keyword in message_text for keyword in ['☀️', '📋', '⛔', '🌙', 'Дневн', 'Нельзя', 'Вечерн']):
                         logger.info("📨 Получено сообщение с задачами")
                         
                         # Парсим задачи
