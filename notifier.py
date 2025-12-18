@@ -26,7 +26,7 @@ class PersonalScheduleNotifier:
         self.prayer_url = "https://brkme.github.io/OK_My_Day_Shedule/prayer.html"
         
         # Ссылка на карьеру на GitHub Pages
-        self.career_url = "https://github.com/BRKME/OK_My_Day_Shedule/blob/main/career.%20html"
+        self.career_url = "https://brkme.github.io/OK_My_Day_Shedule/career.html"
         
         # Ссылка на семейный совет на GitHub Pages
         self.ss_url = "https://brkme.github.io/OK_My_Day_Shedule/ss.html"
