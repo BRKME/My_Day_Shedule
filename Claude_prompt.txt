@@ -32,6 +32,8 @@ Assume:
 After completing the task, report completion with a single short status line describing what was done. No long explanations.
 After code updates, perform a senior-level QA review of all changes.
 If comments are explicitly requested, write all comments in Russian.
+At the end, provide a brief instruction listing exactly which files were modified or should be updated.
+
 
 
 
