@@ -625,6 +625,22 @@ class TaskTrackerBot:
         # Первый вызов - парсим задачи из оригинального сообщения
         tasks = self.parse_tasks(original_message)
         
+        # ПРОВЕРКА: если задач нет - сообщение слишком старое или повреждено
+        total_tasks = len(tasks['morning']) + len(tasks['day']) + len(tasks['cant_do']) + len(tasks['evening'])
+        if total_tasks == 0:
+            error_text = (
+                "⚠️ <b>Ошибка:</b> Не удалось загрузить задачи.\n\n"
+                "Это сообщение слишком старое (>2 часов) или повреждено.\n"
+                "Подожди следующего утреннего/вечернего сообщения."
+            )
+            keyboard = {
+                'inline_keyboard': [
+                    [{'text': '❌ Закрыть', 'callback_data': 'cancel_update'}]
+                ]
+            }
+            await self.edit_message(message_id, error_text, keyboard)
+            return
+        
         # Загружаем существующий прогресс за сегодня
         today_key = self.get_today_key()
         stats = self.load_stats()
