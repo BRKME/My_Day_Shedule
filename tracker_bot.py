@@ -336,15 +336,47 @@ class TaskTrackerBot:
         return '▓' * filled + '░' * (length - filled)
     
     def get_motivation(self, percentage):
-        """Возвращает мотивационное сообщение"""
+        """Возвращает детальное мотивационное сообщение с градацией"""
         if percentage >= 90:
-            return "🏆 <b>Идеально! Так держать!</b>"
+            emoji = "🏆"
+            title = "ИДЕАЛЬНЫЙ ДЕНЬ!"
+            text = f"Ты выполнил {percentage}% задач — это потрясающий результат!"
+            encouragement = "Так держать, чемпион! 💪"
         elif percentage >= 70:
-            return "💪 <b>Отличная работа!</b>"
+            emoji = "🌟"
+            title = "ОТЛИЧНЫЙ ДЕНЬ!"
+            text = f"Ты выполнил {percentage}% задач — продолжай в том же духе!"
+            encouragement = "Ты на правильном пути! 💪"
         elif percentage >= 50:
-            return "👍 <b>Хороший результат!</b>"
+            emoji = "👍"
+            title = "ХОРОШИЙ ДЕНЬ!"
+            text = f"Ты выполнил {percentage}% задач — неплохой результат!"
+            encouragement = "Завтра можешь ещё лучше! 💪"
+        elif percentage >= 30:
+            emoji = "💪"
+            title = "ДЕНЬ С ПОТЕНЦИАЛОМ"
+            text = f"Ты выполнил {percentage}% задач — есть к чему стремиться."
+            encouragement = "Не сдавайся, завтра покажешь класс! 🔥"
         else:
-            return "💡 <b>Завтра будет ещё лучше!</b>"
+            emoji = "🔥"
+            title = "СЛОЖНЫЙ ДЕНЬ"
+            text = f"Сегодня {percentage}% — но это не конец!"
+            encouragement = "Встряхнись! Завтра ты сможешь намного больше! 💪"
+        
+        return f"{emoji} <b>{title}</b>\n{text}\n{encouragement}"
+    
+    def get_section_emoji(self, percentage):
+        """Возвращает эмодзи в зависимости от процента выполнения"""
+        if percentage >= 90:
+            return "✨"  # Идеально
+        elif percentage >= 70:
+            return "🌟"  # Отлично
+        elif percentage >= 50:
+            return "👍"  # Хорошо
+        elif percentage >= 30:
+            return "💪"  # Старайся
+        else:
+            return "🔥"  # Слабовато
     
     async def send_penalty_message(self, cant_do_count, failed_tasks):
         """НОВОЕ: Отправляет штрафное сообщение сразу после сохранения"""
@@ -372,7 +404,7 @@ class TaskTrackerBot:
             logger.error(f"❌ Ошибка отправки штрафного сообщения: {e}")
     
     async def send_daily_summary(self):
-        """ЭТАП 4: Отправляет итоги дня в 23:00"""
+        """ЭТАП 4: Отправляет итоги дня в 23:00 - НОВЫЙ ДИЗАЙН"""
         stats = self.load_stats()
         today_key = self.get_today_key()
         
@@ -386,53 +418,70 @@ class TaskTrackerBot:
         logger.info(f"📊 DEBUG today_data: {today_data}")
         logger.info(f"📊 DEBUG points={today_data.get('points')}, max_points={today_data.get('max_points')}")
         
-        # Формируем сообщение
-        message = f"📊 <b>ИТОГИ ДНЯ - {datetime.now().strftime('%d.%m.%Y')}</b>\n\n"
-        message += "━━━━━━━━━━━━━━━━━━\n\n"
-        
-        # Статистика по периодам
+        # Получаем данные по секциям
         morning = today_data.get('morning', {})
         day = today_data.get('day', {})
         evening = today_data.get('evening', {})
+        cant_do = today_data.get('cant_do', {})
         
         # ОТЛАДКА: Логируем каждую секцию
         logger.info(f"📊 DEBUG morning: completed={morning.get('completed', [])}, total={morning.get('total', 0)}")
         logger.info(f"📊 DEBUG day: completed={day.get('completed', [])}, total={day.get('total', 0)}")
         logger.info(f"📊 DEBUG evening: completed={evening.get('completed', [])}, total={evening.get('total', 0)}")
+        logger.info(f"📊 DEBUG cant_do: completed={cant_do.get('completed', [])}, total={cant_do.get('total', 0)}")
         
-        if morning.get('total', 0) > 0:
-            morning_done = len(morning.get('completed', []))
-            morning_total = morning.get('total', 0)
-            perc = int((morning_done / morning_total * 100))
-            bar = self.get_progress_bar(perc)
-            message += f"🌅 Утро: {bar} {morning_done}/{morning_total} ({perc}%)\n"
+        # НОВАЯ ЛОГИКА: Считаем ТОЛЬКО полезные задачи (без НЕЛЬЗЯ)
+        day_done = len(day.get('completed', []))
+        day_total = day.get('total', 0)
         
-        if day.get('total', 0) > 0:
-            day_done = len(day.get('completed', []))
-            day_total = day.get('total', 0)
-            perc = int((day_done / day_total * 100))
-            bar = self.get_progress_bar(perc)
-            message += f"☀️ День: {bar} {day_done}/{day_total} ({perc}%)\n"
+        evening_done = len(evening.get('completed', []))
+        evening_total = evening.get('total', 0)
         
-        overall_done = today_data.get('points', 0)
-        overall_total = today_data.get('max_points', 0)
+        # ИТОГО: День + Вечер (БЕЗ "НЕЛЬЗЯ"!)
+        overall_done = day_done + evening_done
+        overall_total = day_total + evening_total
         overall_perc = int((overall_done / overall_total * 100)) if overall_total > 0 else 0
-        overall_bar = self.get_progress_bar(overall_perc)
-        message += f"🎯 Общая: {overall_bar} {overall_done}/{overall_total} ({overall_perc}%)\n"
         
-        message += "\n━━━━━━━━━━━━━━━━━━\n"
-        message += f"🎯 <b>РЕЗУЛЬТАТ ДНЯ:</b>\n"
-        message += f"💯 {overall_done}/{overall_total} задач ({overall_perc}%)\n"
-        message += f"🏆 Баллы: {overall_done} из {overall_total}\n\n"
+        # Срывы в НЕЛЬЗЯ считаем отдельно
+        cant_do_fails = len(cant_do.get('completed', []))
         
-        # ИСПРАВЛЕНО: Убраны звёздочки, добавлена мотивация (используем актуальный overall_perc!)
+        logger.info(f"📊 CALCULATED: day={day_done}/{day_total}, evening={evening_done}/{evening_total}, total={overall_done}/{overall_total} ({overall_perc}%)")
+        
+        # === ФОРМИРУЕМ СООБЩЕНИЕ ===
+        message = f"📊 <b>ИТОГИ ДНЯ — {datetime.now().strftime('%d.%m.%Y')}</b>\n\n"
+        
+        # ДЕНЬ
+        if day_total > 0:
+            day_perc = int((day_done / day_total * 100))
+            day_bar = self.get_progress_bar(day_perc)
+            day_emoji = self.get_section_emoji(day_perc)
+            # Выравнивание: "День " (5 символов) для красоты
+            message += f"☀️ День  {day_bar} {day_done}/{day_total} — {day_perc}% {day_emoji}\n"
+        
+        # ВЕЧЕР
+        if evening_total > 0:
+            evening_perc = int((evening_done / evening_total * 100))
+            evening_bar = self.get_progress_bar(evening_perc)
+            evening_emoji = self.get_section_emoji(evening_perc)
+            message += f"🌙 Вечер {evening_bar} {evening_done}/{evening_total} — {evening_perc}% {evening_emoji}\n"
+        
+        # ИТОГО
+        message += f"\n🎯 <b>ИТОГО:</b> {overall_done} из {overall_total} задач ({overall_perc}%)\n"
+        
+        # НЕЛЬЗЯ
+        if cant_do_fails > 0:
+            message += f"⛔ Срывов в НЕЛЬЗЯ: {cant_do_fails} ❌\n"
+        else:
+            message += f"⛔ Срывов в НЕЛЬЗЯ: 0 ✅\n"
+        
+        message += "\n━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
+        # МОТИВАЦИЯ (с детальной градацией)
         message += self.get_motivation(overall_perc)
-        
-        message += "\n\nЗавтра будет ещё лучше! 💪"
         
         # Отправляем
         await self.send_telegram_message(message)
-        logger.info(f"📊 Итоги дня отправлены: {today_data.get('percentage', 0)}%")
+        logger.info(f"📊 Итоги дня отправлены: {overall_perc}% (day={day_done}/{day_total}, evening={evening_done}/{evening_total})")
     
     async def send_weekly_summary(self):
         """ЭТАП 4: Отправляет итоги недели в воскресенье 23:00"""
