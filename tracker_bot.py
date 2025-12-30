@@ -777,6 +777,11 @@ class TaskTrackerBot:
         # Загружаем статистику
         stats = self.load_stats()
         
+        # ЗАПОМИНАЕМ старое количество срывов ДО объединения (для проверки дублирования штрафов)
+        previous_cant_do_count = 0
+        if today_key in stats and 'cant_do' in stats[today_key]:
+            previous_cant_do_count = len(stats[today_key]['cant_do'].get('completed', []))
+        
         # ВАЖНО: Объединяем с существующими данными за сегодня!
         if today_key in stats:
             # Уже есть данные за сегодня - объединяем
@@ -794,19 +799,19 @@ class TaskTrackerBot:
                 
             logger.info(f"📊 Объединены данные за {today_key}")
         
-        # Считаем общие показатели
+        # Считаем общие показатели (ТОЛЬКО день + вечер, БЕЗ morning и cant_do!)
         total_completed = (
-            len(state['completed']['morning']) +
             len(state['completed']['day']) +
             len(state['completed']['evening'])
         )
         total_tasks = (
-            len(state['tasks']['morning']) +
             len(state['tasks']['day']) +
             len(state['tasks']['evening'])
         )
         
         percentage = int((total_completed / total_tasks * 100)) if total_tasks > 0 else 0
+        
+        logger.info(f"📊 ПОДСЧЁТ: day={len(state['completed']['day'])}/{len(state['tasks']['day'])}, evening={len(state['completed']['evening'])}/{len(state['tasks']['evening'])}, total={total_completed}/{total_tasks} ({percentage}%)")
         
         stats[today_key] = {
             'morning': {
@@ -828,7 +833,8 @@ class TaskTrackerBot:
             'percentage': percentage,
             'points': total_completed,
             'max_points': total_tasks,
-            'penalty': len(state['completed']['cant_do']) > 0
+            'penalty': len(state['completed']['cant_do']) > 0,
+            'penalty_pushups': len(state['completed']['cant_do']) * 30  # НОВОЕ: количество отжиманий для утра
         }
         
         # Сохраняем в файл
@@ -836,15 +842,22 @@ class TaskTrackerBot:
         logger.info(f"💾 Save stats result: {save_success}")
         
         if save_success:
-            # НОВОЕ: Отправляем штрафное сообщение если есть срывы
-            cant_do_count = len(state['completed']['cant_do'])
-            if cant_do_count > 0:
+            # НОВОЕ: Отправляем штрафное сообщение ТОЛЬКО если количество срывов УВЕЛИЧИЛОСЬ
+            current_cant_do_count = len(state['completed']['cant_do'])
+            
+            logger.info(f"⚠️ Штрафы: было={previous_cant_do_count}, стало={current_cant_do_count}")
+            
+            # Отправляем штраф ТОЛЬКО если количество УВЕЛИЧИЛОСЬ
+            if current_cant_do_count > previous_cant_do_count:
                 # Получаем названия задач НЕЛЬЗЯ
                 cant_do_tasks = state['tasks']['cant_do']
                 failed_tasks = [cant_do_tasks[i] for i in state['completed']['cant_do']]
                 
                 # Отправляем штрафное сообщение
-                await self.send_penalty_message(cant_do_count, failed_tasks)
+                await self.send_penalty_message(current_cant_do_count, failed_tasks)
+                logger.info(f"📤 Отправлен штраф: {current_cant_do_count} срывов (увеличилось с {previous_cant_do_count})")
+            elif current_cant_do_count > 0:
+                logger.info(f"⏭️ Штраф уже отправлен ранее ({current_cant_do_count} срывов = {previous_cant_do_count}), пропускаем")
             
             # ЭТАП 3: Обновляем исходное сообщение с прогресс-барами
             # ВАЖНО: используем clean_original, а НЕ original_text!
