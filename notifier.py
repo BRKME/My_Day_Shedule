@@ -485,45 +485,41 @@ class PersonalScheduleNotifier:
         return None
 
     async def check_yesterday_penalty(self):
-        """Проверяет штрафное сообщение от вчера через Telegram API"""
+        """Проверяет штраф за вчера из stats.json"""
         try:
             from datetime import timedelta
+            
+            # Получаем вчерашнюю дату
             yesterday = datetime.now() - timedelta(days=1)
-            yesterday_start = yesterday.replace(hour=0, minute=0, second=0)
+            yesterday_key = yesterday.strftime("%Y-%m-%d")
             
-            # Получаем последние обновления из Telegram
-            url = f"https://api.telegram.org/bot{self.telegram_token}/getUpdates"
-            params = {'offset': -100, 'limit': 100}
+            # Читаем stats.json
+            stats_file = "stats.json"
+            if not os.path.exists(stats_file):
+                logger.info("📊 stats.json не найден, штрафа нет")
+                return None
             
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, timeout=10) as response:
-                    if response.status != 200:
-                        logger.warning("⚠️ Не удалось получить обновления для проверки штрафа")
-                        return None
-                    
-                    data = await response.json()
-                    if not data.get('ok'):
-                        return None
-                    
-                    # Ищем штрафное сообщение от вчера
-                    for update in reversed(data.get('result', [])):
-                        message = update.get('message', {})
-                        text = message.get('text', '')
-                        
-                        # Проверяем что это штрафное сообщение
-                        if '⚠️ ВНИМАНИЕ: ШТРАФ!' in text:
-                            # Извлекаем количество отжиманий
-                            match = re.search(r'Отжимания (\d+) раз', text)
-                            if match:
-                                pushups = int(match.group(1))
-                                count = pushups // 30
-                                penalty_text = f"Отжимания {pushups} раз <i>(5 min Штраф за {count} срыв{'а' if count > 1 else ''})</i>"
-                                logger.info(f"✅ Найден штраф: {penalty_text}")
-                                return penalty_text
+            with open(stats_file, 'r', encoding='utf-8') as f:
+                stats = json.load(f)
             
-            logger.info("✅ Штрафов вчера не было")
-            return None
+            # Проверяем есть ли данные за вчера
+            if yesterday_key not in stats:
+                logger.info(f"📊 Нет данных за {yesterday_key}, штрафа нет")
+                return None
             
+            yesterday_data = stats[yesterday_key]
+            
+            # Проверяем penalty_pushups
+            penalty_pushups = yesterday_data.get('penalty_pushups', 0)
+            
+            if penalty_pushups > 0:
+                cant_do_fails = len(yesterday_data.get('cant_do', {}).get('completed', []))
+                logger.info(f"⚠️ Найден штраф за {yesterday_key}: {penalty_pushups} отжиманий ({cant_do_fails} срывов)")
+                return f"🏋️ Отжимания {penalty_pushups} раз <i>(Штраф за {cant_do_fails} срыв{'а' if cant_do_fails > 1 else ''})</i>"
+            else:
+                logger.info(f"✅ Штрафа за {yesterday_key} нет")
+                return None
+                
         except Exception as e:
             logger.error(f"❌ Ошибка проверки штрафа: {e}")
             return None
