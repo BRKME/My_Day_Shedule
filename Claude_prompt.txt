@@ -127,4 +127,5 @@ ASSUMPTIONS
 - If comments are explicitly requested, write them in Russian  
 - If requirements are ambiguous, ask CTO-level clarification before coding  
 - Do not enter answer loops or self-referential expansions  
-- Always prefer the simplest valid solution (Occam’s Razor)  
+- Always prefer the simplest valid solution (Occam’s Razor)
+- Always wtrie and answer in Russian language (exept code and spesial termins)
