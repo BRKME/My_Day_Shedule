@@ -622,9 +622,9 @@ class PersonalScheduleNotifier:
                 content += f"• {task}\n"
         
         # Добавляем расписание детей
-        kids_schedule_text = self.get_kids_schedule(day_of_week)
-        if kids_schedule_text:
-            content += f"\n{kids_schedule_text}"
+        #kids_schedule_text = self.get_kids_schedule(day_of_week)
+        #if kids_schedule_text:
+        #    content += f"\n{kids_schedule_text}"
         
         content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
         
