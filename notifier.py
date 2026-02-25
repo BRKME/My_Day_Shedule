@@ -34,9 +34,9 @@ class PersonalScheduleNotifier:
         if not self.chat_id:
             raise ValueError("❌ TELEGRAM_CHAT_ID не найден в переменных окружения!")
         
-        self.prayer_url = "https://brkme.github.io/OK_My_Day_Shedule/prayer.html"
-        self.ss_url = "https://brkme.github.io/OK_My_Day_Shedule/ss.html"
-        self.career_url = "https://brkme.github.io/OK_My_Day_Shedule/career.html"
+        self.prayer_url = "https://brkme.github.io/My_Day_Shedule/prayer.html"
+        self.ss_url = "https://brkme.github.io/My_Day_Shedule/ss.html"
+        self.career_url = "https://brkme.github.io/My_Day_Shedule/career.html"
         
         self.wisdoms = [
     "Лучший способ начать — перестать говорить и начать делать. — Уолт Дисней",
