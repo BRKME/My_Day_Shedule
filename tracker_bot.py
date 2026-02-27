@@ -307,6 +307,28 @@ class TaskTrackerBot:
             logger.error(f"❌ Ошибка загрузки состояний сообщений: {e}")
             return {}
     
+    def load_tasks_from_stats(self):
+        """
+        Загружает задачи из stats.json (сохранённые notifier.py)
+        Используется как fallback когда message_state потерян
+        """
+        try:
+            today_key = self.get_today_key()
+            stats = self.load_stats()
+            
+            if today_key in stats and '_tasks' in stats[today_key]:
+                tasks = stats[today_key]['_tasks']
+                # Добавляем morning если его нет
+                if 'morning' not in tasks:
+                    tasks['morning'] = []
+                logger.info(f"✅ Задачи загружены из stats: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
+                return tasks
+            
+            return {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
+        except Exception as e:
+            logger.error(f"❌ Ошибка загрузки задач из stats: {e}")
+            return {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
+    
     def save_message_states(self):
         """Сохраняет состояния сообщений в файл"""
         try:
@@ -350,20 +372,184 @@ class TaskTrackerBot:
         elif percentage >= 50:
             emoji = "👍"
             title = "ХОРОШИЙ ДЕНЬ!"
-            text = f"Ты выполнил {percentage}% задач — неплохой результат!"
-            encouragement = "Завтра можешь ещё лучше! 💪"
-        elif percentage >= 30:
-            emoji = "💪"
-            title = "ДЕНЬ С ПОТЕНЦИАЛОМ"
-            text = f"Ты выполнил {percentage}% задач — есть к чему стремиться."
-            encouragement = "Не сдавайся, завтра покажешь класс! 🔥"
+            text = f"Ты выполнил {percentage}% задач — это хороший результат!"
+            encouragement = "Завтра будет ещё лучше! 💪"
         else:
-            emoji = "🔥"
-            title = "СЛОЖНЫЙ ДЕНЬ"
-            text = f"Сегодня {percentage}% — но это не конец!"
-            encouragement = "Встряхнись! Завтра ты сможешь намного больше! 💪"
+            emoji = "📈"
+            title = "ЕСТЬ НАД ЧЕМ РАБОТАТЬ"
+            text = f"Сегодня {percentage}% — но каждый день это новая возможность!"
+            encouragement = "Не сдавайся! 💪"
         
         return f"{emoji} <b>{title}</b>\n{text}\n{encouragement}"
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # LEVEL SYSTEM
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def get_level(self, percentage):
+        """
+        Определяет уровень по проценту выполнения
+        Iron — ≥70%
+        Steel — ≥80%
+        Titanium — ≥90%
+        """
+        if percentage >= 90:
+            return {'name': 'Titanium', 'emoji': '💎', 'color': '🔷'}
+        elif percentage >= 80:
+            return {'name': 'Steel', 'emoji': '⚔️', 'color': '🔹'}
+        elif percentage >= 70:
+            return {'name': 'Iron', 'emoji': '🛡️', 'color': '🔸'}
+        else:
+            return {'name': 'Bronze', 'emoji': '🥉', 'color': '⬜'}
+    
+    def get_level_bar(self, percentage):
+        """
+        Создаёт визуальную шкалу уровня
+        ⬜⬜⬜⬜⬜⬜⬜ < 70% (Bronze)
+        🔸🔸🔸⬜⬜⬜⬜ ≥ 70% (Iron)
+        🔹🔹🔹🔹🔹⬜⬜ ≥ 80% (Steel)
+        🔷🔷🔷🔷🔷🔷🔷 ≥ 90% (Titanium)
+        """
+        if percentage >= 90:
+            return "🔷🔷🔷🔷🔷🔷🔷"
+        elif percentage >= 80:
+            return "🔹🔹🔹🔹🔹⬜⬜"
+        elif percentage >= 70:
+            return "🔸🔸🔸⬜⬜⬜⬜"
+        else:
+            return "⬜⬜⬜⬜⬜⬜⬜"
+    
+    def calculate_streak_90(self, stats):
+        """
+        Считает текущий streak дней с ≥90%
+        Для получения Black level нужно 7 дней подряд
+        """
+        today = datetime.now()
+        streak = 0
+        
+        # Идём назад от сегодня
+        for i in range(30):  # Максимум 30 дней назад
+            day = today - timedelta(days=i)
+            day_key = day.strftime("%Y-%m-%d")
+            
+            if day_key in stats:
+                percentage = stats[day_key].get('percentage', 0)
+                if percentage >= 90:
+                    streak += 1
+                else:
+                    break  # Streak прервался
+            else:
+                break  # Нет данных = streak прервался
+        
+        return streak
+    
+    def is_black_level(self, stats):
+        """Проверяет достигнут ли Black level (7 дней ≥90%)"""
+        return self.calculate_streak_90(stats) >= 7
+    
+    def get_level_display(self, percentage, stats):
+        """
+        Формирует полное отображение уровня с визуализацией
+        """
+        level = self.get_level(percentage)
+        streak_90 = self.calculate_streak_90(stats)
+        is_black = streak_90 >= 7
+        
+        # Визуальная шкала уровней
+        level_scale = """
+┌─────────────────────────────┐
+│  LEVEL SCALE                │
+├─────────────────────────────┤
+│ ⬜ Bronze   │ < 70%         │
+│ 🔸 Iron     │ ≥ 70%         │
+│ 🔹 Steel    │ ≥ 80%         │
+│ 💎 Titanium │ ≥ 90%         │
+│ 🖤 BLACK    │ 7d ≥90%       │
+└─────────────────────────────┘"""
+        
+        # Текущий статус
+        level_bar = self.get_level_bar(percentage)
+        
+        if is_black:
+            status = f"🖤 <b>BLACK LEVEL!</b>\n{level_bar}\n🔥 {streak_90} дней подряд ≥90%!"
+        else:
+            status = f"{level['emoji']} <b>{level['name'].upper()}</b>\n{level_bar}"
+            if streak_90 > 0:
+                progress_to_black = f"\n🔥 Streak ≥90%: {streak_90}/7 дней"
+                status += progress_to_black
+        
+        return status
+    
+    def get_week_stats(self, stats):
+        """Считает статистику за неделю"""
+        today = datetime.now()
+        total = 0
+        count = 0
+        streak_70 = 0
+        current_streak = 0
+        days_above_90 = 0
+        
+        for i in range(7):
+            day = today - timedelta(days=i)
+            day_key = day.strftime("%Y-%m-%d")
+            
+            if day_key in stats:
+                percentage = stats[day_key].get('percentage', 0)
+                total += percentage
+                count += 1
+                
+                if percentage >= 90:
+                    days_above_90 += 1
+                
+                if percentage >= 70:
+                    current_streak += 1
+                    streak_70 = max(streak_70, current_streak)
+                else:
+                    current_streak = 0
+        
+        avg = int(total / count) if count > 0 else 0
+        return {
+            'avg': avg,
+            'days': count,
+            'streak_70': streak_70,
+            'days_above_90': days_above_90,
+            'level': self.get_level(avg)
+        }
+    
+    def get_month_stats(self, stats):
+        """Считает статистику за месяц"""
+        today = datetime.now()
+        total = 0
+        count = 0
+        days_above_90 = 0
+        days_above_80 = 0
+        days_above_70 = 0
+        
+        for i in range(30):
+            day = today - timedelta(days=i)
+            day_key = day.strftime("%Y-%m-%d")
+            
+            if day_key in stats:
+                percentage = stats[day_key].get('percentage', 0)
+                total += percentage
+                count += 1
+                
+                if percentage >= 90:
+                    days_above_90 += 1
+                if percentage >= 80:
+                    days_above_80 += 1
+                if percentage >= 70:
+                    days_above_70 += 1
+        
+        avg = int(total / count) if count > 0 else 0
+        return {
+            'avg': avg,
+            'days': count,
+            'days_above_90': days_above_90,
+            'days_above_80': days_above_80,
+            'days_above_70': days_above_70,
+            'level': self.get_level(avg)
+        }
     
     def get_section_emoji(self, percentage):
         """Возвращает эмодзи в зависимости от процента выполнения"""
@@ -476,6 +662,10 @@ class TaskTrackerBot:
         
         message += "\n━━━━━━━━━━━━━━━━━━━━━\n\n"
         
+        # LEVEL DISPLAY
+        level_display = self.get_level_display(overall_perc, stats)
+        message += level_display + "\n\n"
+        
         # МОТИВАЦИЯ (с детальной градацией)
         message += self.get_motivation(overall_perc)
         
@@ -484,8 +674,11 @@ class TaskTrackerBot:
         logger.info(f"📊 Итоги дня отправлены: {overall_perc}% (day={day_done}/{day_total}, evening={evening_done}/{evening_total})")
     
     async def send_weekly_summary(self):
-        """ЭТАП 4: Отправляет итоги недели в воскресенье 23:00"""
+        """Отправляет итоги недели с Level System"""
         stats = self.load_stats()
+        week_stats = self.get_week_stats(stats)
+        streak_90 = self.calculate_streak_90(stats)
+        is_black = streak_90 >= 7
         
         # Получаем последние 7 дней
         today = datetime.now()
@@ -498,16 +691,19 @@ class TaskTrackerBot:
             
             if day_key in stats:
                 percentage = stats[day_key].get('percentage', 0)
+                level = self.get_level(percentage)
                 week_data.append({
                     'name': day_name,
                     'percentage': percentage,
-                    'date': day.strftime('%d.%m')
+                    'date': day.strftime('%d.%m'),
+                    'level': level
                 })
             else:
                 week_data.append({
                     'name': day_name,
                     'percentage': 0,
-                    'date': day.strftime('%d.%m')
+                    'date': day.strftime('%d.%m'),
+                    'level': self.get_level(0)
                 })
         
         # Формируем сообщение
@@ -516,43 +712,120 @@ class TaskTrackerBot:
         
         message = f"📈 <b>ИТОГИ НЕДЕЛИ</b>\n"
         message += f"{week_start} - {week_end}.{today.year}\n\n"
-        message += "━━━━━━━━━━━━━━━━━━\n\n"
         
-        total_percentage = 0
-        streak = 0
-        current_streak = 0
-        
+        # Шкала уровней
+        message += "┌────────────────────────┐\n"
         for day_data in week_data:
             perc = day_data['percentage']
-            bar = self.get_progress_bar(perc)
-            message += f"{day_data['name']}: {bar} {perc}%\n"
-            
-            total_percentage += perc
-            
-            # Считаем streak (дни подряд с 70%+)
-            if perc >= 70:
-                current_streak += 1
-                streak = max(streak, current_streak)
-            else:
-                current_streak = 0
+            level = day_data['level']
+            level_bar = self.get_level_bar(perc)
+            message += f"│ {day_data['name']} {level_bar} {perc:3d}% │\n"
+        message += "└────────────────────────┘\n\n"
         
-        avg_percentage = int(total_percentage / 7) if week_data else 0
+        # Средний уровень
+        avg_level = week_stats['level']
+        message += f"📊 <b>Средний:</b> {week_stats['avg']}%\n"
+        message += f"{avg_level['emoji']} <b>Уровень: {avg_level['name'].upper()}</b>\n\n"
         
-        message += "\n━━━━━━━━━━━━━━━━━━\n"
-        message += f"📊 Средний результат: {avg_percentage}%\n"
-        message += f"🔥 Дней подряд 70%+: {streak}\n\n"
+        # Статистика
+        message += f"💎 Дней Titanium (≥90%): {week_stats['days_above_90']}/7\n"
+        message += f"🔥 Streak ≥90%: {streak_90} дней\n"
         
-        if avg_percentage >= 80:
-            message += "🏆 Отличная неделя!\nТак держать! 💪"
-        elif avg_percentage >= 70:
-            message += "✨ Хорошая неделя!\nПродолжай в том же духе! 💪"
-        elif avg_percentage >= 60:
-            message += "👍 Неплохая неделя!\nЕщё чуть-чуть! 💪"
+        # Black level progress
+        if is_black:
+            message += f"\n🖤 <b>BLACK LEVEL ACHIEVED!</b> 🖤\n"
+        elif streak_90 > 0:
+            message += f"\n⬛ До BLACK: {7 - streak_90} дней ≥90%\n"
+        
+        message += "\n"
+        
+        # Мотивация
+        if week_stats['avg'] >= 90:
+            message += "🏆 <b>ЛЕГЕНДАРНАЯ НЕДЕЛЯ!</b>\nТы — машина! 💪"
+        elif week_stats['avg'] >= 80:
+            message += "⚔️ <b>СТАЛЬНАЯ НЕДЕЛЯ!</b>\nОтличный результат! 💪"
+        elif week_stats['avg'] >= 70:
+            message += "🛡️ <b>ЖЕЛЕЗНАЯ НЕДЕЛЯ!</b>\nХорошая работа! 💪"
         else:
             message += "📈 Есть над чем работать!\nСледующая неделя будет лучше! 💪"
         
         await self.send_telegram_message(message)
-        logger.info(f"📊 Итоги недели отправлены: средний {avg_percentage}%")
+        logger.info(f"📊 Итоги недели отправлены: средний {week_stats['avg']}%, уровень {avg_level['name']}")
+    
+    async def send_monthly_summary(self):
+        """Отправляет итоги месяца с Level System"""
+        stats = self.load_stats()
+        month_stats = self.get_month_stats(stats)
+        streak_90 = self.calculate_streak_90(stats)
+        
+        today = datetime.now()
+        
+        # Получаем данные за последние 30 дней
+        month_data = []
+        for i in range(29, -1, -1):
+            day = today - timedelta(days=i)
+            day_key = day.strftime("%Y-%m-%d")
+            
+            if day_key in stats:
+                percentage = stats[day_key].get('percentage', 0)
+            else:
+                percentage = 0
+            month_data.append(percentage)
+        
+        message = f"📅 <b>ИТОГИ МЕСЯЦА</b>\n"
+        message += f"Последние 30 дней\n\n"
+        
+        # Мини-график (каждый символ = 1 день)
+        message += "<code>"
+        for i, perc in enumerate(month_data):
+            if perc >= 90:
+                message += "█"
+            elif perc >= 80:
+                message += "▓"
+            elif perc >= 70:
+                message += "▒"
+            elif perc > 0:
+                message += "░"
+            else:
+                message += "·"
+            
+            # Новая строка каждые 7 дней
+            if (i + 1) % 7 == 0:
+                message += "\n"
+        message += "</code>\n"
+        
+        # Легенда
+        message += "█=90%+ ▓=80%+ ▒=70%+ ░=<70% ·=нет\n\n"
+        
+        # Статистика
+        avg_level = month_stats['level']
+        message += f"📊 <b>Средний:</b> {month_stats['avg']}%\n"
+        message += f"{avg_level['emoji']} <b>Уровень: {avg_level['name'].upper()}</b>\n\n"
+        
+        message += f"💎 Titanium (≥90%): {month_stats['days_above_90']} дней\n"
+        message += f"⚔️ Steel (≥80%): {month_stats['days_above_80']} дней\n"
+        message += f"🛡️ Iron (≥70%): {month_stats['days_above_70']} дней\n"
+        message += f"📝 Всего дней: {month_stats['days']}\n\n"
+        
+        # Black level
+        if streak_90 >= 7:
+            message += f"🖤 <b>BLACK LEVEL ACTIVE!</b>\n"
+            message += f"🔥 Streak: {streak_90} дней ≥90%\n\n"
+        elif streak_90 > 0:
+            message += f"⬛ До BLACK: {7 - streak_90} дней ≥90%\n\n"
+        
+        # Мотивация
+        if month_stats['avg'] >= 90:
+            message += "🏆 <b>ЛЕГЕНДАРНЫЙ МЕСЯЦ!</b>\nТы превзошёл все ожидания! 💪"
+        elif month_stats['avg'] >= 80:
+            message += "⚔️ <b>СТАЛЬНОЙ МЕСЯЦ!</b>\nВпечатляющий результат! 💪"
+        elif month_stats['avg'] >= 70:
+            message += "🛡️ <b>ЖЕЛЕЗНЫЙ МЕСЯЦ!</b>\nСтабильная работа! 💪"
+        else:
+            message += "📈 Есть куда расти!\nСледующий месяц будет лучше! 💪"
+        
+        await self.send_telegram_message(message)
+        logger.info(f"📊 Итоги месяца отправлены: средний {month_stats['avg']}%")
     
     async def check_schedule(self):
         """Проверяет расписание для отправки итогов"""
@@ -568,6 +841,12 @@ class TaskTrackerBot:
                 logger.info("⏰ Время для итогов недели")
                 await asyncio.sleep(60)  # Подождём минуту после итогов дня
                 await self.send_weekly_summary()
+            
+            # Итоги месяца 1-го числа
+            if now.day == 1:
+                logger.info("⏰ Время для итогов месяца")
+                await asyncio.sleep(120)  # Подождём 2 минуты
+                await self.send_monthly_summary()
     
     async def send_telegram_message(self, message):
         """Отправляет сообщение в Telegram"""
@@ -688,21 +967,27 @@ class TaskTrackerBot:
         # Первый вызов - парсим задачи из оригинального сообщения
         tasks = self.parse_tasks(original_message)
         
-        # ПРОВЕРКА: если задач нет - сообщение слишком старое или повреждено
+        # ПРОВЕРКА: если задач нет - пробуем загрузить из stats.json
         total_tasks = len(tasks['morning']) + len(tasks['day']) + len(tasks['cant_do']) + len(tasks['evening'])
         if total_tasks == 0:
-            error_text = (
-                "⚠️ <b>Ошибка:</b> Не удалось загрузить задачи.\n\n"
-                "Это сообщение слишком старое (>2 часов) или повреждено.\n"
-                "Подожди следующего утреннего/вечернего сообщения."
-            )
-            keyboard = {
-                'inline_keyboard': [
-                    [{'text': '❌ Закрыть', 'callback_data': 'cancel_update'}]
-                ]
-            }
-            await self.edit_message(message_id, error_text, keyboard)
-            return
+            # Пробуем загрузить из stats.json (сохраняется в notifier.py)
+            tasks = self.load_tasks_from_stats()
+            total_tasks = len(tasks.get('day', [])) + len(tasks.get('cant_do', [])) + len(tasks.get('evening', []))
+            
+            if total_tasks > 0:
+                logger.info(f"✅ Задачи загружены из stats.json: {total_tasks} задач")
+            else:
+                error_text = (
+                    "⚠️ <b>Ошибка:</b> Не удалось загрузить задачи.\n\n"
+                    "Подожди следующего утреннего/вечернего сообщения."
+                )
+                keyboard = {
+                    'inline_keyboard': [
+                        [{'text': '❌ Закрыть', 'callback_data': 'cancel_update'}]
+                    ]
+                }
+                await self.edit_message(message_id, error_text, keyboard)
+                return
         
         # Загружаем существующий прогресс за сегодня
         today_key = self.get_today_key()
