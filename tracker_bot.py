@@ -112,7 +112,7 @@ class TaskTrackerBot:
                 emoji = '⭐' if is_done else '☆'
                 short_task = task[:32] + '...' if len(task) > 32 else task
                 keyboard.append([{
-                    'text': f'{emoji} {idx+1}. НЕ {short_task}',
+                    'text': f'{emoji} {idx+1}. {short_task}',
                     'callback_data': f'toggle_cant_do_{idx}'
                 }])
         
@@ -156,7 +156,7 @@ class TaskTrackerBot:
             msg += "\n⛔ <b>НЕЛЬЗЯ ДЕЛАТЬ:</b>\n"
             for idx, task in enumerate(tasks['cant_do']):
                 emoji = '⭐' if idx in completed.get('cant_do', []) else '☆'
-                msg += f"{emoji} НЕ {task}\n"
+                msg += f"{emoji} {task}\n"
                 total_tasks += 1
                 if idx in completed.get('cant_do', []):
                     total_done += 1
