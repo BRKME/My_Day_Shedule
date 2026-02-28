@@ -1162,8 +1162,8 @@ class TaskTrackerBot:
             keyboard = {
                 'inline_keyboard': [
                     [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
-                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/OK_My_Day_Shedule/prayer.html'}],
-                    [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/OK_My_Day_Shedule/career.html'}]
+                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day_Shedule/prayer.html'}],
+                    [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/My_Day_Shedule/career.html'}]
                 ]
             }
             
@@ -1188,8 +1188,8 @@ class TaskTrackerBot:
             keyboard = {
                 'inline_keyboard': [
                     [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
-                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/OK_My_Day_Shedule/prayer.html'}],
-                    [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/OK_My_Day_Shedule/career.html'}]
+                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day_Shedule/prayer.html'}],
+                    [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/My_Day_Shedule/career.html'}]
                 ]
             }
             
