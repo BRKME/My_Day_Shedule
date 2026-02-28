@@ -438,37 +438,48 @@ class PersonalScheduleNotifier:
         return date_str, day_of_week, schedule
 
     async def get_weather_forecast(self):
+        """Получение погоды через Open-Meteo API (стабильный, без ключа)"""
         try:
+            # Москва: 55.7558, 37.6173
+            url = "https://api.open-meteo.com/v1/forecast?latitude=55.7558&longitude=37.6173&current_weather=true&temperature_unit=celsius&timezone=Europe/Moscow"
+            
             async with aiohttp.ClientSession() as session:
-                async with session.get("https://wttr.in/Moscow?format=%t+%C+%w+%h+%p&m&lang=ru", timeout=10) as response:
+                async with session.get(url, timeout=10) as response:
                     if response.status == 200:
-                        weather_data = await response.text()
-                        parts = weather_data.strip().split()
-                        if len(parts) >= 5:
-                            temp, condition, wind, humidity, precipitation = parts[:5]
-                            return (
-                                f"🌤️ <b>Погода:</b>\n"
-                                f"🌡️ Температура: {temp}\n"
-                                f"☁️ Состояние: {condition}\n"
-                                f"💨 Ветер: {wind}\n"
-                                f"💧 Влажность: {humidity}\n"
-                                f"🌧️ Осадки: {precipitation}\n"
-                            )
-                        return "🌤️ <b>Погода:</b> Данные недоступны\n"
+                        data = await response.json()
+                        current = data.get('current_weather', {})
+                        
+                        temp = current.get('temperature', 'N/A')
+                        windspeed = current.get('windspeed', 'N/A')
+                        
+                        weather_codes = {
+                            0: 'Ясно', 1: 'Малооблачно', 2: 'Переменная облачность', 3: 'Облачно',
+                            45: 'Туман', 48: 'Изморозь',
+                            51: 'Морось', 53: 'Морось', 55: 'Сильная морось',
+                            61: 'Слабый дождь', 63: 'Дождь', 65: 'Сильный дождь',
+                            71: 'Слабый снег', 73: 'Снег', 75: 'Сильный снег',
+                            80: 'Ливень', 81: 'Сильный ливень', 82: 'Очень сильный ливень',
+                            95: 'Гроза', 96: 'Гроза с градом', 99: 'Сильная гроза'
+                        }
+                        
+                        weather_code = current.get('weathercode', 0)
+                        condition = weather_codes.get(weather_code, 'Неизвестно')
+                        
+                        logger.info(f"✅ Погода получена: {temp}°C, {condition}")
+                        
+                        return (
+                            f"🌤️ <b>Погода в Москве:</b>\n"
+                            f"🌡️ {temp}°C • {condition}\n"
+                            f"💨 Ветер: {windspeed} км/ч\n"
+                        )
                     return "🌤️ <b>Погода:</b> Ошибка получения\n"
         except Exception as e:
             logger.error(f"❌ Ошибка погоды: {e}")
             return "🌤️ <b>Погода:</b> Ошибка подключения\n"
 
     async def get_weekend_forecast(self):
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get("https://wttr.in/Moscow?format=%t+%C", params={'lang': 'ru'}, timeout=10) as response:
-                    if response.status == 200:
-                        return ""
-        except Exception as e:
-            logger.error(f"❌ Ошибка: {e}")
-            return ""
+        """Не используется, возвращает пустую строку"""
+        return ""
 
     def get_last_day_of_month(self, year, month, target_weekday):
         calendar = monthcalendar(year, month)
