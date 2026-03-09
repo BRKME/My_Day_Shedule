@@ -37,6 +37,7 @@ class PersonalScheduleNotifier:
         self.prayer_url = "https://brkme.github.io/My_Day_Shedule/prayer.html"
         self.ss_url = "https://brkme.github.io/My_Day_Shedule/ss.html"
         self.career_url = "https://brkme.github.io/My_Day_Shedule/career.html"
+        self.taleb_url = "https://brkme.github.io/My_Day_Shedule/taleb.html"
         
         self.wisdoms = [
     "Лучший способ начать — перестать говорить и начать делать. — Уолт Дисней",
@@ -742,6 +743,7 @@ class PersonalScheduleNotifier:
         
         content += f"\n\n🙏 <a href='{self.prayer_url}'>Утренняя молитва</a>"
         content += f"\n🏢 <a href='{self.career_url}'>Принципы карьеры</a>"
+        content += f"\n📚 <a href='{self.taleb_url}'>Талеб: Антихрупкость</a>"
         
         return content
     
@@ -750,7 +752,8 @@ class PersonalScheduleNotifier:
             'inline_keyboard': [
                 [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
                 [{'text': '🙏 Утренняя молитва', 'url': self.prayer_url}],
-                [{'text': '🏢 Принципы карьеры', 'url': self.career_url}]
+                [{'text': '🏢 Принципы карьеры', 'url': self.career_url}],
+                [{'text': '📚 Талеб: Антихрупкость', 'url': self.taleb_url}]
             ]
         }
     
@@ -841,9 +844,6 @@ class PersonalScheduleNotifier:
             for task in schedule['вечер']:
                 content += f"• {task}\n"
         content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
-        
-        content += f"\n\n🙏 <a href='{self.prayer_url}'>Утренняя молитва</a>"
-        content += f"\n🏢 <a href='{self.career_url}'>Принципы карьеры</a>"
         
         return content
 
