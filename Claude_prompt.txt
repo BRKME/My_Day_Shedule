@@ -175,3 +175,4 @@ Before outputting ANY file, ask:
 3. Did user explicitly request docs? → NO = do not output
 
 If violated → REJECT and regenerate without docs.
+If necessary use FastAPI,LangChain, Firebase, CI/CD, Supabase
