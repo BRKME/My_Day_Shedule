@@ -508,6 +508,66 @@ class PersonalScheduleNotifier:
         """Не используется, возвращает пустую строку"""
         return ""
 
+    async def get_rates(self):
+        """Получение курсов USD/RUB и BTC/USD"""
+        try:
+            rates = {}
+            
+            async with aiohttp.ClientSession() as session:
+                # USD/RUB от ЦБ РФ
+                try:
+                    cbr_url = "https://www.cbr-xml-daily.ru/daily_json.js"
+                    async with session.get(cbr_url, timeout=10) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            usd = data.get('Valute', {}).get('USD', {})
+                            rates['usd'] = usd.get('Value', 0)
+                            rates['usd_prev'] = usd.get('Previous', 0)
+                except Exception as e:
+                    logger.error(f"❌ Ошибка USD: {e}")
+                    rates['usd'] = None
+                
+                # BTC/USD от CoinGecko
+                try:
+                    btc_url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true"
+                    async with session.get(btc_url, timeout=10) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            btc = data.get('bitcoin', {})
+                            rates['btc'] = btc.get('usd', 0)
+                            rates['btc_change'] = btc.get('usd_24h_change', 0)
+                except Exception as e:
+                    logger.error(f"❌ Ошибка BTC: {e}")
+                    rates['btc'] = None
+            
+            # Форматируем вывод
+            result = ""
+            
+            if rates.get('usd'):
+                usd_val = rates['usd']
+                usd_prev = rates.get('usd_prev', usd_val)
+                usd_diff = usd_val - usd_prev
+                usd_arrow = "↑" if usd_diff > 0 else "↓" if usd_diff < 0 else "→"
+                result += f"💵 USD: {usd_val:.2f}₽ {usd_arrow}\n"
+            
+            if rates.get('btc'):
+                btc_val = rates['btc']
+                btc_change = rates.get('btc_change', 0)
+                btc_arrow = "↑" if btc_change > 0 else "↓" if btc_change < 0 else "→"
+                # Форматируем BTC с запятыми
+                btc_formatted = f"{btc_val:,.0f}".replace(",", " ")
+                result += f"₿ BTC: ${btc_formatted} {btc_arrow}{abs(btc_change):.1f}%\n"
+            
+            if result:
+                logger.info(f"✅ Курсы получены: USD={rates.get('usd')}, BTC={rates.get('btc')}")
+                return result
+            else:
+                return ""
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка курсов: {e}")
+            return ""
+
     def get_last_day_of_month(self, year, month, target_weekday):
         calendar = monthcalendar(year, month)
         for week in reversed(calendar):
@@ -640,6 +700,11 @@ class PersonalScheduleNotifier:
         
         weather = await self.get_weather_forecast()
         content += weather
+        
+        # Курсы валют
+        rates = await self.get_rates()
+        if rates:
+            content += rates
         
         if day_of_week in ['monday', 'wednesday', 'friday']:
             weekend_forecast = await self.get_weekend_forecast()

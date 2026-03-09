@@ -128,9 +128,9 @@ def simulate_daily_summary():
     return True
 
 def simulate_morning_with_penalty():
-    """Симуляция утреннего сообщения со штрафом"""
+    """Симуляция утреннего сообщения со штрафом и курсами"""
     print("\n" + "=" * 50)
-    print("☀️ СИМУЛЯЦИЯ: УТРЕННЕЕ СООБЩЕНИЕ СО ШТРАФОМ")
+    print("☀️ СИМУЛЯЦИЯ: УТРЕННЕЕ СООБЩЕНИЕ")
     print("=" * 50)
     
     yesterday_key = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -149,8 +149,18 @@ def simulate_morning_with_penalty():
     print(f"   cant_do_fails: {cant_do_fails}")
     
     # Формируем утреннее сообщение
-    message = f"☀️ <b>Доброе утро!</b>\n"
-    message += f"{datetime.now().strftime('%d.%m.%Y')}\n\n"
+    message = f"🌅 <b>План на Понедельник {datetime.now().strftime('%d.%m.%Y')}</b>\n\n"
+    
+    # Погода (симуляция)
+    message += "🌤️ <b>Погода в Москве:</b>\n"
+    message += "🌡️ -2°C • Облачно\n"
+    message += "💨 Ветер: 12 км/ч\n"
+    
+    # КУРСЫ (симуляция)
+    message += "💵 USD: 88.45₽ ↑\n"
+    message += "₿ BTC: $95 234 ↑2.3%\n"
+    
+    message += "\n"
     
     # ШТРАФ
     if penalty_pushups > 0:
@@ -160,15 +170,17 @@ def simulate_morning_with_penalty():
         print("\n⚠️ Штрафа нет (penalty_pushups = 0)")
     
     message += "<b>📋 Дневные задачи:</b>\n"
-    message += "• Задача 1\n"
-    message += "• Задача 2\n"
-    message += "• Задача 3\n"
+    message += "• Витамины 💊\n"
+    message += "• Зарядка 🤸\n"
+    message += "• English 🇬🇧\n"
     
     print("\n📱 TELEGRAM MESSAGE:")
     print("-" * 40)
     clean_msg = message.replace('<b>', '').replace('</b>', '').replace('<i>', '').replace('</i>', '')
     print(clean_msg)
     print("-" * 40)
+    
+    print("\n✅ КУРСЫ USD и BTC ДОБАВЛЕНЫ!")
     
     return penalty_pushups > 0
 
@@ -187,7 +199,7 @@ def main():
     print("📋 РЕЗУЛЬТАТЫ СИМУЛЯЦИИ")
     print("=" * 50)
     print(f"1. Итоги дня (день+вечер+итого): {'✅ PASS' if test1 else '❌ FAIL'}")
-    print(f"2. Штраф в утреннем сообщении:   {'✅ PASS' if test2 else '❌ FAIL'}")
+    print(f"2. Утреннее (штраф+курсы):       {'✅ PASS' if test2 else '❌ FAIL'}")
     print("=" * 50)
     
     if test1 and test2:
