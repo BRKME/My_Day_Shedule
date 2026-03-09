@@ -601,14 +601,25 @@ class TaskTrackerBot:
         # === ФОРМИРУЕМ СООБЩЕНИЕ (минималистичный стиль) ===
         message = f"<b>ИТОГИ ДНЯ</b> · {datetime.now().strftime('%d.%m.%Y')}\n\n"
         
-        # Прогресс
-        bar = self.get_progress_bar(overall_perc, 10)
-        message += f"{bar} {overall_perc}%\n"
-        message += f"{overall_done}/{overall_total} задач\n\n"
+        # День и Вечер отдельно
+        if day_total > 0:
+            day_perc = min(100, int((day_done / day_total * 100)))
+            day_bar = self.get_progress_bar(day_perc, 7)
+            message += f"День   {day_bar} {day_done}/{day_total}\n"
+        
+        if evening_total > 0:
+            evening_perc = min(100, int((evening_done / evening_total * 100)))
+            evening_bar = self.get_progress_bar(evening_perc, 7)
+            message += f"Вечер  {evening_bar} {evening_done}/{evening_total}\n"
+        
+        # ИТОГО
+        message += f"\n<b>Итого: {overall_done}/{overall_total} ({overall_perc}%)</b>\n"
         
         # НЕЛЬЗЯ (только если есть срывы)
         if cant_do_fails > 0:
-            message += f"Срывов: {cant_do_fails}\n\n"
+            message += f"Срывов: {cant_do_fails}\n"
+        
+        message += "\n"
         
         # LEVEL
         level_display = self.get_level_display(overall_perc, stats)

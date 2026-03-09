@@ -563,7 +563,7 @@ class PersonalScheduleNotifier:
             if penalty_pushups > 0:
                 cant_do_fails = len(yesterday_data.get('cant_do', {}).get('completed', []))
                 logger.info(f"⚠️ Найден штраф за {yesterday_key}: {penalty_pushups} отжиманий ({cant_do_fails} срывов)")
-                return f"🏋️ Отжимания {penalty_pushups} раз <i>(Штраф за {cant_do_fails} срыв{'а' if cant_do_fails > 1 else ''})</i>"
+                return f"Отжимания {penalty_pushups}× (штраф)"
             else:
                 logger.info(f"✅ Штрафа за {yesterday_key} нет")
                 return None
@@ -650,8 +650,7 @@ class PersonalScheduleNotifier:
         
         penalty_task = await self.check_yesterday_penalty()
         if penalty_task:
-            content += f"<b>⚠️ ШТРАФ ЗА ВЧЕРА:</b>\n"
-            content += f"• {penalty_task}\n\n"
+            content += f"<b>ШТРАФ:</b> {penalty_task}\n\n"
         
         if schedule.get('день'):
             content += "<b>📋 Дневные задачи:</b>\n"
