@@ -358,29 +358,15 @@ class TaskTrackerBot:
         return '▓' * filled + '░' * (length - filled)
     
     def get_motivation(self, percentage):
-        """Возвращает детальное мотивационное сообщение с градацией"""
+        """Возвращает короткое мотивационное сообщение"""
         if percentage >= 90:
-            emoji = "🏆"
-            title = "ИДЕАЛЬНЫЙ ДЕНЬ!"
-            text = f"Ты выполнил {percentage}% задач — это потрясающий результат!"
-            encouragement = "Так держать, чемпион! 💪"
+            return "Отличная работа!"
         elif percentage >= 70:
-            emoji = "🌟"
-            title = "ОТЛИЧНЫЙ ДЕНЬ!"
-            text = f"Ты выполнил {percentage}% задач — продолжай в том же духе!"
-            encouragement = "Ты на правильном пути! 💪"
+            return "Хороший день."
         elif percentage >= 50:
-            emoji = "👍"
-            title = "ХОРОШИЙ ДЕНЬ!"
-            text = f"Ты выполнил {percentage}% задач — это хороший результат!"
-            encouragement = "Завтра будет ещё лучше! 💪"
+            return "Неплохо. Завтра лучше."
         else:
-            emoji = "📈"
-            title = "ЕСТЬ НАД ЧЕМ РАБОТАТЬ"
-            text = f"Сегодня {percentage}% — но каждый день это новая возможность!"
-            encouragement = "Не сдавайся! 💪"
-        
-        return f"{emoji} <b>{title}</b>\n{text}\n{encouragement}"
+            return "Новый день — новые возможности."
     
     # ═══════════════════════════════════════════════════════════════════════════════
     # LEVEL SYSTEM
@@ -389,18 +375,15 @@ class TaskTrackerBot:
     def get_level(self, percentage):
         """
         Определяет уровень по проценту выполнения
-        Iron — ≥70%
-        Steel — ≥80%
-        Titanium — ≥90%
         """
         if percentage >= 90:
-            return {'name': 'Titanium', 'emoji': '💎', 'color': '🔷'}
+            return {'name': 'TITANIUM', 'emoji': '💎', 'color': '▓', 'phrase': 'Сегодня ты ТИТАН продуктивности'}
         elif percentage >= 80:
-            return {'name': 'Steel', 'emoji': '⚔️', 'color': '🔹'}
+            return {'name': 'STEEL', 'emoji': '⚔️', 'color': '▓', 'phrase': 'Стальная воля, стальной день'}
         elif percentage >= 70:
-            return {'name': 'Iron', 'emoji': '🛡️', 'color': '🔸'}
+            return {'name': 'IRON', 'emoji': '🛡️', 'color': '▒', 'phrase': 'Железная хватка'}
         else:
-            return {'name': 'Bronze', 'emoji': '🥉', 'color': '⬜'}
+            return {'name': 'BRONZE', 'emoji': '🥉', 'color': '░', 'phrase': 'Есть куда расти'}
     
     def get_level_bar(self, percentage):
         """
@@ -449,34 +432,18 @@ class TaskTrackerBot:
     
     def get_level_display(self, percentage, stats):
         """
-        Формирует полное отображение уровня с визуализацией
+        Формирует минималистичное отображение уровня
         """
         level = self.get_level(percentage)
         streak_90 = self.calculate_streak_90(stats)
         is_black = streak_90 >= 7
         
-        # Визуальная шкала уровней
-        level_scale = """
-┌─────────────────────────────┐
-│  LEVEL SCALE                │
-├─────────────────────────────┤
-│ ⬜ Bronze   │ < 70%         │
-│ 🔸 Iron     │ ≥ 70%         │
-│ 🔹 Steel    │ ≥ 80%         │
-│ 💎 Titanium │ ≥ 90%         │
-│ 🖤 BLACK    │ 7d ≥90%       │
-└─────────────────────────────┘"""
-        
-        # Текущий статус
-        level_bar = self.get_level_bar(percentage)
-        
         if is_black:
-            status = f"🖤 <b>BLACK LEVEL!</b>\n{level_bar}\n🔥 {streak_90} дней подряд ≥90%!"
+            status = f"🖤 BLACK\n→ {streak_90} дней подряд ≥90%"
         else:
-            status = f"{level['emoji']} <b>{level['name'].upper()}</b>\n{level_bar}"
+            status = f"{level['emoji']} {level['name']}\n→ {level['phrase']}"
             if streak_90 > 0:
-                progress_to_black = f"\n🔥 Streak ≥90%: {streak_90}/7 дней"
-                status += progress_to_black
+                status += f"\nStreak: {streak_90}/7"
         
         return status
     
@@ -565,29 +532,27 @@ class TaskTrackerBot:
             return "🔥"  # Слабовато
     
     async def send_penalty_message(self, cant_do_count, failed_tasks):
-        """НОВОЕ: Отправляет штрафное сообщение сразу после сохранения"""
+        """Отправляет штрафное сообщение (минималистичный стиль)"""
         try:
             pushups = cant_do_count * 30
-            penalty_msg = f"⚠️ <b>ВНИМАНИЕ: ШТРАФ!</b>\n\n"
-            penalty_msg += f"Сегодня у тебя {cant_do_count} срыв{'а' if cant_do_count > 1 else ''} в НЕЛЬЗЯ:\n"
+            
+            penalty_msg = f"<b>ШТРАФ</b>\n\n"
+            penalty_msg += f"Срывов: {cant_do_count}\n"
             
             for task in failed_tasks:
-                # Убираем HTML теги и "НЕ" из начала
                 clean_task = task.replace('<i>', '').replace('</i>', '').replace('<b>', '').replace('</b>', '')
-                clean_task = clean_task.split('(')[0].strip()  # Убираем пояснения в скобках
+                clean_task = clean_task.split('(')[0].strip()
                 if clean_task.startswith('НЕ ') or clean_task.startswith('Не '):
                     clean_task = clean_task[3:].strip()
-                penalty_msg += f"• {clean_task}\n"
+                penalty_msg += f"· {clean_task}\n"
             
-            penalty_msg += f"\n<b>Завтра в утренних задачах будет:</b>\n"
-            penalty_msg += f"🏋️ Отжимания {pushups} раз <i>(Штраф за {cant_do_count} срыв{'а' if cant_do_count > 1 else ''})</i>\n\n"
-            penalty_msg += f"Держись крепче! 💪"
+            penalty_msg += f"\nЗавтра: {pushups} отжиманий"
             
             await self.send_telegram_message(penalty_msg)
-            logger.info(f"⚠️ Отправлено штрафное сообщение: {pushups} отжиманий")
+            logger.info(f"⚠️ Штраф: {pushups} отжиманий")
             
         except Exception as e:
-            logger.error(f"❌ Ошибка отправки штрафного сообщения: {e}")
+            logger.error(f"❌ Ошибка штрафа: {e}")
     
     async def send_daily_summary(self):
         """ЭТАП 4: Отправляет итоги дня в 23:00 - НОВЫЙ ДИЗАЙН"""
@@ -626,47 +591,30 @@ class TaskTrackerBot:
         # ИТОГО: День + Вечер (БЕЗ "НЕЛЬЗЯ"!)
         overall_done = day_done + evening_done
         overall_total = day_total + evening_total
-        overall_perc = int((overall_done / overall_total * 100)) if overall_total > 0 else 0
+        overall_perc = min(100, int((overall_done / overall_total * 100))) if overall_total > 0 else 0
         
         # Срывы в НЕЛЬЗЯ считаем отдельно
         cant_do_fails = len(cant_do.get('completed', []))
         
         logger.info(f"📊 CALCULATED: day={day_done}/{day_total}, evening={evening_done}/{evening_total}, total={overall_done}/{overall_total} ({overall_perc}%)")
         
-        # === ФОРМИРУЕМ СООБЩЕНИЕ ===
-        message = f"📊 <b>ИТОГИ ДНЯ — {datetime.now().strftime('%d.%m.%Y')}</b>\n\n"
+        # === ФОРМИРУЕМ СООБЩЕНИЕ (минималистичный стиль) ===
+        message = f"<b>ИТОГИ ДНЯ</b> · {datetime.now().strftime('%d.%m.%Y')}\n\n"
         
-        # ДЕНЬ
-        if day_total > 0:
-            day_perc = int((day_done / day_total * 100))
-            day_bar = self.get_progress_bar(day_perc)
-            day_emoji = self.get_section_emoji(day_perc)
-            # Выравнивание: "День " (5 символов) для красоты
-            message += f"☀️ День  {day_bar} {day_done}/{day_total} — {day_perc}% {day_emoji}\n"
+        # Прогресс
+        bar = self.get_progress_bar(overall_perc, 10)
+        message += f"{bar} {overall_perc}%\n"
+        message += f"{overall_done}/{overall_total} задач\n\n"
         
-        # ВЕЧЕР
-        if evening_total > 0:
-            evening_perc = int((evening_done / evening_total * 100))
-            evening_bar = self.get_progress_bar(evening_perc)
-            evening_emoji = self.get_section_emoji(evening_perc)
-            message += f"🌙 Вечер {evening_bar} {evening_done}/{evening_total} — {evening_perc}% {evening_emoji}\n"
-        
-        # ИТОГО
-        message += f"\n🎯 <b>ИТОГО:</b> {overall_done} из {overall_total} задач ({overall_perc}%)\n"
-        
-        # НЕЛЬЗЯ
+        # НЕЛЬЗЯ (только если есть срывы)
         if cant_do_fails > 0:
-            message += f"⛔ Срывов в НЕЛЬЗЯ: {cant_do_fails} ❌\n"
-        else:
-            message += f"⛔ Срывов в НЕЛЬЗЯ: 0 ✅\n"
+            message += f"Срывов: {cant_do_fails}\n\n"
         
-        message += "\n━━━━━━━━━━━━━━━━━━━━━\n\n"
-        
-        # LEVEL DISPLAY
+        # LEVEL
         level_display = self.get_level_display(overall_perc, stats)
         message += level_display + "\n\n"
         
-        # МОТИВАЦИЯ (с детальной градацией)
+        # МОТИВАЦИЯ
         message += self.get_motivation(overall_perc)
         
         # Отправляем
@@ -706,48 +654,42 @@ class TaskTrackerBot:
                     'level': self.get_level(0)
                 })
         
-        # Формируем сообщение
+        # Формируем сообщение (минималистичный стиль)
         week_start = (today - timedelta(days=6)).strftime('%d.%m')
         week_end = today.strftime('%d.%m')
         
-        message = f"📈 <b>ИТОГИ НЕДЕЛИ</b>\n"
-        message += f"{week_start} - {week_end}.{today.year}\n\n"
+        message = f"<b>ИТОГИ НЕДЕЛИ</b>\n{week_start} — {week_end}\n\n"
         
-        # Шкала уровней
-        message += "┌────────────────────────┐\n"
+        # Дни недели (простая шкала)
         for day_data in week_data:
             perc = day_data['percentage']
-            level = day_data['level']
-            level_bar = self.get_level_bar(perc)
-            message += f"│ {day_data['name']} {level_bar} {perc:3d}% │\n"
-        message += "└────────────────────────┘\n\n"
+            bar = self.get_progress_bar(perc, 7)
+            message += f"{day_data['name']} {bar} {perc}%\n"
         
-        # Средний уровень
+        message += f"\nСредний: {week_stats['avg']}%\n"
+        
+        # Level
         avg_level = week_stats['level']
-        message += f"📊 <b>Средний:</b> {week_stats['avg']}%\n"
-        message += f"{avg_level['emoji']} <b>Уровень: {avg_level['name'].upper()}</b>\n\n"
+        message += f"{avg_level['emoji']} {avg_level['name']}\n"
         
-        # Статистика
-        message += f"💎 Дней Titanium (≥90%): {week_stats['days_above_90']}/7\n"
-        message += f"🔥 Streak ≥90%: {streak_90} дней\n"
+        # Streak
+        if streak_90 > 0:
+            message += f"Streak: {streak_90}/7\n"
         
-        # Black level progress
+        # Black level
         if is_black:
-            message += f"\n🖤 <b>BLACK LEVEL ACHIEVED!</b> 🖤\n"
-        elif streak_90 > 0:
-            message += f"\n⬛ До BLACK: {7 - streak_90} дней ≥90%\n"
+            message += "\n🖤 BLACK ACHIEVED"
         
+        # Короткая мотивация
         message += "\n"
-        
-        # Мотивация
         if week_stats['avg'] >= 90:
-            message += "🏆 <b>ЛЕГЕНДАРНАЯ НЕДЕЛЯ!</b>\nТы — машина! 💪"
+            message += "Легендарная неделя."
         elif week_stats['avg'] >= 80:
-            message += "⚔️ <b>СТАЛЬНАЯ НЕДЕЛЯ!</b>\nОтличный результат! 💪"
+            message += "Отличный результат."
         elif week_stats['avg'] >= 70:
-            message += "🛡️ <b>ЖЕЛЕЗНАЯ НЕДЕЛЯ!</b>\nХорошая работа! 💪"
+            message += "Хорошая работа."
         else:
-            message += "📈 Есть над чем работать!\nСледующая неделя будет лучше! 💪"
+            message += "Следующая неделя будет лучше."
         
         await self.send_telegram_message(message)
         logger.info(f"📊 Итоги недели отправлены: средний {week_stats['avg']}%, уровень {avg_level['name']}")
@@ -772,8 +714,7 @@ class TaskTrackerBot:
                 percentage = 0
             month_data.append(percentage)
         
-        message = f"📅 <b>ИТОГИ МЕСЯЦА</b>\n"
-        message += f"Последние 30 дней\n\n"
+        message = f"<b>ИТОГИ МЕСЯЦА</b>\n30 дней\n\n"
         
         # Мини-график (каждый символ = 1 день)
         message += "<code>"
@@ -789,40 +730,36 @@ class TaskTrackerBot:
             else:
                 message += "·"
             
-            # Новая строка каждые 7 дней
             if (i + 1) % 7 == 0:
                 message += "\n"
         message += "</code>\n"
-        
-        # Легенда
-        message += "█=90%+ ▓=80%+ ▒=70%+ ░=<70% ·=нет\n\n"
+        message += "█90+ ▓80+ ▒70+ ░<70 ·нет\n\n"
         
         # Статистика
         avg_level = month_stats['level']
-        message += f"📊 <b>Средний:</b> {month_stats['avg']}%\n"
-        message += f"{avg_level['emoji']} <b>Уровень: {avg_level['name'].upper()}</b>\n\n"
+        message += f"Средний: {month_stats['avg']}%\n"
+        message += f"{avg_level['emoji']} {avg_level['name']}\n\n"
         
-        message += f"💎 Titanium (≥90%): {month_stats['days_above_90']} дней\n"
-        message += f"⚔️ Steel (≥80%): {month_stats['days_above_80']} дней\n"
-        message += f"🛡️ Iron (≥70%): {month_stats['days_above_70']} дней\n"
-        message += f"📝 Всего дней: {month_stats['days']}\n\n"
+        message += f"≥90%: {month_stats['days_above_90']}d\n"
+        message += f"≥80%: {month_stats['days_above_80']}d\n"
+        message += f"≥70%: {month_stats['days_above_70']}d\n"
         
         # Black level
         if streak_90 >= 7:
-            message += f"🖤 <b>BLACK LEVEL ACTIVE!</b>\n"
-            message += f"🔥 Streak: {streak_90} дней ≥90%\n\n"
+            message += f"\n🖤 BLACK · {streak_90}d streak"
         elif streak_90 > 0:
-            message += f"⬛ До BLACK: {7 - streak_90} дней ≥90%\n\n"
+            message += f"\nStreak: {streak_90}/7"
         
-        # Мотивация
+        # Короткая мотивация
+        message += "\n\n"
         if month_stats['avg'] >= 90:
-            message += "🏆 <b>ЛЕГЕНДАРНЫЙ МЕСЯЦ!</b>\nТы превзошёл все ожидания! 💪"
+            message += "Легендарный месяц."
         elif month_stats['avg'] >= 80:
-            message += "⚔️ <b>СТАЛЬНОЙ МЕСЯЦ!</b>\nВпечатляющий результат! 💪"
+            message += "Отличный результат."
         elif month_stats['avg'] >= 70:
-            message += "🛡️ <b>ЖЕЛЕЗНЫЙ МЕСЯЦ!</b>\nСтабильная работа! 💪"
+            message += "Хорошая работа."
         else:
-            message += "📈 Есть куда расти!\nСледующий месяц будет лучше! 💪"
+            message += "Следующий месяц будет лучше."
         
         await self.send_telegram_message(message)
         logger.info(f"📊 Итоги месяца отправлены: средний {month_stats['avg']}%")
