@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Антихрупкость · Дерево · Талеб</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f6f3ed;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: #1e2b2f;
+            line-height: 1.5;
+            padding: 2rem 1rem;
+        }
+
+        .paper {
+            max-width: 950px;
+            margin: 0 auto;
+            background: rgba(255, 254, 250, 0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 48px 48px 32px 32px;
+            box-shadow: 0 20px 40px -15px rgba(40, 30, 10, 0.2),
+                        0 0 0 1px rgba(150, 130, 100, 0.15) inset;
+            padding: 2.8rem 2.4rem;
+        }
+
+        /* дерево (схема) */
+        .tree-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 2rem 0 3rem 0;
+            position: relative;
+        }
+
+        .ground {
+            width: 100%;
+            height: 24px;
+            background: #2c3e2c;
+            border-radius: 100px 100px 0 0;
+            margin-top: -4px;
+            box-shadow: 0 6px 0 #1f2e1f;
+            position: relative;
+            z-index: 5;
+        }
+
+        .ground::after {
+            content: "";
+            position: absolute;
+            top: 8px;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: #4a5b4a;
+            border-radius: 2px;
+            opacity: 0.4;
+        }
+
+        .tree-wrapper {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+            gap: 0.5rem 2rem;
+            flex-wrap: wrap;
+        }
+
+        /* корни — под землёй */
+        .roots-area {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 550px;
+            margin-bottom: -8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .root {
+            background: #7b5e47;
+            width: 16px;
+            height: 40px;
+            border-radius: 40% 40% 30% 30%;
+            transform: rotate(5deg) skewX(-2deg);
+            box-shadow: -2px 6px 0 #4f3e2f;
+        }
+
+        .root:nth-child(2) { height: 52px; width: 18px; background: #8d6b4f; transform: rotate(-8deg); }
+        .root:nth-child(3) { height: 34px; width: 14px; background: #6b4f38; transform: rotate(12deg); }
+        .root:nth-child(4) { height: 48px; width: 20px; background: #8d6b4f; transform: rotate(-3deg); }
+        .root:nth-child(5) { height: 38px; background: #7b5e47; }
+
+        /* ствол */
+        .trunk-section {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .trunk {
+            width: 100px;
+            background: #6b4f3a;
+            background: linear-gradient(145deg, #5d4230, #84664b);
+            height: 200px;
+            border-radius: 40px 30px 20px 20px;
+            box-shadow: 8px 12px 0 #3a2e22, 2px 2px 0 #b19476 inset;
+            position: relative;
+            z-index: 10;
+            margin: -10px 0 -10px 0;
+        }
+
+        /* ветви */
+        .branches {
+            display: flex;
+            justify-content: center;
+            gap: 0.6rem;
+            width: 100%;
+            max-width: 550px;
+            margin-top: -70px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .branch {
+            background: #7d634b;
+            width: 40px;
+            height: 100px;
+            border-radius: 60px 20px 20px 60px;
+            transform-origin: bottom center;
+            box-shadow: -2px 5px 0 #4f3b2b;
+            transition: all 0.2s ease;
+        }
+
+        .branch:nth-child(1) { transform: rotate(-20deg) translateY(10px); height: 110px; background: #8f7359; }
+        .branch:nth-child(2) { transform: rotate(5deg) translateY(25px); width: 45px; background: #6d523d; }
+        .branch:nth-child(3) { transform: rotate(30deg) translateY(0px); height: 85px; background: #9b8065; }
+        .branch:nth-child(4) { transform: rotate(-10deg) translateY(30px); height: 75px; background: #7c6249; }
+        .branch:nth-child(5) { transform: rotate(15deg) translateY(15px); height: 95px; background: #aa8f74; }
+
+        .branch:hover {
+            transform: rotate(0deg) scale(1.02);
+            background: #b49b82;
+        }
+
+        /* листочки / почки */
+        .leaf {
+            width: 24px;
+            height: 24px;
+            background: #3f7543;
+            border-radius: 80% 0 80% 0;
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            transform: rotate(45deg);
+            box-shadow: 0 4px 0 #1f481f;
+        }
+
+        .branch:nth-child(3) .leaf { background: #578a4a; left: 18px; top: -6px; width: 28px; height: 28px; }
+        .branch:nth-child(5) .leaf { background: #2f6d2f; left: 5px; top: -14px; }
+
+        /* заголовки и текст */
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 450;
+            letter-spacing: -0.02em;
+            color: #1d3b2b;
+            border-left: 8px solid #2b6e4c;
+            padding-left: 1.5rem;
+            margin: 1.5rem 0 1rem 0;
+            line-height: 1.2;
+            text-wrap: pretty;
+        }
+
+        .verse {
+            font-size: 1.8rem;
+            font-weight: 340;
+            font-style: italic;
+            color: #385e3a;
+            margin-bottom: 2.5rem;
+            border-bottom: 2px dashed #b6aa92;
+            padding-bottom: 1rem;
+        }
+
+        .block {
+            margin: 2.5rem 0;
+            padding: 1.8rem 2rem;
+            background: #fefcf7;
+            border-radius: 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.03), 0 4px 0 #e0d6c8;
+        }
+
+        .block h2 {
+            font-weight: 500;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #1d3927;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.8rem;
+            margin: 2rem 0;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem 1.2rem;
+            border-radius: 28px;
+            border: 1px solid #ddd6cb;
+            box-shadow: 0 4px 0 #c0b5a4;
+        }
+
+        .card h3 {
+            font-size: 1.6rem;
+            font-weight: 480;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: #2d4a2d;
+        }
+
+        .card p {
+            color: #2e3f33;
+            font-size: 1.05rem;
+        }
+
+        .emph {
+            background: #e7f0e3;
+            border-radius: 40px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 470;
+            display: inline-block;
+            margin: 0.8rem 0;
+        }
+
+        .daily-box {
+            background: #eae2d4;
+            padding: 2rem;
+            border-radius: 40px;
+            margin-top: 3rem;
+            border: 1px solid #cbbca7;
+            box-shadow: inset 0 0 0 2px #f9f3e9, 0 8px 0 #a3927c;
+        }
+
+        .daily-box p {
+            font-size: 1.25rem;
+            margin: 0.8rem 0;
+        }
+
+        hr {
+            border: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #817a6b, transparent);
+            margin: 2.5rem 0;
+        }
+
+        .footer-quote {
+            font-size: 2rem;
+            font-weight: 330;
+            text-align: center;
+            background: #dde8da;
+            border-radius: 60px;
+            padding: 2rem;
+            margin: 3rem 0 1rem;
+            color: #1a3a21;
+            border: 2px solid #96a893;
+        }
+
+        .small-note {
+            font-size: 1rem;
+            color: #6f6659;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .paper { padding: 1.5rem; }
+            h1 { font-size: 2.2rem; }
+            .verse { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="paper">
+    
+    <!-- Фраза-акцент -->
+    <div class="verse">
+        🌱 Не предсказывай бурю. Стань деревом, которое после каждой бури выше и толще.
+    </div>
+
+    <!-- Рисунок дерева (абстрактно‑смысловой) -->
+    <div class="tree-diagram">
+        <div class="roots-area">
+            <div class="root"></div><div class="root"></div><div class="root"></div><div class="root"></div><div class="root"></div>
+        </div>
+        <div class="trunk-section">
+            <div class="trunk"></div>
+        </div>
+        <div class="branches">
+            <div class="branch"><span class="leaf"></span></div>
+            <div class="branch"><span class="leaf"></span></div>
+            <div class="branch"><span class="leaf"></span></div>
+            <div class="branch"><span class="leaf"></span></div>
+            <div class="branch"><span class="leaf"></span></div>
+        </div>
+        <div class="ground"></div>
+    </div>
+
+    <!-- Определение -->
+    <h1>Антихрупкость <span style="font-weight:300; color:#43664a;">— это когда после удара тебе лучше, чем до.</span></h1>
+
+    <!-- Три уровня дерева -->
+    <div class="grid-3">
+        <div class="card">
+            <h3>🌳 Корни — фундамент</h3>
+            <p><strong>База, которая держит всё.</strong> Подушка ликвидности на 6–12 месяцев. Сон — приоритет номер один. Физическое и ментальное здоровье. Базовые навыки выживания — от готовки до умения сказать «нет». И главное: via negativa — сначала убрать всё токсичное из жизни, только потом добавлять новое. Корни всегда должны быть в порядке, независимо от сезона.</p>
+        </div>
+        <div class="card">
+            <h3>🧱 Ствол — основа</h3>
+            <p><strong>То, что кормит здесь и сейчас.</strong> Несколько источников дохода с чёткими границами. Скучная, надёжная работа, которая не высасывает душу. Redundancy — если один источник падает, другие держат. Ствол не должен быть красивым, он должен быть толстым и живучим.</p>
+        </div>
+        <div class="card">
+            <h3>🌿 Ветви — лаборатория</h3>
+            <p><strong>Эксперименты, маленькие ставки, новые направления.</strong> Convex tinkering — пробуем то, где потенциальный выигрыш больше, чем возможный проигрыш. Здесь можно ломаться, здесь разрешено ошибаться. Но есть правило: старые ветви надо обрезать, чтобы новые росли гуще. Каждый год — аудит и ампутация всего, что отжило.</p>
+        </div>
+    </div>
+
+    <!-- Гибкость как принцип + шторм -->
+    <div class="block" style="background: #ecf0e4;">
+        <h2>🌀 ГИБКОСТЬ КАК ПРИНЦИП</h2>
+        <p style="font-size:1.3rem; margin-bottom:1.2rem;">Шторм приходит всегда. Вопрос не в том, как его предсказать, а в том, как встретить.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:2rem; justify-content:space-around; margin-top:1.5rem;">
+            <div><span style="font-size:2rem;">🌬️</span> Ветви гнутся, но не ломаются.</div>
+            <div><span style="font-size:2rem;">🌲</span> Ствол качается, но держит.</div>
+            <div><span style="font-size:2rem;">🪨</span> Корни сидят глубоко.</div>
+        </div>
+    </div>
+
+    <!-- ОДНА ФРАЗА (повтор с усилением) -->
+    <div class="footer-quote">
+        ⚡ ОДНА ФРАЗА:<br> Не предсказывай бурю. Стань деревом, которое после каждой бури выше и толще.
+    </div>
+
+    <!-- КАК ЭТО ВЫГЛЯДИТ В ЖИЗНИ (пример) -->
+    <div class="daily-box">
+        <h2 style="margin-top:0; color:#2c4d32;">🌄 КАК ЭТО ВЫГЛЯДИТ В ЖИЗНИ</h2>
+        <p>🔹 <strong>Сегодня утром</strong> я проверил корни: подушка есть, выспался, завтрак нормальный, никакого токсичного общения.</p>
+        <p>🔹 Потом сделал <strong>скучную работу по стволу</strong> — то, что приносит деньги, но не вдохновение.</p>
+        <p>🔹 Вечером посадил одну маленькую <strong>ветвь</strong> — написал пост, который давно хотел, но боялся.</p>
+        <p>🔹 Перед сном — 10 минут тишины и запись в дневник.</p>
+        <p style="font-weight:500; margin-top:1.5rem;">🌱 А через год я посмотрю на дерево и скажу: оно выросло.</p>
+    </div>
+
+    <!-- референс / итог -->
+    <hr>
+    <div class="small-note">
+        <span>антихрупкость · via negativa · выпуклость · redundancy</span>
+        <span>🌳🧠💪</span>
+    </div>
+
+    <!-- маленький эмодзи‑дерево в конце -->
+    <div style="text-align:center; margin-top:2rem; opacity:0.5;">🌲 ⚖️ 🌱</div>
+</div>
+</body>
+</html>
