@@ -591,7 +591,7 @@ class TaskTrackerBot:
         # ИТОГО: День + Вечер (БЕЗ "НЕЛЬЗЯ"!)
         overall_done = day_done + evening_done
         overall_total = day_total + evening_total
-        overall_perc = min(100, int((overall_done / overall_total * 100))) if overall_total > 0 else 0
+        overall_perc = int((overall_done / overall_total * 100)) if overall_total > 0 else 0
         
         # Срывы в НЕЛЬЗЯ считаем отдельно
         cant_do_fails = len(cant_do.get('completed', []))
@@ -603,13 +603,13 @@ class TaskTrackerBot:
         
         # День и Вечер отдельно
         if day_total > 0:
-            day_perc = min(100, int((day_done / day_total * 100)))
-            day_bar = self.get_progress_bar(day_perc, 7)
+            day_perc = int((day_done / day_total * 100))
+            day_bar = self.get_progress_bar(min(100, day_perc), 7)
             message += f"День   {day_bar} {day_done}/{day_total}\n"
         
         if evening_total > 0:
-            evening_perc = min(100, int((evening_done / evening_total * 100)))
-            evening_bar = self.get_progress_bar(evening_perc, 7)
+            evening_perc = int((evening_done / evening_total * 100))
+            evening_bar = self.get_progress_bar(min(100, evening_perc), 7)
             message += f"Вечер  {evening_bar} {evening_done}/{evening_total}\n"
         
         # ИТОГО
@@ -1027,8 +1027,13 @@ class TaskTrackerBot:
                 # Объединяем множества
                 combined_completed = list(existing_completed | new_completed)
                 
-                # Обновляем
+                # Обновляем completed
                 state['completed'][period] = combined_completed
+                
+                # ФИКС: Объединяем total - берём максимум из существующего и нового
+                existing_total = existing.get(period, {}).get('total', 0)
+                new_total = len(state['tasks'].get(period, []))
+                state['tasks'][period] = ['_'] * max(existing_total, new_total)  # placeholder list для len()
                 
             logger.info(f"📊 Объединены данные за {today_key}")
         
