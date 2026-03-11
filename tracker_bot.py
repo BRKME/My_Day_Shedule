@@ -1016,6 +1016,8 @@ class TaskTrackerBot:
             previous_cant_do_count = len(stats[today_key]['cant_do'].get('completed', []))
         
         # ВАЖНО: Объединяем с существующими данными за сегодня!
+        merged_totals = {}  # Сохраняем merged totals отдельно
+        
         if today_key in stats:
             # Уже есть данные за сегодня - объединяем
             existing = stats[today_key]
@@ -1030,49 +1032,50 @@ class TaskTrackerBot:
                 # Обновляем completed
                 state['completed'][period] = combined_completed
                 
-                # ФИКС: Объединяем total - берём максимум из существующего и нового
+                # Объединяем total - берём максимум из существующего и нового
                 existing_total = existing.get(period, {}).get('total', 0)
                 new_total = len(state['tasks'].get(period, []))
-                state['tasks'][period] = ['_'] * max(existing_total, new_total)  # placeholder list для len()
+                merged_totals[period] = max(existing_total, new_total)
                 
             logger.info(f"📊 Объединены данные за {today_key}")
+        else:
+            # Нет данных - используем текущие totals
+            for period in ['morning', 'day', 'cant_do', 'evening']:
+                merged_totals[period] = len(state['tasks'].get(period, []))
         
         # Считаем общие показатели (ТОЛЬКО день + вечер, БЕЗ morning и cant_do!)
         total_completed = (
             len(state['completed']['day']) +
             len(state['completed']['evening'])
         )
-        total_tasks = (
-            len(state['tasks']['day']) +
-            len(state['tasks']['evening'])
-        )
+        total_tasks = merged_totals['day'] + merged_totals['evening']
         
         percentage = int((total_completed / total_tasks * 100)) if total_tasks > 0 else 0
         
-        logger.info(f"📊 ПОДСЧЁТ: day={len(state['completed']['day'])}/{len(state['tasks']['day'])}, evening={len(state['completed']['evening'])}/{len(state['tasks']['evening'])}, total={total_completed}/{total_tasks} ({percentage}%)")
+        logger.info(f"📊 ПОДСЧЁТ: day={len(state['completed']['day'])}/{merged_totals['day']}, evening={len(state['completed']['evening'])}/{merged_totals['evening']}, total={total_completed}/{total_tasks} ({percentage}%)")
         
         stats[today_key] = {
             'morning': {
                 'completed': state['completed']['morning'],
-                'total': len(state['tasks']['morning'])
+                'total': merged_totals['morning']
             },
             'day': {
                 'completed': state['completed']['day'],
-                'total': len(state['tasks']['day'])
+                'total': merged_totals['day']
             },
             'cant_do': {
                 'completed': state['completed']['cant_do'],
-                'total': len(state['tasks']['cant_do'])
+                'total': merged_totals['cant_do']
             },
             'evening': {
                 'completed': state['completed']['evening'],
-                'total': len(state['tasks']['evening'])
+                'total': merged_totals['evening']
             },
             'percentage': percentage,
             'points': total_completed,
             'max_points': total_tasks,
             'penalty': len(state['completed']['cant_do']) > 0,
-            'penalty_pushups': len(state['completed']['cant_do']) * 30  # НОВОЕ: количество отжиманий для утра
+            'penalty_pushups': len(state['completed']['cant_do']) * 30
         }
         
         # Сохраняем в файл
