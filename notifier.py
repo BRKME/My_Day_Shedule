@@ -741,9 +741,9 @@ class PersonalScheduleNotifier:
         
         content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
         
-        content += f"\n\n🙏 <a href='{self.prayer_url}'>Утренняя молитва</a>"
-        content += f"\n🏢 <a href='{self.career_url}'>Принципы карьеры</a>"
-        content += f"\n📚 <a href='{self.taleb_url}'>Талеб: Антихрупкость</a>"
+        content += f'\n\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
+        content += f'\n🏢 <a href="{self.career_url}">Принципы карьеры</a>'
+        content += f'\n📚 <a href="{self.taleb_url}">Талеб: Антихрупкость</a>'
         
         return content
     
@@ -907,7 +907,7 @@ class PersonalScheduleNotifier:
                         logger.error(f"❌ Ошибка API")
                         return False
             if ss_content:
-                family_msg = f"<b>📋 Семейный совет:</b>\n\n🔗 <a href='{self.ss_url}'>Открыть структуру Семейного Совета</a>"
+                family_msg = f'<b>📋 Семейный совет:</b>\n\n🔗 <a href="{self.ss_url}">Открыть структуру Семейного Совета</a>'
                 payload_council = {'chat_id': self.chat_id, 'text': family_msg, 'parse_mode': 'HTML', 'disable_web_page_preview': False}
                 async with aiohttp.ClientSession() as session:
                     async with session.post(url, json=payload_council, timeout=10) as response:
