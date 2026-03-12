@@ -16,6 +16,8 @@ import logging
 from datetime import datetime, timedelta
 import os
 import re
+import base64
+import requests
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -284,14 +286,67 @@ class TaskTrackerBot:
             return {}
     
     def save_stats(self, stats):
-        """Сохраняет статистику в файл"""
+        """Сохраняет статистику в файл и синхронизирует с GitHub"""
         try:
             with open(self.stats_file, 'w', encoding='utf-8') as f:
                 json.dump(stats, f, ensure_ascii=False, indent=2)
-            logger.info("✅ Статистика сохранена")
+            logger.info("✅ Статистика сохранена локально")
+            
+            # Синхронизируем с GitHub
+            self.sync_stats_to_github(stats)
+            
             return True
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения статистики: {e}")
+            return False
+    
+    def sync_stats_to_github(self, stats):
+        """Синхронизирует stats.json с GitHub репозиторием"""
+        try:
+            github_token = os.getenv('GITHUB_TOKEN')
+            if not github_token:
+                logger.warning("⚠️ GITHUB_TOKEN не найден, пропускаем синхронизацию")
+                return False
+            
+            repo = "BRKME/My_Day_Shedule"
+            path = "stats.json"
+            url = f"https://api.github.com/repos/{repo}/contents/{path}"
+            
+            headers = {
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            # Получаем текущий SHA файла
+            response = requests.get(url, headers=headers, timeout=10)
+            sha = None
+            if response.status_code == 200:
+                sha = response.json().get('sha')
+            
+            # Кодируем содержимое
+            content = json.dumps(stats, ensure_ascii=False, indent=2)
+            content_b64 = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+            
+            # Создаём/обновляем файл
+            data = {
+                "message": f"stats: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                "content": content_b64,
+                "branch": "main"
+            }
+            if sha:
+                data["sha"] = sha
+            
+            response = requests.put(url, headers=headers, json=data, timeout=10)
+            
+            if response.status_code in [200, 201]:
+                logger.info("✅ stats.json синхронизирован с GitHub")
+                return True
+            else:
+                logger.warning(f"⚠️ GitHub sync failed: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка синхронизации с GitHub: {e}")
             return False
     
     def load_message_states(self):
