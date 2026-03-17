@@ -364,25 +364,56 @@ class TaskTrackerBot:
     
     def load_tasks_from_stats(self):
         """
-        Загружает задачи из stats.json (сохранённые notifier.py)
-        Используется как fallback когда message_state потерян
+        Загружает задачи из stats.json
+        Сначала пробует с GitHub (основной источник), потом локально
         """
+        today_key = self.get_today_key()
+        
+        # 1. Пробуем загрузить с GitHub (актуальные данные от notifier.py)
         try:
-            today_key = self.get_today_key()
+            github_token = os.getenv('GITHUB_TOKEN')
+            if github_token:
+                repo = "BRKME/My_Day_Shedule"
+                path = "stats.json"
+                url = f"https://api.github.com/repos/{repo}/contents/{path}"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json"
+                }
+                
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    content = base64.b64decode(data['content']).decode('utf-8')
+                    stats = json.loads(content)
+                    
+                    if today_key in stats and '_tasks' in stats[today_key]:
+                        tasks = stats[today_key]['_tasks']
+                        if 'morning' not in tasks:
+                            tasks['morning'] = []
+                        logger.info(f"✅ Задачи загружены с GitHub: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
+                        return tasks
+                    else:
+                        logger.warning(f"⚠️ На GitHub нет задач за {today_key}")
+                else:
+                    logger.warning(f"⚠️ GitHub API: {response.status_code}")
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка загрузки с GitHub: {e}")
+        
+        # 2. Fallback: локальный файл
+        try:
             stats = self.load_stats()
             
             if today_key in stats and '_tasks' in stats[today_key]:
                 tasks = stats[today_key]['_tasks']
-                # Добавляем morning если его нет
                 if 'morning' not in tasks:
                     tasks['morning'] = []
-                logger.info(f"✅ Задачи загружены из stats: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
+                logger.info(f"✅ Задачи загружены из локального stats: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
                 return tasks
-            
-            return {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
         except Exception as e:
-            logger.error(f"❌ Ошибка загрузки задач из stats: {e}")
-            return {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
+            logger.error(f"❌ Ошибка загрузки из локального stats: {e}")
+        
+        return {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
     
     def save_message_states(self):
         """Сохраняет состояния сообщений в файл"""

@@ -9,6 +9,8 @@ import sys
 import os
 import json
 import re
+import base64
+import requests
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -786,11 +788,61 @@ class PersonalScheduleNotifier:
             stats[today]['_message'] = message[:1000]  # Сохраняем первые 1000 символов
             stats[today]['_updated'] = datetime.now().isoformat()
             
-            # Сохраняем
+            # Сохраняем локально
             with open(stats_file, 'w', encoding='utf-8') as f:
                 json.dump(stats, f, ensure_ascii=False, indent=2)
             
             logger.info(f"✅ Задачи сохранены в stats.json: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
+            
+            # Синхронизируем с GitHub для tracker_bot на Railway
+            self.sync_stats_to_github(stats)
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка сохранения задач: {e}")
+    
+    def sync_stats_to_github(self, stats):
+        """Синхронизирует stats.json с GitHub для tracker_bot.py"""
+        try:
+            github_token = os.getenv('GITHUB_TOKEN')
+            if not github_token:
+                logger.warning("⚠️ GITHUB_TOKEN не найден, пропускаем синхронизацию")
+                return
+            
+            repo = "BRKME/My_Day_Shedule"
+            path = "stats.json"
+            url = f"https://api.github.com/repos/{repo}/contents/{path}"
+            headers = {
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            # Получаем текущий SHA
+            response = requests.get(url, headers=headers, timeout=10)
+            sha = None
+            if response.status_code == 200:
+                sha = response.json().get('sha')
+            
+            # Кодируем контент
+            content = json.dumps(stats, ensure_ascii=False, indent=2)
+            encoded = base64.b64encode(content.encode()).decode()
+            
+            # Обновляем файл
+            data = {
+                "message": f"stats: tasks {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                "content": encoded,
+                "branch": "main"
+            }
+            if sha:
+                data["sha"] = sha
+            
+            response = requests.put(url, headers=headers, json=data, timeout=10)
+            if response.status_code in [200, 201]:
+                logger.info("✅ stats.json синхронизирован с GitHub")
+            else:
+                logger.warning(f"⚠️ GitHub sync: {response.status_code}")
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка синхронизации с GitHub: {e}")
             
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения задач: {e}")
