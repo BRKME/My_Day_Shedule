@@ -3,151 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:title" content="Семейный Совет - Еженедельная традиция">
+    <meta property="og:title" content="Семейный Совет — Еженедельная традиция">
     <meta property="og:description" content="Структура семейного совета для укрепления связей">
     <meta property="og:type" content="article">
-    <title>Семейный Совет - Еженедельная традиция</title>
+    <title>Семейный Совет — Еженедельная традиция</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --color-bg: #0a1614;
+            --color-surface: #f7faf9;
+            --color-accent: #0d9488;
+            --color-accent-soft: #ccfbf1;
+            --color-text: #1a2d2a;
+            --color-text-muted: #4a6b65;
+            --font-heading: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'Raleway', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Georgia', serif;
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-            color: #444;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-body);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 24px 16px;
         }
+
         .container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 680px;
+            margin: 0 auto;
+            background: var(--color-surface);
+            border-radius: 4px;
+            padding: 48px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
         }
+
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 24px;
+        }
+
+        .icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--color-accent);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
         h1 {
-            text-align: center;
-            color: #444;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: normal;
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 500;
+            color: var(--color-text);
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
         }
-        h2 {
-            color: #444;
-            font-size: 1.5em;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            font-weight: normal;
-        }
-        .emoji {
-            text-align: center;
-            font-size: 3em;
-            margin: 20px 0;
-        }
-        p {
-            margin: 15px 0;
-            font-size: 1.2em;
-            text-align: justify;
-            color: #444;
-            font-style: normal;
-            font-weight: normal;
-        }
-        ul {
-            margin: 10px 0;
-            padding-left: 25px;
-        }
-        li {
-            margin: 10px 0;
-            font-size: 1.2em;
-            color: #444;
-            font-style: normal;
-            font-weight: normal;
-        }
+
         .highlight {
-            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            font-style: normal;
+            background: var(--color-accent-soft);
+            padding: 24px 28px;
+            border-radius: 3px;
+            margin: 28px 0;
             text-align: center;
-            font-size: 1.2em;
-            font-weight: normal;
-            color: #444;
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--color-text);
+            border-left: 3px solid var(--color-accent);
         }
+
         .divider {
-            border: none;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #84fab0, transparent);
-            margin: 20px 0;
+            width: 60px;
+            height: 1px;
+            background: var(--color-accent);
+            margin: 32px auto;
         }
+
+        h2 {
+            font-family: var(--font-heading);
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            margin: 32px 0 16px;
+        }
+
+        ul {
+            margin: 12px 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        li {
+            margin: 14px 0;
+            font-size: 1rem;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 9px;
+            width: 6px;
+            height: 6px;
+            background: var(--color-accent);
+            border-radius: 50%;
+        }
+
+        .time {
+            color: var(--color-accent);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-right: 4px;
+        }
+
         .footer {
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #f0f0f0;
-            color: #999;
-            font-size: 0.9em;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--color-accent-soft);
+            color: var(--color-text-muted);
+            font-size: 0.9rem;
+            font-weight: 300;
         }
-        .time {
-            color: #84fab0;
-            font-size: 0.9em;
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="emoji">👨‍👩‍👧‍👦</div>
-        <h1>Семейный Совет</h1>
-        
+        <div class="header">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="7" r="4"/>
+                    <path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>
+                    <circle cx="4" cy="11" r="2.5"/>
+                    <circle cx="20" cy="11" r="2.5"/>
+                    <path d="M1 21a4 4 0 0 1 6-3.5"/>
+                    <path d="M23 21a4 4 0 0 0-6-3.5"/>
+                </svg>
+            </div>
+            <h1>Семейный Совет</h1>
+        </div>
+
         <div class="highlight">
             Еженедельная традиция для укрепления семейных связей
         </div>
-        
-        <hr class="divider">
-        
+
+        <div class="divider"></div>
+
         <h2>Начало</h2>
         <ul>
-            <li><span class="time">10 min.</span> Каждый рассказывает интересные факты о прошедшей неделе (новости, достижения, трудности, радости) +AI расшифровка</li>
-            <li><span class="time">1 min.</span> «Награда семейный Оскар» (Награда за лучшее достижение недели)</li>
-            <li><span class="time">1 min.</span> «Награда Эпичный провал» (С юмором обсудить, у кого что не получилось)</li>
-            <li><span class="time">1 min.</span> Рубрика «Интересная идея» (каждый может предложить идею для семейного досуга)</li>
+            <li><span class="time">10 мин.</span> Каждый рассказывает интересные факты о прошедшей неделе (новости, достижения, трудности, радости) + AI расшифровка</li>
+            <li><span class="time">1 мин.</span> «Награда семейный Оскар» — награда за лучшее достижение недели</li>
+            <li><span class="time">1 мин.</span> «Награда Эпичный провал» — с юмором обсудить, у кого что не получилось</li>
+            <li><span class="time">1 мин.</span> Рубрика «Интересная идея» — каждый может предложить идею для семейного досуга</li>
         </ul>
-        
-        <hr class="divider">
-        
+
+        <div class="divider"></div>
+
         <h2>Обучение и развитие</h2>
         <ul>
-            <li>Кружки секции репетиторы (что происходит, не перегружены ли дети? Все ли им нравится? Хотят ли попробовать что-то новое?)</li>
-            <li>Обсуждение школьных дел (Оценки за неделю. С какими предметами сложности? Нужна ли помощь?)</li>
+            <li>Кружки, секции, репетиторы — что происходит, не перегружены ли дети? Всё ли им нравится? Хотят ли попробовать что-то новое?</li>
+            <li>Обсуждение школьных дел — оценки за неделю, с какими предметами сложности, нужна ли помощь?</li>
             <li>Обсудить книги, которые все читают</li>
         </ul>
-        
-        <hr class="divider">
-        
+
+        <div class="divider"></div>
+
         <h2>Дела семейные</h2>
         <ul>
-            <li><span class="time">1 min.</span> Меню на неделю (учесть пожелания всех, обсудить полезные блюда, назначить дни, когда дети помогут с готовкой)</li>
-            <li><span class="time">1 min.</span> Распределение обязанностей по дому (обновить «список дел». Что кому нравится делать?)</li>
-            <li><span class="time">1 min.</span> Планирование семейного отдыха на выходные (куда поехать? Что посмотреть?)</li>
-            <li><span class="time">1 min.</span> Обсуждение предстоящих крупных событий (Подготовка к дням рождения, праздникам. Кого пригласить? Что подарить? Как украсить дом?)</li>
-            <li><span class="time">1 min.</span> Организация пространства (как поддерживать порядок в своих комнатах/общих зонах? Можно ли что-то переставить или улучшить для большего удобства?)</li>
+            <li><span class="time">1 мин.</span> Меню на неделю — учесть пожелания всех, обсудить полезные блюда, назначить дни, когда дети помогут с готовкой</li>
+            <li><span class="time">1 мин.</span> Распределение обязанностей по дому — обновить «список дел», что кому нравится делать?</li>
+            <li><span class="time">1 мин.</span> Планирование семейного отдыха на выходные — куда поехать? что посмотреть?</li>
+            <li><span class="time">1 мин.</span> Обсуждение предстоящих крупных событий — подготовка к дням рождения, праздникам, кого пригласить, что подарить, как украсить дом</li>
+            <li><span class="time">1 мин.</span> Организация пространства — как поддерживать порядок в своих комнатах и общих зонах, можно ли что-то переставить или улучшить</li>
         </ul>
-        
-        <hr class="divider">
-        
+
+        <div class="divider"></div>
+
         <h2>Финансы</h2>
         <ul>
-            <li><span class="time">1 min.</span> Обсуждение суммы карманных денег (что в нее должно входить: проезд, перекусы в школе, мелкие желания? Как часто их выдавать?)</li>
-            <li><span class="time">1 min.</span> Обсуждение семейного бюджета в общих чертах (объяснить, на что тратятся деньги в семье. Большие расходы этой недели. Это помогает детям понимать ценность денег)</li>
+            <li><span class="time">1 мин.</span> Обсуждение суммы карманных денег — что в неё должно входить: проезд, перекусы в школе, мелкие желания? Как часто их выдавать?</li>
+            <li><span class="time">1 мин.</span> Обсуждение семейного бюджета в общих чертах — объяснить, на что тратятся деньги в семье, большие расходы этой недели. Это помогает детям понимать ценность денег</li>
         </ul>
-        
-        <hr class="divider">
-        
+
+        <div class="divider"></div>
+
         <h2>Финал</h2>
         <div class="highlight">
             Каждый говорит, за что он благодарен другому члену семьи на этой неделе
         </div>
-        
+
         <div class="footer">
-            ✨ Семья — это главное ✨
+            Семья — это главное
         </div>
     </div>
 </body>

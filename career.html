@@ -4,195 +4,265 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Принципы карьеры</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --color-bg: #0a0f1a;
+            --color-surface: #f8f9fb;
+            --color-accent: #1e3a5f;
+            --color-accent-light: #2563eb;
+            --color-accent-soft: #dbeafe;
+            --color-text: #1a1f2e;
+            --color-text-muted: #5a6478;
+            --font-heading: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'Raleway', sans-serif;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            line-height: 1.6;
+            font-family: var(--font-body);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px 16px;
         }
-        
+
         .container {
-            max-width: 800px;
-            margin: 40px auto;
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 720px;
+            margin: 0 auto;
+            background: var(--color-surface);
+            border-radius: 4px;
+            padding: 48px 44px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
         }
-        
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--color-accent-soft);
+        }
+
+        .icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 24px;
+        }
+
+        .icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--color-accent);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
         h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-            font-size: 2.5rem;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #f0f0f0;
+            font-family: var(--font-heading);
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            letter-spacing: 0.01em;
+            line-height: 1.4;
         }
-        
+
         .principle {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
+            background: #fff;
+            border-radius: 4px;
+            padding: 24px 28px;
             margin: 20px 0;
-            border-left: 5px solid #667eea;
-            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 3px solid var(--color-accent-light);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        
+
         .principle:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
         }
-        
+
+        .principle-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
         .principle-number {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            width: 36px;
+            height: 36px;
+            background: var(--color-accent);
+            color: #fff;
             border-radius: 50%;
-            text-align: center;
-            line-height: 40px;
-            font-weight: bold;
-            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            flex-shrink: 0;
         }
-        
+
         .principle-title {
-            display: inline-block;
-            font-size: 1.4rem;
-            color: #2c3e50;
-            margin-bottom: 10px;
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--color-text);
         }
-        
+
         .principle-description {
-            color: #555;
-            margin-top: 10px;
-            padding-left: 55px;
+            color: var(--color-text-muted);
+            font-size: 0.98rem;
+            line-height: 1.65;
         }
-        
+
         .quote {
-            font-style: italic;
-            color: #666;
-            border-left: 3px solid #764ba2;
-            padding-left: 20px;
-            margin: 30px 0;
+            background: var(--color-accent);
+            color: #fff;
+            padding: 28px 32px;
+            border-radius: 4px;
+            margin: 36px 0 0;
         }
-        
-        @media (max-width: 768px) {
+
+        .quote p {
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .quote p:first-child {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .quote p:last-child {
+            opacity: 0.85;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 600px) {
             .container {
-                padding: 20px;
-                margin: 20px auto;
+                padding: 32px 24px;
             }
-            
+
             h1 {
-                font-size: 2rem;
+                font-size: 1.4rem;
             }
-            
+
             .principle {
                 padding: 20px;
+            }
+
+            .principle-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Твоя траектория должна развиваться, а не обслуживать чужую</h1>
-        
-        <div class="principle">
-            <span class="principle-number">1</span>
-            <div class="principle-title">Верить в себя и свои возможности</div>
-            <div class="principle-description">
-                Это не наивный оптимизм, а фундаментальная установка мышления:
-                пока я считаю что-то возможным, у меня есть пространство для действий,решений и роста.
-                Как только я считаю это невозможным — путь закрыт ещё до начала.
+        <div class="header">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
             </div>
+            <h1>Твоя траектория должна развиваться, а не обслуживать чужую</h1>
         </div>
-        
+
         <div class="principle">
-            <span class="principle-number">2</span>
-            <div class="principle-title">Мышление собственника</div>
+            <div class="principle-header">
+                <span class="principle-number">1</span>
+                <div class="principle-title">Верить в себя и свои возможности</div>
+            </div>
             <div class="principle-description">
-                Развивать мышление собственника (ownership mind). 
-                Относиться к проектам и задачам как к своим собственным,
-                брать полную ответственность за результат и проявлять инициативу
-                не по запросу, а по необходимости.
+                Это не наивный оптимизм, а фундаментальная установка мышления: пока я считаю что-то возможным, у меня есть пространство для действий, решений и роста. Как только я считаю это невозможным — путь закрыт ещё до начала.
             </div>
         </div>
 
         <div class="principle">
-            <span class="principle-number">4</span>
-            <div class="principle-title">Visibility ≠ откровенность.</div>
-            <div class="principle-description">
-                Не болтай. Результаты — руководству. Лиxная жизнь — только близким.
+            <div class="principle-header">
+                <span class="principle-number">2</span>
+                <div class="principle-title">Мышление собственника</div>
             </div>
-        </div>
-        
-        <div class="principle">
-            <span class="principle-number">3</span>
-            <div class="principle-title">Думать о себе как о бизнесе</div>
             <div class="principle-description">
-                Даже находясь в найме, я бизнес-единица.
-                Моя капитализация это мой текущий доход и потенциал будущих доходов,
-                накопленный опыт, знания, репутация и то,
-                насколько я остаюсь релевантным рынку на фоне постоянных изменений.
-            </div>
-        </div>
-        
-        <div class="principle">
-            <span class="principle-number">4</span>
-            <div class="principle-title">Прокачивать видимость</div>
-            <div class="principle-description">
-                Если я присутствую на митинге мой голос звучит, а мнение зафиксировано.
-                Я активно участвую в конференциях, встречах и выставках,
-                расширяю круг знакомств и профессиональных контактов.
-            </div>
-        </div>
-        
-        <div class="principle">
-            <span class="principle-number">5</span>
-            <div class="principle-title">Больше делать - меньше рефлексировать</div>
-            <div class="principle-description">
-                Моя задача на работе договориться со всеми заинтересованными сторонами
-                и качественно выполнить дело.
-                Фокус на действиях и результатах,
-                а не на избыточном анализе, сомнениях и внутреннем шуме.
+                Развивать мышление собственника (ownership mind). Относиться к проектам и задачам как к своим собственным, брать полную ответственность за результат и проявлять инициативу не по запросу, а по необходимости.
             </div>
         </div>
 
-         <div class="principle">
-            <span class="principle-number">5</span>
-            <div class="principle-title">Руководство</div>
-            <div class="principle-description">
-                Быстрая речь считывается как тревожность или слабая позиция. (хочешь быстрее закончить)
-                Спокойный темп = контроль.
-                Никогда не говорить больше, чем требуется. Лишние детали размывают позицию.
-                Не входить в разговор снизу. Руководство покупает твою экспертизу, а не твоё старание.
-            </div>
-        </div>
-        
         <div class="principle">
-            <span class="principle-number">6</span>
-            <div class="principle-title">Фокус на заработке</div>
+            <div class="principle-header">
+                <span class="principle-number">3</span>
+                <div class="principle-title">Думать о себе как о бизнесе</div>
+            </div>
             <div class="principle-description">
-                На работу приходят зарабатывать деньги.
-                Это прагматичный подход, который помогает сохранять фокус на целях
-                и не отвлекаться на второстепенное.
+                Даже находясь в найме, я бизнес-единица. Моя капитализация — это мой текущий доход и потенциал будущих доходов, накопленный опыт, знания, репутация и то, насколько я остаюсь релевантным рынку на фоне постоянных изменений.
             </div>
         </div>
-        
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">4</span>
+                <div class="principle-title">Visibility ≠ откровенность</div>
+            </div>
+            <div class="principle-description">
+                Не болтай. Результаты — руководству. Личная жизнь — только близким.
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">5</span>
+                <div class="principle-title">Прокачивать видимость</div>
+            </div>
+            <div class="principle-description">
+                Если я присутствую на митинге — мой голос звучит, а мнение зафиксировано. Я активно участвую в конференциях, встречах и выставках, расширяю круг знакомств и профессиональных контактов.
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">6</span>
+                <div class="principle-title">Больше делать — меньше рефлексировать</div>
+            </div>
+            <div class="principle-description">
+                Моя задача на работе — договориться со всеми заинтересованными сторонами и качественно выполнить дело. Фокус на действиях и результатах, а не на избыточном анализе, сомнениях и внутреннем шуме.
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">7</span>
+                <div class="principle-title">Руководство</div>
+            </div>
+            <div class="principle-description">
+                Быстрая речь считывается как тревожность или слабая позиция — хочешь быстрее закончить. Спокойный темп = контроль. Никогда не говорить больше, чем требуется. Лишние детали размывают позицию. Не входить в разговор снизу. Руководство покупает твою экспертизу, а не твоё старание.
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">8</span>
+                <div class="principle-title">Фокус на заработке</div>
+            </div>
+            <div class="principle-description">
+                На работу приходят зарабатывать деньги. Это прагматичный подход, который помогает сохранять фокус на целях и не отвлекаться на второстепенное.
+            </div>
+        </div>
+
         <div class="quote">
-            <p><strong>Ключевые ценности:</strong> Действие. Рациональность. Прагматизм.</p>
+            <p>Ключевые ценности: Действие. Рациональность. Прагматизм.</p>
             <p>Остальное второстепенно.</p>
         </div>
     </div>

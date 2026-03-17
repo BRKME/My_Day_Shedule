@@ -3,150 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:title" content="Вечер воспоминаний - Хранители времени">
+    <meta property="og:title" content="Вечер воспоминаний — Хранители времени">
     <meta property="og:description" content="Раз в месяц смотреть фото и рассказывать историю семьи">
     <meta property="og:type" content="article">
-    <title>Вечер воспоминаний - Хранители времени</title>
+    <title>Вечер воспоминаний — Хранители времени</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --color-bg: #1a1408;
+            --color-surface: #faf8f5;
+            --color-accent: #b45309;
+            --color-accent-soft: #fde9d4;
+            --color-text: #2d2418;
+            --color-text-muted: #6b5c4a;
+            --font-heading: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'Raleway', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Georgia', serif;
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-            color: #444;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            font-family: var(--font-body);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 24px 16px;
         }
+
         .container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 680px;
+            margin: 0 auto;
+            background: var(--color-surface);
+            border-radius: 4px;
+            padding: 48px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
         }
+
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 24px;
+        }
+
+        .icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--color-accent);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
         h1 {
-            text-align: center;
-            color: #444;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: normal;
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 500;
+            color: var(--color-text);
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
         }
-        h2 {
-            color: #444;
-            font-size: 1.5em;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            font-weight: normal;
+
+        .subtitle {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            color: var(--color-accent);
+            font-weight: 400;
         }
-        .emoji {
-            text-align: center;
-            font-size: 3em;
-            margin: 20px 0;
+
+        .schedule {
+            color: var(--color-text-muted);
+            font-size: 0.9rem;
+            margin-top: 8px;
         }
-        p {
-            margin: 15px 0;
-            font-size: 1.2em;
-            text-align: justify;
-            color: #444;
-        }
+
         .highlight {
-            background: linear-gradient(120deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
+            background: var(--color-accent-soft);
+            padding: 24px 28px;
+            border-radius: 3px;
+            margin: 28px 0;
             text-align: center;
-            font-size: 1.2em;
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--color-text);
+            border-left: 3px solid var(--color-accent);
         }
+
         .divider {
-            border: none;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #4facfe, transparent);
-            margin: 20px 0;
+            width: 60px;
+            height: 1px;
+            background: var(--color-accent);
+            margin: 32px auto;
         }
-        ul {
-            margin: 10px 0;
-            padding-left: 25px;
+
+        h2 {
+            font-family: var(--font-heading);
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            margin: 32px 0 16px;
         }
-        li {
-            margin: 12px 0;
-            font-size: 1.2em;
-            color: #444;
+
+        p {
+            font-size: 1.05rem;
+            font-weight: 300;
+            margin: 16px 0;
         }
+
         .section {
-            background: #f8fcff;
-            border-left: 4px solid #4facfe;
-            padding: 20px;
+            background: #fff;
+            border-left: 3px solid var(--color-accent);
+            padding: 20px 24px;
             margin: 20px 0;
-            border-radius: 0 10px 10px 0;
+            border-radius: 0 4px 4px 0;
         }
+
         .section-title {
-            font-weight: bold;
-            color: #4facfe;
-            font-size: 1.1em;
-            margin-bottom: 10px;
+            font-family: var(--font-heading);
+            font-weight: 500;
+            color: var(--color-accent);
+            font-size: 1.1rem;
+            margin-bottom: 12px;
         }
+
+        .section p {
+            margin: 0;
+            color: var(--color-text);
+        }
+
+        ul {
+            margin: 12px 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        li {
+            margin: 14px 0;
+            font-size: 1.05rem;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 6px;
+            height: 6px;
+            background: var(--color-accent);
+            border-radius: 50%;
+        }
+
         .footer {
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #f0f0f0;
-            color: #999;
-            font-size: 0.9em;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--color-accent-soft);
+            color: var(--color-text-muted);
+            font-size: 0.9rem;
+            font-weight: 300;
         }
-        .schedule {
-            color: #4facfe;
-            font-size: 0.9em;
-            text-align: center;
-            margin-top: 10px;
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="emoji">📸</div>
-        <h1>Вечер воспоминаний</h1>
-        <p style="text-align: center; font-size: 1.3em; color: #4facfe; margin-top: 0;">Хранители времени</p>
-        <p class="schedule">Третья суббота месяца</p>
-        
+        <div class="header">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <path d="M21 15l-5-5L5 21"/>
+                </svg>
+            </div>
+            <h1>Вечер воспоминаний</h1>
+            <div class="subtitle">Хранители времени</div>
+            <div class="schedule">Третья суббота месяца</div>
+        </div>
+
         <div class="highlight">
             Раз в месяц смотреть фото, рассказывать историю семьи и наши истории
         </div>
-        
-        <hr class="divider">
-        
+
+        <div class="divider"></div>
+
         <div class="section">
-            <div class="section-title">🕯️ Атмосфера</div>
-            <p style="margin: 0;">Обязательный ритуал — приглушенный свет, теплый плед для каждого, вкусный травяной чай или какао с зефирками.</p>
+            <div class="section-title">Атмосфера</div>
+            <p>Обязательный ритуал — приглушенный свет, теплый плед для каждого, вкусный травяной чай или какао с зефирками.</p>
         </div>
-        
-        <hr class="divider">
-        
-        <h2>👑 Хранитель вечера</h2>
+
+        <div class="divider"></div>
+
+        <h2>Хранитель вечера</h2>
         <p>Роль можно передавать по очереди. Этот человек отвечает за:</p>
         <ul>
             <li>Подготовку темы</li>
             <li>Отбор фото и артефактов</li>
             <li>Ведение вечера</li>
         </ul>
-        
-        <hr class="divider">
-        
-        <h2>⏳ Путешествие во времени</h2>
+
+        <div class="divider"></div>
+
+        <h2>Путешествие во времени</h2>
         <div class="section">
-            <ul style="margin: 0; padding-left: 20px;">
+            <ul style="margin: 0;">
                 <li>Показ фото/видео по теме. Самое главное: каждый, кто помнит эту историю, делится своим взглядом и впечатлением.</li>
                 <li>Родители рассказывают истории из своего детства, которые перекликаются с темой.</li>
             </ul>
         </div>
-        
-        <hr class="divider">
-        
+
+        <div class="divider"></div>
+
         <div class="highlight">
             Каждая история — это часть нашей семейной летописи
         </div>
-        
+
         <div class="footer">
-            ✨ Память — это то, что нас объединяет ✨
+            Память — это то, что нас объединяет
         </div>
     </div>
 </body>

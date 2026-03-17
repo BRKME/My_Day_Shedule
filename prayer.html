@@ -3,122 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:title" content="To really Enjoy life - Утренняя молитва">
+    <meta property="og:title" content="To really Enjoy life — Утренняя молитва">
     <meta property="og:description" content="Начни день с правильным настроем">
     <meta property="og:type" content="article">
-    <title>To really Enjoy life - Утренняя молитва</title>
+    <title>To really Enjoy life — Утренняя молитва</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --color-bg: #1a1612;
+            --color-surface: #f8f5f0;
+            --color-accent: #c9a227;
+            --color-accent-soft: #e8dcc4;
+            --color-text: #2d2a26;
+            --color-text-muted: #6b6560;
+            --font-heading: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'Raleway', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Georgia', serif;
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-            color: #444;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-body);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 24px 16px;
         }
+
         .container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 680px;
+            margin: 0 auto;
+            background: var(--color-surface);
+            border-radius: 4px;
+            padding: 48px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
         }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .sun-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 24px;
+            opacity: 0.9;
+        }
+
+        .sun-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--color-accent);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
         h1 {
-            text-align: center;
-            color: #444;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: normal;
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 500;
+            color: var(--color-text);
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
         }
-        .emoji {
-            text-align: center;
-            font-size: 3em;
-            margin: 20px 0;
-        }
-        p {
-            margin: 15px 0;
-            font-size: 1.2em;
-            text-align: justify;
-            color: #444;
-            font-style: normal;
-            font-weight: normal;
-        }
-        .highlight {
-            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            font-style: normal;
-            text-align: center;
-            font-size: 1.2em;
-            font-weight: normal;
-            color: #444;
-        }
+
         .divider {
-            border: none;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #84fab0, transparent);
+            width: 60px;
+            height: 1px;
+            background: var(--color-accent);
+            margin: 32px auto;
+        }
+
+        p {
+            font-size: 1.1rem;
+            font-weight: 300;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .highlight {
+            background: var(--color-accent-soft);
+            padding: 24px 28px;
+            border-radius: 3px;
+            margin: 28px 0;
+            text-align: center;
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            font-weight: 500;
+            color: var(--color-text);
+            border-left: 3px solid var(--color-accent);
+        }
+
+        .dark-block {
+            background: var(--color-bg);
+            color: #e8e4df;
+            padding: 32px;
+            border-radius: 3px;
+            margin: 32px 0;
+            text-align: center;
+        }
+
+        .dark-block p {
+            color: #a8a49f;
+            font-size: 1rem;
+            margin: 0 0 16px;
+            text-align: center;
+        }
+
+        .dark-block strong {
+            display: block;
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--color-accent);
             margin: 20px 0;
         }
+
+        .dark-block .final {
+            color: #d4d0cb;
+            font-size: 1.05rem;
+            margin: 0;
+        }
+
+        .closing {
+            text-align: center;
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--color-text);
+            margin: 32px 0 0;
+        }
+
         .footer {
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #f0f0f0;
-            color: #999;
-            font-size: 0.9em;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--color-accent-soft);
+            color: var(--color-text-muted);
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .highlight {
+                padding: 20px;
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="emoji">🌅</div>
-        <h1>To really Enjoy life</h1>
-        
-        <hr class="divider">
-        
+        <div class="header">
+            <div class="sun-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="4"/>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                </svg>
+            </div>
+            <h1>To really Enjoy life</h1>
+        </div>
+
+        <div class="divider"></div>
+
         <p>Я улыбаюсь новому дню. Я знаю какие чудеса и возможности он мне приготовил, и благодарю Бога за этот подарок. Я не буду тратить его на гнев, обиды, сожаления и тревоги.</p>
-        
+
         <div class="highlight">
             Жизнь слишком коротка, чтобы быть несчастным.
         </div>
-        
-        <p>Я вхожу в этот день как пантера: спокойно, уверенно, с прямой спиной и без суеты Я жёсткий тип.</p>
-        
-        <p>Я сделаю из идеи реальное дело (+ один кирпич) и она обретя Божью поддержку станет неуязвимой для чужих мнений.</p>
-        
-        <hr class="divider">
-        
+
+        <p>Я вхожу в этот день как пантера: спокойно, уверенно, с прямой спиной и без суеты. Я жёсткий тип.</p>
+
+        <p>Я сделаю из идеи реальное дело (+один кирпич) и она, обретя Божью поддержку, станет неуязвимой для чужих мнений.</p>
+
+        <div class="divider"></div>
+
         <p>Никаких пределов не существует — только уровни. Каждое «невозможно» — это просто «я пока не умею». Каждая граница — тренировочная линия.</p>
 
-        <p> Алкоголь это тихий убийца мозга . Без него Я получу доступ к настоящей силе, ясности и потоку жизни. </p>
+        <p>Алкоголь — это тихий убийца мозга. Без него я получу доступ к настоящей силе, ясности и потоку жизни.</p>
 
-        <hr class="divider">
-        
+        <div class="divider"></div>
+
         <p>Когда голос страха шепчет про неудачи и смерть, я отвечаю ему:</p>
-        
+
         <div class="highlight">
             Бог не любит боязливых, поэтому я ничего не боюсь и никогда не сдамся.
         </div>
-        
+
         <p>Ведь пока я дышу — игра продолжается.</p>
-        
-        <hr class="divider">
-        
-        <p style="text-align: center; font-size: 1.2em; color: #444;">
-            Спасибо тебе, сегодняшний день. Я в игре. Я в ней до конца.
-        </p>
-        
-        <hr class="divider">
-        
-        <div class="highlight" style="background: linear-gradient(120deg, #1a1a2e 0%, #16213e 100%); color: #fff;">
-            Вселенная холодна и равнодушна. В ней нет смысла. Финал — тепловая смерть.<br><br>
-            <strong>Ты свободен.</strong><br><br>
-            Живи по-настоящему: люби, рискуй, ошибайся, радуйся, гори.
+
+        <div class="divider"></div>
+
+        <p class="closing">Спасибо тебе, сегодняшний день. Я в игре. Я в ней до конца.</p>
+
+        <div class="dark-block">
+            <p>Вселенная холодна и равнодушна. В ней нет смысла. Финал — тепловая смерть.</p>
+            <strong>Ты свободен.</strong>
+            <p class="final">Живи по-настоящему: люби, рискуй, ошибайся, радуйся, гори.</p>
         </div>
-        
+
         <div class="footer">
-            ✨ Когда твои открытые позиции едва держатся на плаву, но тебе плевать, потому что жизнь прекрасна. ✨
+            Когда твои открытые позиции едва держатся на плаву, но тебе плевать, потому что жизнь прекрасна.
         </div>
     </div>
 </body>
