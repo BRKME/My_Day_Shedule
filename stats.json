@@ -238,5 +238,35 @@
     "max_points": 25,
     "penalty": false,
     "penalty_pushups": 0
+  },
+  "2026-03-20": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "total": 13
+    },
+    "cant_do": {
+      "completed": [
+        3
+      ],
+      "total": 6
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 30,
+    "points": 4,
+    "max_points": 13,
+    "penalty": true,
+    "penalty_pushups": 30
   }
 }
