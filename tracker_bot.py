@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Telegram бот для отслеживания выполнения задач - ФИНАЛЬНАЯ ВЕРСИЯ
-Исправления:
-1. Система штрафов через Telegram API
-2. Исправление 161% → 100%
-3. Убраны звёздочки из итогов
-4. Эмодзи 📊 вместо 🌙
+Telegram бот для отслеживания выполнения задач - v2.0
+Исправления v2.0:
+1. Все HTTP → aiohttp (не блокирует event loop)
+2. message_states синхронизируются с GitHub (переживает рестарт Railway)
+3. Исправлен check_schedule (.seconds → .total_seconds())
+4. Добавлен Procfile для Railway
 """
 
 import asyncio
@@ -17,7 +17,6 @@ from datetime import datetime, timedelta
 import os
 import re
 import base64
-import requests
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -32,12 +31,18 @@ class TaskTrackerBot:
         if not self.chat_id:
             raise ValueError("❌ TELEGRAM_CHAT_ID не найден в переменных окружения!")
         
+        self.github_token = os.getenv('GITHUB_TOKEN', '')
+        self.github_repo = "BRKME/My_Day_Shedule"
+        
         self.stats_file = "stats.json"
         self.message_state_file = "message_states.json"
         self.last_update_id = 0
         
+        # aiohttp session — создаётся в run()
+        self.session = None
+        
         # Хранилище текущего состояния для каждого сообщения
-        # {message_id: {'morning': [0,1,2], 'day': [0], 'evening': [], 'original_text': '...'}}
+        # {message_id: {'tasks': {...}, 'completed': {...}, 'original_text': '...'}}
         self.message_state = self.load_message_states()
         
     def parse_tasks(self, message_text):
@@ -285,69 +290,91 @@ class TaskTrackerBot:
             logger.error(f"❌ Ошибка загрузки статистики: {e}")
             return {}
     
-    def save_stats(self, stats):
+    async def save_stats(self, stats):
         """Сохраняет статистику в файл и синхронизирует с GitHub"""
         try:
             with open(self.stats_file, 'w', encoding='utf-8') as f:
                 json.dump(stats, f, ensure_ascii=False, indent=2)
             logger.info("✅ Статистика сохранена локально")
             
-            # Синхронизируем с GitHub
-            self.sync_stats_to_github(stats)
+            # Синхронизируем с GitHub (async)
+            await self.sync_stats_to_github(stats)
             
             return True
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения статистики: {e}")
             return False
     
-    def sync_stats_to_github(self, stats):
-        """Синхронизирует stats.json с GitHub репозиторием"""
+    async def _github_get_file(self, path):
+        """Получает содержимое файла с GitHub (async)"""
+        if not self.github_token:
+            return None
         try:
-            github_token = os.getenv('GITHUB_TOKEN')
-            if not github_token:
-                logger.warning("⚠️ GITHUB_TOKEN не найден, пропускаем синхронизацию")
-                return False
-            
-            repo = "BRKME/My_Day_Shedule"
-            path = "stats.json"
-            url = f"https://api.github.com/repos/{repo}/contents/{path}"
-            
+            url = f"https://api.github.com/repos/{self.github_repo}/contents/{path}"
             headers = {
-                "Authorization": f"token {github_token}",
+                "Authorization": f"token {self.github_token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            async with self.session.get(url, headers=headers, timeout=10) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    content = base64.b64decode(data['content']).decode('utf-8')
+                    return content
+                return None
+        except Exception as e:
+            logger.warning(f"⚠️ GitHub GET {path}: {e}")
+            return None
+    
+    async def _github_put_file(self, path, content, message="auto update"):
+        """Записывает файл на GitHub (async)"""
+        if not self.github_token:
+            logger.warning("⚠️ GITHUB_TOKEN не найден, пропускаем синхронизацию")
+            return False
+        try:
+            url = f"https://api.github.com/repos/{self.github_repo}/contents/{path}"
+            headers = {
+                "Authorization": f"token {self.github_token}",
                 "Accept": "application/vnd.github.v3+json"
             }
             
             # Получаем текущий SHA файла
-            response = requests.get(url, headers=headers, timeout=10)
             sha = None
-            if response.status_code == 200:
-                sha = response.json().get('sha')
+            async with self.session.get(url, headers=headers, timeout=10) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    sha = data.get('sha')
             
             # Кодируем содержимое
-            content = json.dumps(stats, ensure_ascii=False, indent=2)
             content_b64 = base64.b64encode(content.encode('utf-8')).decode('utf-8')
             
-            # Создаём/обновляем файл
-            data = {
-                "message": f"stats: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            payload = {
+                "message": message,
                 "content": content_b64,
                 "branch": "main"
             }
             if sha:
-                data["sha"] = sha
+                payload["sha"] = sha
             
-            response = requests.put(url, headers=headers, json=data, timeout=10)
-            
-            if response.status_code in [200, 201]:
-                logger.info("✅ stats.json синхронизирован с GitHub")
-                return True
-            else:
-                logger.warning(f"⚠️ GitHub sync failed: {response.status_code}")
-                return False
+            async with self.session.put(url, headers=headers, json=payload, timeout=10) as response:
+                if response.status in [200, 201]:
+                    logger.info(f"✅ {path} синхронизирован с GitHub")
+                    return True
+                else:
+                    logger.warning(f"⚠️ GitHub PUT {path}: {response.status}")
+                    return False
                 
         except Exception as e:
-            logger.warning(f"⚠️ Ошибка синхронизации с GitHub: {e}")
+            logger.warning(f"⚠️ Ошибка синхронизации {path} с GitHub: {e}")
             return False
+    
+    async def sync_stats_to_github(self, stats):
+        """Синхронизирует stats.json с GitHub репозиторием"""
+        content = json.dumps(stats, ensure_ascii=False, indent=2)
+        return await self._github_put_file(
+            "stats.json", 
+            content, 
+            f"stats: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        )
     
     def load_message_states(self):
         """Загружает состояния сообщений из файла"""
@@ -362,7 +389,7 @@ class TaskTrackerBot:
             logger.error(f"❌ Ошибка загрузки состояний сообщений: {e}")
             return {}
     
-    def load_tasks_from_stats(self):
+    async def load_tasks_from_stats(self):
         """
         Загружает задачи из stats.json
         Сначала пробует с GitHub (основной источник), потом локально
@@ -371,32 +398,17 @@ class TaskTrackerBot:
         
         # 1. Пробуем загрузить с GitHub (актуальные данные от notifier.py)
         try:
-            github_token = os.getenv('GITHUB_TOKEN')
-            if github_token:
-                repo = "BRKME/My_Day_Shedule"
-                path = "stats.json"
-                url = f"https://api.github.com/repos/{repo}/contents/{path}"
-                headers = {
-                    "Authorization": f"token {github_token}",
-                    "Accept": "application/vnd.github.v3+json"
-                }
-                
-                response = requests.get(url, headers=headers, timeout=10)
-                if response.status_code == 200:
-                    data = response.json()
-                    content = base64.b64decode(data['content']).decode('utf-8')
-                    stats = json.loads(content)
-                    
-                    if today_key in stats and '_tasks' in stats[today_key]:
-                        tasks = stats[today_key]['_tasks']
-                        if 'morning' not in tasks:
-                            tasks['morning'] = []
-                        logger.info(f"✅ Задачи загружены с GitHub: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
-                        return tasks
-                    else:
-                        logger.warning(f"⚠️ На GitHub нет задач за {today_key}")
+            content = await self._github_get_file("stats.json")
+            if content:
+                stats = json.loads(content)
+                if today_key in stats and '_tasks' in stats[today_key]:
+                    tasks = stats[today_key]['_tasks']
+                    if 'morning' not in tasks:
+                        tasks['morning'] = []
+                    logger.info(f"✅ Задачи загружены с GitHub: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
+                    return tasks
                 else:
-                    logger.warning(f"⚠️ GitHub API: {response.status_code}")
+                    logger.warning(f"⚠️ На GitHub нет задач за {today_key}")
         except Exception as e:
             logger.warning(f"⚠️ Ошибка загрузки с GitHub: {e}")
         
@@ -416,17 +428,43 @@ class TaskTrackerBot:
         return {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
     
     def save_message_states(self):
-        """Сохраняет состояния сообщений в файл"""
+        """Сохраняет состояния сообщений ЛОКАЛЬНО (быстро, для toggle)"""
         try:
             # Преобразуем int ключи в строки для JSON
             data = {str(k): v for k, v in self.message_state.items()}
             with open(self.message_state_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
-            logger.info("✅ Состояния сообщений сохранены")
             return True
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения состояний сообщений: {e}")
             return False
+    
+    async def sync_message_states_to_github(self):
+        """Синхронизирует message_states.json с GitHub (переживает рестарт Railway)"""
+        try:
+            data = {str(k): v for k, v in self.message_state.items()}
+            content = json.dumps(data, ensure_ascii=False, indent=2)
+            return await self._github_put_file(
+                "message_states.json",
+                content,
+                f"states: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            )
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка синхронизации states с GitHub: {e}")
+            return False
+    
+    async def load_message_states_from_github(self):
+        """Загружает message_states.json с GitHub при старте"""
+        try:
+            content = await self._github_get_file("message_states.json")
+            if content:
+                data = json.loads(content)
+                states = {int(k): v for k, v in data.items()}
+                logger.info(f"✅ Загружено {len(states)} состояний сообщений с GitHub")
+                return states
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка загрузки states с GitHub: {e}")
+        return {}
     
     def get_today_key(self):
         """Возвращает ключ для сегодняшнего дня"""
@@ -882,8 +920,8 @@ class TaskTrackerBot:
                 await asyncio.sleep(120)  # Подождём 2 минуты
                 await self.send_monthly_summary()
     
-    async def send_telegram_message(self, message):
-        """Отправляет сообщение в Telegram"""
+    async def send_telegram_message(self, message, reply_markup=None):
+        """Отправляет сообщение в Telegram (с опциональной клавиатурой)"""
         try:
             url = f"https://api.telegram.org/bot{self.telegram_token}/sendMessage"
             payload = {
@@ -891,18 +929,23 @@ class TaskTrackerBot:
                 'text': message,
                 'parse_mode': 'HTML'
             }
+            if reply_markup:
+                payload['reply_markup'] = reply_markup
             
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, timeout=10) as response:
-                    if response.status == 200:
-                        logger.info("✅ Сообщение отправлено")
-                        return True
-                    else:
-                        logger.error(f"❌ Ошибка отправки: {response.status}")
-                        return False
+            async with self.session.post(url, json=payload, timeout=10) as response:
+                if response.status == 200:
+                    logger.info("✅ Сообщение отправлено")
+                    return True
+                else:
+                    logger.error(f"❌ Ошибка отправки: {response.status}")
+                    return False
         except Exception as e:
             logger.error(f"❌ Ошибка: {e}")
             return False
+    
+    # Алиас для обратной совместимости
+    async def send_message(self, text, reply_markup=None):
+        return await self.send_telegram_message(text, reply_markup)
     
     async def edit_message(self, message_id, text, reply_markup=None):
         """Редактирует сообщение"""
@@ -918,15 +961,14 @@ class TaskTrackerBot:
             if reply_markup:
                 payload['reply_markup'] = reply_markup
             
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, timeout=10) as response:
-                    if response.status == 200:
-                        logger.info("✅ Сообщение обновлено")
-                        return True
-                    else:
-                        error_text = await response.text()
-                        logger.error(f"❌ Ошибка обновления: {response.status} - {error_text}")
-                        return False
+            async with self.session.post(url, json=payload, timeout=10) as response:
+                if response.status == 200:
+                    logger.info("✅ Сообщение обновлено")
+                    return True
+                else:
+                    error_text = await response.text()
+                    logger.error(f"❌ Ошибка обновления: {response.status} - {error_text}")
+                    return False
         except Exception as e:
             logger.error(f"❌ Ошибка: {e}")
             return False
@@ -940,9 +982,8 @@ class TaskTrackerBot:
             if text:
                 payload['text'] = text
             
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, timeout=10) as response:
-                    return response.status == 200
+            async with self.session.post(url, json=payload, timeout=10) as response:
+                return response.status == 200
         except Exception as e:
             logger.error(f"❌ Ошибка: {e}")
             return False
@@ -1005,7 +1046,7 @@ class TaskTrackerBot:
         total_tasks = len(tasks['morning']) + len(tasks['day']) + len(tasks['cant_do']) + len(tasks['evening'])
         if total_tasks == 0:
             # Пробуем загрузить из stats.json (сохраняется в notifier.py)
-            tasks = self.load_tasks_from_stats()
+            tasks = await self.load_tasks_from_stats()
             total_tasks = len(tasks.get('day', [])) + len(tasks.get('cant_do', [])) + len(tasks.get('evening', []))
             
             if total_tasks > 0:
@@ -1165,7 +1206,7 @@ class TaskTrackerBot:
         }
         
         # Сохраняем в файл
-        save_success = self.save_stats(stats)
+        save_success = await self.save_stats(stats)
         logger.info(f"💾 Save stats result: {save_success}")
         
         if save_success:
@@ -1216,8 +1257,9 @@ class TaskTrackerBot:
             # Обновляем только original_text для отображения
             self.message_state[message_id]['original_text'] = updated_text
             
-            # Сохраняем в файл
+            # Сохраняем в файл + GitHub (переживёт рестарт)
             self.save_message_states()
+            await self.sync_message_states_to_github()
             
             # Логируем (без отправки нового сообщения)
             logger.info(f"💾 Прогресс сохранён: {percentage}%")
@@ -1254,12 +1296,11 @@ class TaskTrackerBot:
                 'timeout': 30
             }
             
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, timeout=40) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        return data.get('result', [])
-                    return []
+            async with self.session.get(url, params=params, timeout=40) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data.get('result', [])
+                return []
         except Exception as e:
             logger.error(f"❌ Ошибка получения обновлений: {e}")
             return []
@@ -1332,7 +1373,20 @@ class TaskTrackerBot:
     
     async def run(self):
         """Основной цикл бота"""
-        logger.info("🤖 Tracker Bot запущен!")
+        logger.info("🤖 Tracker Bot v2.0 запущен!")
+        
+        # Создаём persistent aiohttp session (одна на весь бот)
+        self.session = aiohttp.ClientSession()
+        
+        # Загружаем message_states с GitHub (переживает рестарт Railway)
+        github_states = await self.load_message_states_from_github()
+        if github_states:
+            # Объединяем с локальными (локальные могут быть новее)
+            for k, v in github_states.items():
+                if k not in self.message_state:
+                    self.message_state[k] = v
+            logger.info(f"📊 Всего состояний: {len(self.message_state)}")
+        
         logger.info("📊 Слушаю обновления...")
         
         # Запускаем HTTP сервер для Railway
@@ -1352,32 +1406,35 @@ class TaskTrackerBot:
         railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
         if railway_domain:
             webhook_url = f"https://{railway_domain}/webhook"
-            async with aiohttp.ClientSession() as session:
-                url = f"https://api.telegram.org/bot{self.telegram_token}/setWebhook"
-                payload = {'url': webhook_url}
-                async with session.post(url, json=payload) as response:
-                    result = await response.json()
-                    if result.get('ok'):
-                        logger.info(f"✅ Webhook установлен: {webhook_url}")
-                    else:
-                        logger.error(f"❌ Ошибка webhook: {result}")
+            url = f"https://api.telegram.org/bot{self.telegram_token}/setWebhook"
+            payload = {'url': webhook_url}
+            async with self.session.post(url, json=payload) as response:
+                result = await response.json()
+                if result.get('ok'):
+                    logger.info(f"✅ Webhook установлен: {webhook_url}")
+                else:
+                    logger.error(f"❌ Ошибка webhook: {result}")
         
         last_schedule_check = datetime.now()
         
         # Основной цикл - только для проверки расписания
-        while True:
-            try:
-                # Проверяем расписание каждую минуту
-                now = datetime.now()
-                if (now - last_schedule_check).seconds >= 60:
-                    await self.check_schedule()
-                    last_schedule_check = now
-                
-                await asyncio.sleep(60)  # Спим минуту
-                
-            except Exception as e:
-                logger.error(f"❌ Ошибка в главном цикле: {e}")
-                await asyncio.sleep(5)
+        try:
+            while True:
+                try:
+                    # Проверяем расписание каждую минуту
+                    now = datetime.now()
+                    if (now - last_schedule_check).total_seconds() >= 60:
+                        await self.check_schedule()
+                        last_schedule_check = now
+                    
+                    await asyncio.sleep(60)  # Спим минуту
+                    
+                except Exception as e:
+                    logger.error(f"❌ Ошибка в главном цикле: {e}")
+                    await asyncio.sleep(5)
+        finally:
+            # Корректно закрываем session при выходе
+            await self.session.close()
 
 if __name__ == "__main__":
     bot = TaskTrackerBot()

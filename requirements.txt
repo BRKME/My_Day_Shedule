@@ -1,2 +1,2 @@
 aiohttp==3.9.1
-requests>=2.31.0
+# notifier.py (GitHub Actions) also needs: requests — installed in workflow yaml
