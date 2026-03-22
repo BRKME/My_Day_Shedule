@@ -323,12 +323,13 @@
     },
     "evening": {
       "completed": [
-        0
+        0,
+        1
       ],
       "total": 2
     },
-    "percentage": 22,
-    "points": 2,
+    "percentage": 33,
+    "points": 3,
     "max_points": 9,
     "penalty": false,
     "penalty_pushups": 0
