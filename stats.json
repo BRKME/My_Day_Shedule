@@ -305,5 +305,30 @@
     "max_points": 8,
     "penalty": true,
     "penalty_pushups": 30
+  },
+  "2026-03-22": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        0
+      ],
+      "total": 7
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 4
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 14,
+    "points": 1,
+    "max_points": 7,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
