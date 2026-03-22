@@ -322,12 +322,14 @@
       "total": 4
     },
     "evening": {
-      "completed": [],
-      "total": 0
+      "completed": [
+        0
+      ],
+      "total": 2
     },
-    "percentage": 14,
-    "points": 1,
-    "max_points": 7,
+    "percentage": 22,
+    "points": 2,
+    "max_points": 9,
     "penalty": false,
     "penalty_pushups": 0
   }
