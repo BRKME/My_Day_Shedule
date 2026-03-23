@@ -340,7 +340,9 @@
       "total": 0
     },
     "day": {
-      "completed": [],
+      "completed": [
+        2
+      ],
       "total": 13
     },
     "cant_do": {
@@ -353,8 +355,8 @@
       "completed": [],
       "total": 0
     },
-    "percentage": 0,
-    "points": 0,
+    "percentage": 7,
+    "points": 1,
     "max_points": 13,
     "penalty": true,
     "penalty_pushups": 30
