@@ -434,12 +434,23 @@
       "total": 6
     },
     "evening": {
-      "completed": [],
-      "total": 0
+      "completed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "total": 12
     },
-    "percentage": 46,
-    "points": 6,
-    "max_points": 13,
+    "percentage": 64,
+    "points": 16,
+    "max_points": 25,
     "penalty": false,
     "penalty_pushups": 0
   }
