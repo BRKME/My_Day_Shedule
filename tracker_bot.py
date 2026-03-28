@@ -482,15 +482,47 @@ class TaskTrackerBot:
         return '▓' * filled + '░' * (length - filled)
     
     def get_motivation(self, percentage):
-        """Возвращает короткое мотивационное сообщение"""
-        if percentage >= 90:
-            return "Отличная работа!"
+        """Возвращает мотивационное сообщение в RPG стиле"""
+        import random
+        
+        if percentage >= 95:
+            phrases = [
+                "🏆 ACHIEVEMENT UNLOCKED: Титан Продуктивности",
+                "💎 Ты сегодня на уровне богов",
+                "⚡ КРИТИЧЕСКИЙ УДАР по прокрастинации!"
+            ]
+        elif percentage >= 90:
+            phrases = [
+                "🔥 ЛЕГЕНДА! Так держать!",
+                "⚡ +500 XP к силе воли",
+                "🎯 Почти идеально. Враги повержены."
+            ]
+        elif percentage >= 80:
+            phrases = [
+                "💪 Спартанец! Щит не дрогнул.",
+                "🗡️ Достойный бой. Победа близка.",
+                "🔱 Отличный результат, воин!"
+            ]
         elif percentage >= 70:
-            return "Хороший день."
+            phrases = [
+                "⚔️ Самурай на пути. Завтра — ещё один шаг.",
+                "🛡️ Хороший день. Меч наточен.",
+                "🎯 Достойно. Продолжай тренировки."
+            ]
         elif percentage >= 50:
-            return "Неплохо. Завтра лучше."
+            phrases = [
+                "🔰 Воин растёт. Каждый бой — опыт.",
+                "⚔️ Неплохо. Завтра покажешь больше.",
+                "🛡️ Ты в игре. Это главное."
+            ]
         else:
-            return "Новый день — новые возможности."
+            phrases = [
+                "🌅 Новый день — новый шанс. Level Up ждёт.",
+                "🔰 Даже легенды начинали с нуля.",
+                "⚔️ Падать не страшно. Страшно не встать."
+            ]
+        
+        return random.choice(phrases)
     
     # ═══════════════════════════════════════════════════════════════════════════════
     # LEVEL SYSTEM
@@ -498,33 +530,29 @@ class TaskTrackerBot:
     
     def get_level(self, percentage):
         """
-        Определяет уровень по проценту выполнения
+        Определяет уровень по проценту выполнения — RPG стиль
         """
-        if percentage >= 90:
-            return {'name': 'TITANIUM', 'emoji': '💎', 'color': '▓', 'phrase': 'Сегодня ты ТИТАН продуктивности'}
+        if percentage >= 95:
+            return {'name': 'TITAN', 'emoji': '💎', 'rank': 7, 'phrase': 'Невозможное стало возможным', 'bar': '🔷🔷🔷🔷🔷🔷🔷'}
+        elif percentage >= 90:
+            return {'name': 'LEGEND', 'emoji': '⚡', 'rank': 6, 'phrase': 'Имя войдёт в историю', 'bar': '🔶🔶🔶🔶🔶🔶⬜'}
         elif percentage >= 80:
-            return {'name': 'STEEL', 'emoji': '⚔️', 'color': '▓', 'phrase': 'Стальная воля, стальной день'}
+            return {'name': 'SPARTAN', 'emoji': '🔱', 'rank': 5, 'phrase': '300 не сдались. И ты не сдашься.', 'bar': '🔹🔹🔹🔹🔹⬜⬜'}
         elif percentage >= 70:
-            return {'name': 'IRON', 'emoji': '🛡️', 'color': '▒', 'phrase': 'Железная хватка'}
+            return {'name': 'SAMURAI', 'emoji': '🗡️', 'rank': 4, 'phrase': 'Путь дисциплины и чести', 'bar': '🔸🔸🔸🔸⬜⬜⬜'}
+        elif percentage >= 50:
+            return {'name': 'WARRIOR', 'emoji': '⚔️', 'rank': 3, 'phrase': 'Воин просыпается', 'bar': '🔸🔸🔸⬜⬜⬜⬜'}
+        elif percentage >= 30:
+            return {'name': 'APPRENTICE', 'emoji': '🛡️', 'rank': 2, 'phrase': 'Ученик на тропе', 'bar': '🔸🔸⬜⬜⬜⬜⬜'}
         else:
-            return {'name': 'BRONZE', 'emoji': '🥉', 'color': '░', 'phrase': 'Есть куда расти'}
+            return {'name': 'ROOKIE', 'emoji': '🔰', 'rank': 1, 'phrase': 'Каждый путь начинается с шага', 'bar': '🔸⬜⬜⬜⬜⬜⬜'}
     
     def get_level_bar(self, percentage):
         """
         Создаёт визуальную шкалу уровня
-        ⬜⬜⬜⬜⬜⬜⬜ < 70% (Bronze)
-        🔸🔸🔸⬜⬜⬜⬜ ≥ 70% (Iron)
-        🔹🔹🔹🔹🔹⬜⬜ ≥ 80% (Steel)
-        🔷🔷🔷🔷🔷🔷🔷 ≥ 90% (Titanium)
         """
-        if percentage >= 90:
-            return "🔷🔷🔷🔷🔷🔷🔷"
-        elif percentage >= 80:
-            return "🔹🔹🔹🔹🔹⬜⬜"
-        elif percentage >= 70:
-            return "🔸🔸🔸⬜⬜⬜⬜"
-        else:
-            return "⬜⬜⬜⬜⬜⬜⬜"
+        level = self.get_level(percentage)
+        return level['bar']
     
     def calculate_streak_90(self, stats):
         """
@@ -556,18 +584,35 @@ class TaskTrackerBot:
     
     def get_level_display(self, percentage, stats):
         """
-        Формирует минималистичное отображение уровня
+        Формирует игровое отображение уровня с XP-баром
         """
         level = self.get_level(percentage)
         streak_90 = self.calculate_streak_90(stats)
         is_black = streak_90 >= 7
         
+        # Rank bar
+        rank_bar = level['bar']
+        
         if is_black:
-            status = f"🖤 BLACK\n→ {streak_90} дней подряд ≥90%"
+            status = f"🖤 <b>DEMIGOD</b> (Level 8)\n"
+            status += f"{rank_bar}\n"
+            status += f"⚡ {streak_90} дней на уровне богов"
         else:
-            status = f"{level['emoji']} {level['name']}\n→ {level['phrase']}"
+            status = f"{level['emoji']} <b>{level['name']}</b> (Level {level['rank']})\n"
+            status += f"{rank_bar}\n"
+            status += f"→ {level['phrase']}"
+            
+            # Показываем прогресс до следующего уровня
+            if percentage < 95:
+                next_levels = {30: 50, 50: 70, 70: 80, 80: 90, 90: 95}
+                for threshold, next_threshold in next_levels.items():
+                    if percentage < next_threshold:
+                        tasks_to_next = max(1, int((next_threshold - percentage) / 3))
+                        status += f"\n📈 +{tasks_to_next} задач до Level Up"
+                        break
+            
             if streak_90 > 0:
-                status += f"\nStreak: {streak_90}/7"
+                status += f"\n🔥 Streak: {streak_90}/7 дней"
         
         return status
     
@@ -606,6 +651,67 @@ class TaskTrackerBot:
             'days_above_90': days_above_90,
             'level': self.get_level(avg)
         }
+    
+    def get_top_failed_tasks(self, stats, days=7):
+        """
+        Анализирует какие задачи чаще всего НЕ выполняются за период
+        Возвращает топ-3 с процентом выполнения
+        """
+        today = datetime.now()
+        task_stats = {}  # task_name -> {'completed': 0, 'total': 0}
+        
+        for i in range(days):
+            day = today - timedelta(days=i)
+            day_key = day.strftime("%Y-%m-%d")
+            
+            if day_key not in stats:
+                continue
+            
+            day_data = stats[day_key]
+            
+            # Получаем список задач из _tasks (сохраняется notifier.py)
+            all_tasks_dict = day_data.get('_tasks', {})
+            
+            # Анализируем день и вечер
+            for section in ['day', 'evening']:
+                section_data = day_data.get(section, {})
+                completed_indices = section_data.get('completed', [])
+                
+                # Задачи для этой секции
+                section_tasks = all_tasks_dict.get(section, [])
+                if not section_tasks:
+                    continue
+                
+                for idx, task in enumerate(section_tasks):
+                    clean_task = task.strip()
+                    if not clean_task:
+                        continue
+                    
+                    if clean_task not in task_stats:
+                        task_stats[clean_task] = {'completed': 0, 'total': 0}
+                    
+                    task_stats[clean_task]['total'] += 1
+                    
+                    # Проверяем выполнена ли задача (по индексу)
+                    if idx in completed_indices:
+                        task_stats[clean_task]['completed'] += 1
+        
+        # Считаем процент выполнения и сортируем по невыполнению
+        failed_tasks = []
+        for task, data in task_stats.items():
+            if data['total'] >= 2:  # Минимум 2 раза встречалась
+                completion_rate = int((data['completed'] / data['total']) * 100)
+                failed_tasks.append({
+                    'task': task[:25] + '...' if len(task) > 25 else task,
+                    'rate': completion_rate,
+                    'completed': data['completed'],
+                    'total': data['total']
+                })
+        
+        # Сортируем по проценту выполнения (от меньшего к большему)
+        failed_tasks.sort(key=lambda x: x['rate'])
+        
+        return failed_tasks[:3]  # Топ-3 самых проблемных
     
     def get_month_stats(self, stats):
         """Считает статистику за месяц"""
@@ -757,7 +863,7 @@ class TaskTrackerBot:
         logger.info(f"📊 Итоги дня отправлены: {overall_perc}% (day={day_done}/{day_total}, evening={evening_done}/{evening_total})")
     
     async def send_weekly_summary(self):
-        """Отправляет итоги недели с Level System"""
+        """Отправляет итоги недели с Level System и топ-3 проблемных задач"""
         stats = self.load_stats()
         week_stats = self.get_week_stats(stats)
         streak_90 = self.calculate_streak_90(stats)
@@ -789,42 +895,56 @@ class TaskTrackerBot:
                     'level': self.get_level(0)
                 })
         
-        # Формируем сообщение (минималистичный стиль)
+        # Формируем сообщение
         week_start = (today - timedelta(days=6)).strftime('%d.%m')
         week_end = today.strftime('%d.%m')
         
-        message = f"<b>ИТОГИ НЕДЕЛИ</b>\n{week_start} — {week_end}\n\n"
+        message = f"⚔️ <b>ИТОГИ НЕДЕЛИ</b>\n{week_start} — {week_end}\n\n"
         
-        # Дни недели (простая шкала)
+        # Дни недели с эмодзи уровня
         for day_data in week_data:
             perc = day_data['percentage']
+            level = day_data['level']
             bar = self.get_progress_bar(perc, 7)
-            message += f"{day_data['name']} {bar} {perc}%\n"
+            message += f"{day_data['name']} {bar} {perc}% {level['emoji']}\n"
         
-        message += f"\nСредний: {week_stats['avg']}%\n"
-        
-        # Level
+        # Средний уровень
         avg_level = week_stats['level']
-        message += f"{avg_level['emoji']} {avg_level['name']}\n"
+        message += f"\n<b>Средний:</b> {week_stats['avg']}%\n"
+        message += f"{avg_level['emoji']} <b>{avg_level['name']}</b> (Level {avg_level['rank']})\n"
+        message += f"{avg_level['bar']}\n"
         
         # Streak
         if streak_90 > 0:
-            message += f"Streak: {streak_90}/7\n"
+            message += f"\n🔥 Streak: {streak_90}/7 дней"
         
         # Black level
         if is_black:
-            message += "\n🖤 BLACK ACHIEVED"
+            message += "\n\n🖤 <b>DEMIGOD ACHIEVED!</b>"
+            message += "\n⚡ Ты достиг уровня богов"
         
-        # Короткая мотивация
+        # ТОП-3 ПРОБЛЕМНЫХ ЗАДАЧ
+        top_failed = self.get_top_failed_tasks(stats, days=7)
+        if top_failed:
+            message += "\n\n⚠️ <b>Зоны роста:</b>\n"
+            for i, task in enumerate(top_failed, 1):
+                # Прогресс-бар для задачи
+                task_bar = self.get_progress_bar(task['rate'], 5)
+                message += f"{i}. {task['task']}\n"
+                message += f"   {task_bar} {task['rate']}% ({task['completed']}/{task['total']})\n"
+        
+        # Мотивация
         message += "\n"
-        if week_stats['avg'] >= 90:
-            message += "Легендарная неделя."
+        if week_stats['avg'] >= 95:
+            message += "🏆 ЛЕГЕНДАРНАЯ НЕДЕЛЯ! Ты на пути к величию."
+        elif week_stats['avg'] >= 90:
+            message += "⚡ Отличный результат! Level Up заслужен."
         elif week_stats['avg'] >= 80:
-            message += "Отличный результат."
+            message += "🗡️ Спартанская неделя. Враги повержены."
         elif week_stats['avg'] >= 70:
-            message += "Хорошая работа."
+            message += "⚔️ Хорошая работа, самурай. Продолжай."
         else:
-            message += "Следующая неделя будет лучше."
+            message += "🛡️ Новая неделя — новый шанс. Level Up ждёт."
         
         await self.send_telegram_message(message)
         logger.info(f"📊 Итоги недели отправлены: средний {week_stats['avg']}%, уровень {avg_level['name']}")

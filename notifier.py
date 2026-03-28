@@ -596,7 +596,7 @@ class PersonalScheduleNotifier:
         return None
 
     async def check_yesterday_penalty(self):
-        """Проверяет штраф за вчера из stats.json"""
+        """Проверяет штраф за вчера из stats.json - возвращает детальную информацию"""
         try:
             from datetime import timedelta
             
@@ -624,9 +624,21 @@ class PersonalScheduleNotifier:
             penalty_pushups = yesterday_data.get('penalty_pushups', 0)
             
             if penalty_pushups > 0:
-                cant_do_fails = len(yesterday_data.get('cant_do', {}).get('completed', []))
+                cant_do_completed = yesterday_data.get('cant_do', {}).get('completed', [])
+                cant_do_fails = len(cant_do_completed)
                 logger.info(f"⚠️ Найден штраф за {yesterday_key}: {penalty_pushups} отжиманий ({cant_do_fails} срывов)")
-                return f"Отжимания {penalty_pushups}× (штраф)"
+                
+                # Формируем детальное сообщение
+                penalty_text = f"⚠️ <b>Отжимания {penalty_pushups}×</b>\n"
+                penalty_text += f"Вчера срывов: {cant_do_fails}\n"
+                
+                # Показываем какие именно срывы были
+                if cant_do_completed:
+                    for fail in cant_do_completed[:3]:  # Максимум 3
+                        clean_fail = fail.replace('НЕ ', '').replace('Не ', '').strip()
+                        penalty_text += f"· {clean_fail}\n"
+                
+                return penalty_text.strip()
             else:
                 logger.info(f"✅ Штрафа за {yesterday_key} нет")
                 return None
@@ -716,9 +728,10 @@ class PersonalScheduleNotifier:
         
         content += "\n"
         
-        penalty_task = await self.check_yesterday_penalty()
-        if penalty_task:
-            content += f"<b>ШТРАФ:</b> {penalty_task}\n\n"
+        # Штраф за вчера (если есть) - с деталями
+        penalty_info = await self.check_yesterday_penalty()
+        if penalty_info:
+            content += f"{penalty_info}\n\n"
         
         if schedule.get('день'):
             content += "<b>📋 Дневные задачи:</b>\n"
