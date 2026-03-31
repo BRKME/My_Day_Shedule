@@ -3,6 +3,7 @@ on:
   schedule:
     - cron: '0 3 * * *'   # 07:00 MSK — утреннее
     - cron: '0 16 * * *'   # 19:00 MSK — вечернее
+    - cron: '0 10 * * 5'   # 13:00 MSK пятница — зачёт подтягивания
   workflow_dispatch:
     inputs:
       period:
@@ -13,6 +14,7 @@ on:
         options:
           - morning
           - evening
+          - pullups
 
 jobs:
   send-notification:
@@ -38,10 +40,15 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
             HOUR=$(date -u +%H)
-            echo "Текущий час UTC: $HOUR"
+            DOW=$(date -u +%u)  # 1=Mon, 5=Fri
+            echo "Текущий час UTC: $HOUR, день недели: $DOW"
             
+            # Пятница 10:00 UTC = зачёт подтягивания
+            if [[ "$DOW" -eq 5 && "$HOUR" -eq 10 ]]; then
+              echo "period=pullups" >> $GITHUB_OUTPUT
+              echo "✅ Определён период: PULLUPS (пятница)"
             # Утро: 04:00-10:00 UTC (07:00-13:00 MSK)
-            if [[ "$HOUR" -ge 4 && "$HOUR" -lt 10 ]]; then
+            elif [[ "$HOUR" -ge 4 && "$HOUR" -lt 10 ]]; then
               echo "period=morning" >> $GITHUB_OUTPUT
               echo "✅ Определён период: MORNING"
             # Вечер: 16:00-22:00 UTC (19:00-01:00 MSK)

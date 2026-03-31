@@ -305,6 +305,34 @@ class TaskTrackerBot:
             logger.error(f"❌ Ошибка сохранения статистики: {e}")
             return False
     
+    async def save_pullups(self, count):
+        """Сохраняет результат подтягиваний"""
+        stats = self.load_stats()
+        today_key = self.get_today_key()
+        
+        # Создаём секцию pullups если нет
+        if 'pullups' not in stats:
+            stats['pullups'] = {}
+        
+        stats['pullups'][today_key] = count
+        logger.info(f"💪 Подтягивания за {today_key}: {count}")
+        
+        await self.save_stats(stats)
+    
+    def get_last_pullups(self, days=7):
+        """Получает последний результат подтягиваний за N дней"""
+        stats = self.load_stats()
+        pullups_data = stats.get('pullups', {})
+        
+        today = datetime.now()
+        for i in range(days):
+            day = today - timedelta(days=i)
+            day_key = day.strftime("%Y-%m-%d")
+            if day_key in pullups_data:
+                return pullups_data[day_key], day_key
+        
+        return None, None
+    
     async def _github_get_file(self, path):
         """Получает содержимое файла с GitHub (async)"""
         if not self.github_token:
@@ -933,6 +961,24 @@ class TaskTrackerBot:
                 message += f"{i}. {task['task']}\n"
                 message += f"   {task_bar} {task['rate']}% ({task['completed']}/{task['total']})\n"
         
+        # ПОДТЯГИВАНИЯ (пятничный зачёт)
+        last_pullups, pullups_date = self.get_last_pullups(days=7)
+        if last_pullups is not None:
+            goal = 15
+            pullups_perc = min(100, int((last_pullups / goal) * 100))
+            pullups_bar = self.get_progress_bar(pullups_perc, 7)
+            message += f"\n\n💪 <b>Подтягивания:</b> {last_pullups}/{goal}\n"
+            message += f"{pullups_bar}\n"
+            
+            if last_pullups >= goal:
+                message += "🏆 <b>ЦЕЛЬ ДОСТИГНУТА!</b>\n"
+                message += "Выбери приз: 🍕 Пицца / 🎮 Игра / 📱 Гаджет"
+            elif last_pullups >= goal - 2:
+                message += "🔥 Почти у цели! Ещё чуть-чуть!"
+            else:
+                diff = goal - last_pullups
+                message += f"→ До цели: +{diff}"
+        
         # Мотивация
         message += "\n"
         if week_stats['avg'] >= 95:
@@ -1146,6 +1192,34 @@ class TaskTrackerBot:
         elif callback_data == 'header':
             # Заголовки не кликабельны
             await self.answer_callback_query(callback_query_id)
+        
+        elif callback_data.startswith('pullups_'):
+            # Зачёт подтягиваний
+            count = int(callback_data.split('_')[1])
+            await self.save_pullups(count)
+            
+            # Формируем ответ
+            goal = 15
+            if count >= goal:
+                response = f"🏆 <b>ЦЕЛЬ ДОСТИГНУТА!</b>\n\n"
+                response += f"💪 Подтягивания: {count}/{goal}\n"
+                response += f"▓▓▓▓▓▓▓▓▓▓ 100%\n\n"
+                response += "🎁 Выбери свой приз:\n"
+                response += "🍕 Пицца | 🎮 Игра | 📱 Гаджет"
+                await self.answer_callback_query(callback_query_id, f"🏆 {count} раз! Цель достигнута!")
+            else:
+                progress_pct = int((count / goal) * 100)
+                filled = int(progress_pct / 10)
+                bar = '▓' * filled + '░' * (10 - filled)
+                remaining = goal - count
+                response = f"✅ <b>Записано: {count} подтягиваний</b>\n\n"
+                response += f"💪 Прогресс: {count}/{goal}\n"
+                response += f"{bar} {progress_pct}%\n\n"
+                response += f"→ Ещё {remaining} до цели!"
+                await self.answer_callback_query(callback_query_id, f"✅ Записано: {count}")
+            
+            # Обновляем сообщение
+            await self.edit_message(message_id, response, None)
     
     async def show_checklist(self, message_id, original_message):
         """Показывает чек-лист для отметки задач"""

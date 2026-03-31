@@ -918,6 +918,56 @@ class PersonalScheduleNotifier:
         
         return content
 
+    async def send_pullups_message(self):
+        """Отправляет сообщение для зачёта по подтягиваниям с кнопками"""
+        message = "💪 <b>ЗАЧЁТ ПО ПОДТЯГИВАНИЯМ</b>\n\n"
+        message += "Сколько раз подтянулся?\n"
+        message += "Цель: 15 раз 🎯"
+        
+        # Кнопки с числами 8-20
+        keyboard = {
+            'inline_keyboard': [
+                [
+                    {'text': '8', 'callback_data': 'pullups_8'},
+                    {'text': '10', 'callback_data': 'pullups_10'},
+                    {'text': '12', 'callback_data': 'pullups_12'},
+                    {'text': '13', 'callback_data': 'pullups_13'}
+                ],
+                [
+                    {'text': '14', 'callback_data': 'pullups_14'},
+                    {'text': '15 🎯', 'callback_data': 'pullups_15'},
+                    {'text': '17', 'callback_data': 'pullups_17'},
+                    {'text': '20', 'callback_data': 'pullups_20'}
+                ],
+                [
+                    {'text': '22', 'callback_data': 'pullups_22'},
+                    {'text': '25', 'callback_data': 'pullups_25'}
+                ]
+            ]
+        }
+        
+        url = f"https://api.telegram.org/bot{self.telegram_token}/sendMessage"
+        payload = {
+            'chat_id': self.chat_id,
+            'text': message,
+            'parse_mode': 'HTML',
+            'reply_markup': json.dumps(keyboard)
+        }
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, timeout=30) as response:
+                    if response.status == 200:
+                        logger.info("✅ Сообщение подтягиваний отправлено")
+                        return True
+                    else:
+                        error = await response.text()
+                        logger.error(f"❌ Ошибка Telegram: {error}")
+                        return False
+        except Exception as e:
+            logger.error(f"❌ Ошибка: {e}")
+            return False
+
     async def fetch_event_file(self, filename):
         try:
             url = f"https://raw.githubusercontent.com/BRKME/Day/main/{filename}"
@@ -1029,6 +1079,9 @@ class PersonalScheduleNotifier:
         elif period == 'evening':
             message = await self.format_evening_message(date_str, day_of_week, schedule)
             add_button = True
+        elif period == 'pullups':
+            # Отдельная логика для подтягиваний
+            return await self.send_pullups_message()
         else:
             logger.error(f"❌ Неизвестный период: {period}")
             return False
@@ -1045,7 +1098,7 @@ async def main(period):
         sys.exit(1)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or sys.argv[1] not in ('morning', 'day', 'evening'):
-        print("❌ Использование: python notifier.py <morning|day|evening>")
+    if len(sys.argv) != 2 or sys.argv[1] not in ('morning', 'day', 'evening', 'pullups'):
+        print("❌ Использование: python notifier.py <morning|day|evening|pullups>")
         sys.exit(1)
     asyncio.run(main(sys.argv[1]))
