@@ -69,6 +69,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "🚀 Запуск notifier.py с периодом: ${{ steps.period.outputs.period }}"
           python notifier.py ${{ steps.period.outputs.period }}

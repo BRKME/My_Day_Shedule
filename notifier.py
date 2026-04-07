@@ -602,7 +602,7 @@ class PersonalScheduleNotifier:
         return None
 
     async def check_yesterday_penalty(self):
-        """Проверяет штраф за вчера из stats.json - возвращает детальную информацию"""
+        """Проверяет штраф за вчера из stats.json (загружает с GitHub)"""
         try:
             from datetime import timedelta
             
@@ -610,14 +610,12 @@ class PersonalScheduleNotifier:
             yesterday = datetime.now() - timedelta(days=1)
             yesterday_key = yesterday.strftime("%Y-%m-%d")
             
-            # Читаем stats.json
-            stats_file = "stats.json"
-            if not os.path.exists(stats_file):
-                logger.info("📊 stats.json не найден, штрафа нет")
-                return None
+            # Загружаем stats.json с GitHub (там актуальные данные от tracker_bot)
+            stats = self._load_stats_from_github()
             
-            with open(stats_file, 'r', encoding='utf-8') as f:
-                stats = json.load(f)
+            if not stats:
+                logger.info("📊 Не удалось загрузить stats.json с GitHub")
+                return None
             
             # Проверяем есть ли данные за вчера
             if yesterday_key not in stats:
@@ -634,15 +632,21 @@ class PersonalScheduleNotifier:
                 cant_do_fails = len(cant_do_completed)
                 logger.info(f"⚠️ Найден штраф за {yesterday_key}: {penalty_pushups} отжиманий ({cant_do_fails} срывов)")
                 
+                # Получаем названия задач из _tasks
+                tasks_dict = yesterday_data.get('_tasks', {})
+                cant_do_tasks = tasks_dict.get('cant_do', [])
+                
                 # Формируем детальное сообщение
                 penalty_text = f"⚠️ <b>Отжимания {penalty_pushups}×</b>\n"
                 penalty_text += f"Вчера срывов: {cant_do_fails}\n"
                 
-                # Показываем какие именно срывы были
-                if cant_do_completed:
-                    for fail in cant_do_completed[:3]:  # Максимум 3
-                        clean_fail = fail.replace('НЕ ', '').replace('Не ', '').strip()
-                        penalty_text += f"· {clean_fail}\n"
+                # Показываем какие именно срывы были (по индексам)
+                if cant_do_completed and cant_do_tasks:
+                    for idx in cant_do_completed[:3]:  # Максимум 3
+                        if isinstance(idx, int) and idx < len(cant_do_tasks):
+                            task = cant_do_tasks[idx]
+                            clean_task = task.replace('НЕ ', '').replace('Не ', '').strip()
+                            penalty_text += f"· {clean_task}\n"
                 
                 return penalty_text.strip()
             else:
@@ -651,6 +655,37 @@ class PersonalScheduleNotifier:
                 
         except Exception as e:
             logger.error(f"❌ Ошибка проверки штрафа: {e}")
+            return None
+    
+    def _load_stats_from_github(self):
+        """Загружает stats.json с GitHub"""
+        try:
+            github_token = os.getenv('GITHUB_TOKEN')
+            if not github_token:
+                logger.warning("⚠️ GITHUB_TOKEN не найден")
+                return None
+            
+            repo = "BRKME/My_Day_Shedule"
+            path = "stats.json"
+            url = f"https://api.github.com/repos/{repo}/contents/{path}"
+            headers = {
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                content_b64 = response.json().get('content', '')
+                content = base64.b64decode(content_b64).decode('utf-8')
+                stats = json.loads(content)
+                logger.info(f"✅ Загружен stats.json с GitHub ({len(stats)} записей)")
+                return stats
+            else:
+                logger.warning(f"⚠️ GitHub GET stats.json: {response.status_code}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка загрузки stats.json с GitHub: {e}")
             return None
 
     def get_kids_schedule(self, day_of_week):
