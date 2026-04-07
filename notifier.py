@@ -474,10 +474,10 @@ class PersonalScheduleNotifier:
         return date_str, day_of_week, schedule
 
     async def get_weather_forecast(self):
-        """Получение погоды через Open-Meteo API (стабильный, без ключа)"""
+        """Получение погоды через Open-Meteo API (копия из Family_Bot)"""
         try:
-            # Москва: 55.7558, 37.6173
-            url = "https://api.open-meteo.com/v1/forecast?latitude=55.7558&longitude=37.6173&current_weather=true&temperature_unit=celsius&timezone=Europe/Moscow"
+            # Санкт-Петербург: 59.9311, 30.3609
+            url = "https://api.open-meteo.com/v1/forecast?latitude=59.9311&longitude=30.3609&current_weather=true&temperature_unit=celsius&timezone=Europe/Moscow"
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=10) as response:
@@ -494,8 +494,7 @@ class PersonalScheduleNotifier:
                             51: 'Морось', 53: 'Морось', 55: 'Сильная морось',
                             61: 'Слабый дождь', 63: 'Дождь', 65: 'Сильный дождь',
                             71: 'Слабый снег', 73: 'Снег', 75: 'Сильный снег',
-                            80: 'Ливень', 81: 'Сильный ливень', 82: 'Очень сильный ливень',
-                            95: 'Гроза', 96: 'Гроза с градом', 99: 'Сильная гроза'
+                            95: 'Гроза'
                         }
                         
                         weather_code = current.get('weathercode', 0)
@@ -504,14 +503,17 @@ class PersonalScheduleNotifier:
                         logger.info(f"✅ Погода получена: {temp}°C, {condition}")
                         
                         return (
-                            f"🌤️ <b>Погода в Москве:</b>\n"
+                            f"🌤️ <b>Погода в Санкт-Петербурге:</b>\n"
                             f"🌡️ {temp}°C • {condition}\n"
                             f"💨 Ветер: {windspeed} км/ч\n"
                         )
-                    return "🌤️ <b>Погода:</b> Ошибка получения\n"
+                    else:
+                        logger.warning(f"⚠️ Open-Meteo вернул статус {response.status}")
+                        return ""
+            
         except Exception as e:
             logger.error(f"❌ Ошибка погоды: {e}")
-            return "🌤️ <b>Погода:</b> Ошибка подключения\n"
+            return ""
 
     async def get_weekend_forecast(self):
         """Не используется, возвращает пустую строку"""
