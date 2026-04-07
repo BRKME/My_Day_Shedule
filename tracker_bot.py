@@ -741,6 +741,73 @@ class TaskTrackerBot:
         
         return failed_tasks[:3]  # Топ-3 самых проблемных
     
+    def get_week_penalty_stats(self, stats, days=7):
+        """
+        Собирает статистику штрафов за неделю
+        Возвращает: {
+            'total_pushups': int,
+            'days_with_penalty': int,
+            'total_fails': int,
+            'top_violations': [{'rule': str, 'count': int}, ...]
+        }
+        """
+        today = datetime.now()
+        total_pushups = 0
+        days_with_penalty = 0
+        total_fails = 0
+        violations = {}  # rule_name -> count
+        
+        for i in range(days):
+            day = today - timedelta(days=i)
+            day_key = day.strftime("%Y-%m-%d")
+            
+            if day_key not in stats:
+                continue
+            
+            day_data = stats[day_key]
+            
+            # Считаем отжимания
+            pushups = day_data.get('penalty_pushups', 0)
+            if pushups > 0:
+                total_pushups += pushups
+                days_with_penalty += 1
+            
+            # Считаем срывы
+            cant_do = day_data.get('cant_do', {})
+            completed_indices = cant_do.get('completed', [])
+            fails_count = len(completed_indices)
+            total_fails += fails_count
+            
+            # Получаем названия нарушенных правил
+            tasks_dict = day_data.get('_tasks', {})
+            cant_do_tasks = tasks_dict.get('cant_do', [])
+            
+            for idx in completed_indices:
+                if isinstance(idx, int) and idx < len(cant_do_tasks):
+                    rule = cant_do_tasks[idx]
+                    # Очищаем от "Не " и форматирования
+                    clean_rule = rule.replace('НЕ ', '').replace('Не ', '')
+                    clean_rule = clean_rule.split('<')[0].strip()  # Убираем <i>...</i>
+                    clean_rule = clean_rule[:30]  # Обрезаем длинные
+                    
+                    if clean_rule not in violations:
+                        violations[clean_rule] = 0
+                    violations[clean_rule] += 1
+        
+        # Топ нарушений (сортируем по частоте)
+        top_violations = sorted(
+            [{'rule': k, 'count': v} for k, v in violations.items()],
+            key=lambda x: x['count'],
+            reverse=True
+        )[:3]
+        
+        return {
+            'total_pushups': total_pushups,
+            'days_with_penalty': days_with_penalty,
+            'total_fails': total_fails,
+            'top_violations': top_violations
+        }
+    
     def get_month_stats(self, stats):
         """Считает статистику за месяц"""
         today = datetime.now()
@@ -978,6 +1045,21 @@ class TaskTrackerBot:
             else:
                 diff = goal - last_pullups
                 message += f"→ До цели: +{diff}"
+        
+        # СТАТИСТИКА ШТРАФОВ
+        penalty_stats = self.get_week_penalty_stats(stats, days=7)
+        if penalty_stats['total_fails'] > 0:
+            message += f"\n\n⚠️ <b>Штрафы недели:</b>\n"
+            message += f"Отжиманий: {penalty_stats['total_pushups']}×\n"
+            message += f"Дней со срывами: {penalty_stats['days_with_penalty']}/7\n"
+            message += f"Всего срывов: {penalty_stats['total_fails']}\n"
+            
+            if penalty_stats['top_violations']:
+                message += "\n<i>Частые нарушения:</i>\n"
+                for v in penalty_stats['top_violations']:
+                    message += f"· {v['rule']} ({v['count']}×)\n"
+        else:
+            message += "\n\n✅ <b>Без штрафов!</b> Чистая неделя 🏆"
         
         # Мотивация
         message += "\n"
