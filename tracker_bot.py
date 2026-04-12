@@ -298,7 +298,9 @@ class TaskTrackerBot:
             logger.info("✅ Статистика сохранена локально")
             
             # Синхронизируем с GitHub (async)
-            await self.sync_stats_to_github(stats)
+            sync_result = await self.sync_stats_to_github(stats)
+            if not sync_result:
+                logger.warning("⚠️ Синхронизация с GitHub не удалась! Проверь GITHUB_TOKEN")
             
             return True
         except Exception as e:
@@ -356,7 +358,7 @@ class TaskTrackerBot:
     async def _github_put_file(self, path, content, message="auto update"):
         """Записывает файл на GitHub (async)"""
         if not self.github_token:
-            logger.warning("⚠️ GITHUB_TOKEN не найден, пропускаем синхронизацию")
+            logger.warning("⚠️ GITHUB_TOKEN не найден в переменных окружения Railway!")
             return False
         try:
             url = f"https://api.github.com/repos/{self.github_repo}/contents/{path}"
@@ -371,6 +373,12 @@ class TaskTrackerBot:
                 if response.status == 200:
                     data = await response.json()
                     sha = data.get('sha')
+                elif response.status == 401:
+                    logger.error("❌ GitHub: токен невалиден (401 Unauthorized)")
+                    return False
+                elif response.status == 403:
+                    logger.error("❌ GitHub: доступ запрещён (403 Forbidden) - проверь права токена")
+                    return False
             
             # Кодируем содержимое
             content_b64 = base64.b64encode(content.encode('utf-8')).decode('utf-8')
@@ -388,7 +396,8 @@ class TaskTrackerBot:
                     logger.info(f"✅ {path} синхронизирован с GitHub")
                     return True
                 else:
-                    logger.warning(f"⚠️ GitHub PUT {path}: {response.status}")
+                    error_text = await response.text()
+                    logger.warning(f"⚠️ GitHub PUT {path}: {response.status} - {error_text[:100]}")
                     return False
                 
         except Exception as e:

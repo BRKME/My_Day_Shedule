@@ -629,6 +629,15 @@ class PersonalScheduleNotifier:
                 logger.info("📊 Не удалось загрузить stats.json с GitHub")
                 return None
             
+            # Проверяем насколько свежие данные
+            dates = [k for k in stats.keys() if k.startswith('202')]
+            if dates:
+                last_date = max(dates)
+                days_old = (datetime.now() - datetime.strptime(last_date, "%Y-%m-%d")).days
+                if days_old > 3:
+                    logger.warning(f"⚠️ Данные устарели! Последняя запись: {last_date} ({days_old} дней назад)")
+                    logger.warning("⚠️ Проверь GITHUB_TOKEN на Railway - синхронизация не работает!")
+            
             # Проверяем есть ли данные за вчера
             if yesterday_key not in stats:
                 logger.info(f"📊 Нет данных за {yesterday_key}, штрафа нет")
@@ -674,7 +683,7 @@ class PersonalScheduleNotifier:
         try:
             github_token = os.getenv('GITHUB_TOKEN')
             if not github_token:
-                logger.warning("⚠️ GITHUB_TOKEN не найден")
+                logger.warning("⚠️ GITHUB_TOKEN не найден в переменных окружения")
                 return None
             
             repo = "BRKME/My_Day_Shedule"
@@ -690,8 +699,20 @@ class PersonalScheduleNotifier:
                 content_b64 = response.json().get('content', '')
                 content = base64.b64decode(content_b64).decode('utf-8')
                 stats = json.loads(content)
-                logger.info(f"✅ Загружен stats.json с GitHub ({len(stats)} записей)")
+                # Показываем последнюю дату в stats
+                dates = [k for k in stats.keys() if k.startswith('202')]
+                if dates:
+                    last_date = max(dates)
+                    logger.info(f"✅ Загружен stats.json с GitHub (последняя запись: {last_date})")
+                else:
+                    logger.info(f"✅ Загружен stats.json с GitHub ({len(stats)} записей)")
                 return stats
+            elif response.status_code == 401:
+                logger.error("❌ GitHub: токен невалиден (401)")
+                return None
+            elif response.status_code == 404:
+                logger.warning("⚠️ stats.json не найден на GitHub")
+                return None
             else:
                 logger.warning(f"⚠️ GitHub GET stats.json: {response.status_code}")
                 return None
