@@ -541,5 +541,34 @@
     "max_points": 26,
     "penalty": true,
     "penalty_pushups": 30
+  },
+  "2026-04-14": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        0,
+        1,
+        2,
+        4,
+        5
+      ],
+      "total": 13
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 6
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 38,
+    "points": 5,
+    "max_points": 13,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
