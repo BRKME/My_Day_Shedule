@@ -589,7 +589,8 @@
       "completed": [
         0,
         1,
-        5
+        5,
+        9
       ],
       "total": 13
     },
@@ -601,8 +602,8 @@
       "completed": [],
       "total": 0
     },
-    "percentage": 23,
-    "points": 3,
+    "percentage": 30,
+    "points": 4,
     "max_points": 13,
     "penalty": false,
     "penalty_pushups": 0
