@@ -615,10 +615,12 @@
     },
     "day": {
       "completed": [
+        0,
         1,
         2,
         3,
-        4
+        4,
+        5
       ],
       "total": 15
     },
@@ -632,8 +634,8 @@
       "completed": [],
       "total": 0
     },
-    "percentage": 26,
-    "points": 4,
+    "percentage": 40,
+    "points": 6,
     "max_points": 15,
     "penalty": true,
     "penalty_pushups": 30
