@@ -1,8 +1,8 @@
 name: Daily Schedule Notifier
 on:
   schedule:
-    - cron: '0 3 * * *'   # 07:00 MSK — утреннее
-    - cron: '0 16 * * *'   # 19:00 MSK — вечернее
+    - cron: '0 2 * * *'   # 07:00 MSK — утреннее
+    - cron: '0 15 * * *'   # 19:00 MSK — вечернее
     - cron: '0 10 * * 5'   # 13:00 MSK пятница — зачёт подтягивания
   workflow_dispatch:
     inputs:
