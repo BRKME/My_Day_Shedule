@@ -1082,6 +1082,29 @@ class PersonalScheduleNotifier:
                 reminders.append({'key': event_key, 'event': event, 'type': 'event_day'})
         return reminders
 
+    async def send_morning_photo(self):
+        """Отправляет мотивационное фото перед утренним сообщением"""
+        try:
+            photo_url = "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_motivation.jpg"
+            url = f"https://api.telegram.org/bot{self.telegram_token}/sendPhoto"
+            
+            payload = {
+                'chat_id': self.chat_id,
+                'photo': photo_url
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, timeout=15) as response:
+                    if response.status == 200:
+                        logger.info("✅ Утреннее фото отправлено")
+                        return True
+                    else:
+                        logger.warning(f"⚠️ Не удалось отправить фото: {response.status}")
+                        return False
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка отправки фото: {e}")
+            return False
+
     async def send_telegram_message(self, message, ss_content=None, add_progress_button=False):
         try:
             # НОВОЕ: Сохраняем задачи для tracker_bot.py
@@ -1128,6 +1151,9 @@ class PersonalScheduleNotifier:
         add_button = False
         
         if period == 'morning':
+            # Сначала отправляем мотивационное фото
+            await self.send_morning_photo()
+            
             message = await self.format_morning_day_message(date_str, day_of_week, schedule)
             add_button = True
             
