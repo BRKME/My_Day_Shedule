@@ -152,6 +152,37 @@
             font-weight: 300;
         }
 
+        .audio-player {
+            background: linear-gradient(135deg, var(--color-accent) 0%, #b8922a 100%);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 16px rgba(201, 162, 39, 0.3);
+        }
+
+        .audio-player .audio-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .audio-player .play-icon {
+            font-size: 1.4rem;
+        }
+
+        .audio-player .audio-title {
+            color: #fff;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 32px 24px;
@@ -178,6 +209,16 @@
                 </svg>
             </div>
             <h1>To really Enjoy life</h1>
+        </div>
+
+        <div class="audio-player">
+            <div class="audio-header">
+                <span class="play-icon">🎧</span>
+                <span class="audio-title">Прослушать молитву</span>
+            </div>
+            <audio controls preload="metadata">
+                <source src="prayer.mp3" type="audio/mpeg">
+            </audio>
         </div>
 
         <div class="divider"></div>
