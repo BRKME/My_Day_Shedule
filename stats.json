@@ -828,7 +828,9 @@
         1,
         2,
         4,
-        5
+        5,
+        11,
+        13
       ],
       "total": 15
     },
@@ -842,8 +844,8 @@
       "completed": [],
       "total": 0
     },
-    "percentage": 33,
-    "points": 5,
+    "percentage": 46,
+    "points": 7,
     "max_points": 15,
     "penalty": true,
     "penalty_pushups": 30
