@@ -877,12 +877,13 @@
     "evening": {
       "completed": [
         4,
-        5
+        5,
+        7
       ],
       "total": 13
     },
-    "percentage": 37,
-    "points": 10,
+    "percentage": 40,
+    "points": 11,
     "max_points": 27,
     "penalty": false,
     "penalty_pushups": 0
