@@ -47,12 +47,13 @@ class PersonalScheduleNotifier:
         
         self.recurring_events = {
             'tarelka': {'name': 'Семейная традиция - Путешествие на тарелке', 'file': 'tarelka.txt', 'rule': 'last_saturday'},
-            'chronos': {
-                'name': 'Семейная традиция - Вечер воспоминаний',
-                'url': 'https://brkme.github.io/My_Day_Shedule/chronos.html',
-                'short_text': 'Хранители времени — смотрим фото и рассказываем историю семьи',
-                'rule': 'third_saturday'
-            },
+            # АРХИВ: 'chronos' - Вечер воспоминаний (убрана из активных традиций)
+            # 'chronos': {
+            #     'name': 'Семейная традиция - Вечер воспоминаний',
+            #     'url': 'https://brkme.github.io/My_Day_Shedule/chronos.html',
+            #     'short_text': 'Хранители времени — смотрим фото и рассказываем историю семьи',
+            #     'rule': 'third_saturday'
+            # },
             'new': {
                 'name': 'Семейная традиция - День нового',
                 'url': 'https://brkme.github.io/My_Day_Shedule/new.html',
