@@ -883,12 +883,13 @@
         8,
         9,
         10,
-        11
+        11,
+        12
       ],
       "total": 13
     },
-    "percentage": 59,
-    "points": 16,
+    "percentage": 62,
+    "points": 17,
     "max_points": 27,
     "penalty": false,
     "penalty_pushups": 0
