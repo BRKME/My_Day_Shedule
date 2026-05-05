@@ -878,12 +878,13 @@
       "completed": [
         4,
         5,
-        7
+        7,
+        8
       ],
       "total": 13
     },
-    "percentage": 40,
-    "points": 11,
+    "percentage": 44,
+    "points": 12,
     "max_points": 27,
     "penalty": false,
     "penalty_pushups": 0
