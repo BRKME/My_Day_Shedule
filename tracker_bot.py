@@ -1687,9 +1687,11 @@ class TaskTrackerBot:
         await site.start()
         logger.info(f"🌐 HTTP сервер запущен на порту {port}")
         
-        # Устанавливаем webhook
+        # Устанавливаем webhook или используем polling
         railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-        if railway_domain:
+        use_polling = os.environ.get('USE_POLLING', 'false').lower() == 'true'
+        
+        if railway_domain and not use_polling:
             webhook_url = f"https://{railway_domain}/webhook"
             url = f"https://api.telegram.org/bot{self.telegram_token}/setWebhook"
             payload = {'url': webhook_url}
@@ -1699,10 +1701,19 @@ class TaskTrackerBot:
                     logger.info(f"✅ Webhook установлен: {webhook_url}")
                 else:
                     logger.error(f"❌ Ошибка webhook: {result}")
+        else:
+            # VPS mode - используем long polling
+            logger.info("📡 Режим Long Polling (VPS)")
+            # Удаляем webhook если был
+            delete_url = f"https://api.telegram.org/bot{self.telegram_token}/deleteWebhook"
+            async with self.session.post(delete_url) as response:
+                result = await response.json()
+                if result.get('ok'):
+                    logger.info("✅ Webhook удалён, переключаемся на polling")
         
         last_schedule_check = datetime.now()
         
-        # Основной цикл - только для проверки расписания
+        # Основной цикл
         try:
             while True:
                 try:
@@ -1712,7 +1723,26 @@ class TaskTrackerBot:
                         await self.check_schedule()
                         last_schedule_check = now
                     
-                    await asyncio.sleep(60)  # Спим минуту
+                    # Если VPS mode - используем polling
+                    if not railway_domain or use_polling:
+                        updates = await self.get_updates()
+                        for update in updates:
+                            self.last_update_id = update.get('update_id', self.last_update_id)
+                            
+                            # Обрабатываем callback_query (нажатие кнопки)
+                            callback_query = update.get('callback_query')
+                            if callback_query:
+                                callback_data = callback_query.get('data', '')
+                                callback_query_id = callback_query.get('id', '')
+                                message = callback_query.get('message', {})
+                                message_id = message.get('message_id', 0)
+                                message_text = message.get('text', '')
+                                logger.info(f"📞 Получен callback: {callback_data}")
+                                await self.process_callback(callback_data, callback_query_id, message_id, message_text)
+                        
+                        await asyncio.sleep(1)  # Короткая пауза между polling запросами
+                    else:
+                        await asyncio.sleep(60)  # Webhook mode - просто ждём
                     
                 except Exception as e:
                     logger.error(f"❌ Ошибка в главном цикле: {e}")
