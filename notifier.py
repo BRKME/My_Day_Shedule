@@ -337,24 +337,10 @@ class PersonalScheduleNotifier:
     },
     'sunday': {
         'день': [
-            'День 📵 без гаджетов <i>(Весь день живое общение)</i>',
-            'День 🧹 семейной уборки',
-            'Дать 💝 3 поглаживания семье: (комплимент, внимание, объятия, искренний интерес)',
-            'Включи 🧠 Мозг Выбери 1 самое важное дело на сегодня. Приоритет $',
-            'Семейный 🍳 завтрак <i>(30 min Начало дня вместе)</i>',
-            '😊 Д <i>(Сегодня мо-о-о-жно)</i>',
-            'Семейная 🚶 прогулка <i>(60 min Свежий воздух)</i>'
+            '👨‍👩‍👧‍👦 FamilyDay — день без задач'
         ],
-        'нельзя_день': [
-            'Не 🙅 Извиняйся <i>(автоматическое принятие вины + эрозия авторитета)</i>',
-            'Не 🤬 Ругайся <i>(Мат это мусор и 👅 гнева и бессилия)</i>',
-            'Не ⚡ Есть после 22-00 <i>( Цель 85 кг. )</i>',
-            'Не 🍷 Пей Алкоголь <i>(Даже вино. Он крадет твою энергию, деньги и внешность. Сушка до 1 мая)</i>'
-        ],
-        'вечер': [
-            'Прими 💊 Магний перед сном <i>(1 min Выключи стресс)</i>',
-            'Вечерняя 🙏 благодарность <i>(5 min Семейная традиция)</i>'
-                ]
+        'нельзя_день': [],
+        'вечер': []
             }
         }
 
@@ -669,6 +655,25 @@ class PersonalScheduleNotifier:
         day_names = {'monday': 'Понедельник', 'tuesday': 'Вторник', 'wednesday': 'Среда', 'thursday': 'Четверг', 'friday': 'Пятница', 'saturday': 'Суббота', 'sunday': 'Воскресенье'}
         day_ru = day_names.get(day_of_week, day_of_week)
         wisdom = self.get_random_wisdom()
+        
+        # Sunday = FamilyDay, minimal message
+        if day_of_week == 'sunday':
+            content = f"🌅 <b>{day_ru} {date_str}</b>\n\n"
+            
+            weather = await self.get_weather_forecast()
+            content += weather
+            
+            content += "\n👨‍👩‍👧‍👦 <b>FamilyDay</b>\nДень без задач. Наслаждайся семьёй.\n"
+            
+            # Kids schedule
+            kids_day = day_ru.lower()
+            if kids_day in self.kids_schedule and self.kids_schedule[kids_day]:
+                content += "\n<b>👶 Расписание детей:</b>\n"
+                for k in self.kids_schedule[kids_day]:
+                    content += f"• {k['child']} {k['activity']} {k['time']}\n"
+            
+            content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
+            return content
         
         content = f"🌅 <b>План на {day_ru} {date_str}</b>\n\n"
         
@@ -1073,6 +1078,9 @@ class PersonalScheduleNotifier:
             message = await self.format_morning_day_message(date_str, day_of_week, schedule)
             add_button = True
         elif period == 'evening':
+            if day_of_week == 'sunday':
+                logger.info("🌙 Воскресенье — FamilyDay, вечернее сообщение не отправляется")
+                return True
             message = await self.format_evening_message(date_str, day_of_week, schedule)
             add_button = True
         elif period == 'pullups':
