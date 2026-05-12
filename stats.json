@@ -1022,12 +1022,17 @@
       "total": 6
     },
     "evening": {
-      "completed": [],
-      "total": 0
+      "completed": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "total": 13
     },
-    "percentage": 21,
-    "points": 3,
-    "max_points": 14,
+    "percentage": 25,
+    "points": 7,
+    "max_points": 27,
     "penalty": true,
     "penalty_pushups": 30
   }
