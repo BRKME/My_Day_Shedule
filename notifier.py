@@ -40,6 +40,7 @@ class PersonalScheduleNotifier:
         self.ss_url = "https://brkme.github.io/My_Day_Shedule/ss.html"
         self.career_url = "https://brkme.github.io/My_Day_Shedule/career.html"
         self.taleb_url = "https://brkme.github.io/My_Day_Shedule/taleb.html"
+        self.kohelet_url = "https://brkme.github.io/My_Day_Shedule/kohelet.html"
         
         self.wisdoms = [
     "Фокусируешься на решениях — находишь их даже в безвыходных, казалось бы, ситуациях. Концентрируешься на проблемах — получаешь их в полном объёме и даже больше."
@@ -723,6 +724,7 @@ class PersonalScheduleNotifier:
         content += f'\n\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
         content += f'\n🏢 <a href="{self.career_url}">Принципы карьеры</a>'
         content += f'\n📚 <a href="{self.taleb_url}">Талеб: Антихрупкость</a>'
+        content += f'\n📜 <a href="{self.kohelet_url}">Экклезиаст: Chelek</a>'
         
         return content
     
@@ -732,7 +734,8 @@ class PersonalScheduleNotifier:
                 [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
                 [{'text': '🙏 Утренняя молитва', 'url': self.prayer_url}],
                 [{'text': '🏢 Принципы карьеры', 'url': self.career_url}],
-                [{'text': '📚 Талеб: Антихрупкость', 'url': self.taleb_url}]
+                [{'text': '📚 Талеб: Антихрупкость', 'url': self.taleb_url}],
+                [{'text': '📜 Экклезиаст: Chelek', 'url': self.kohelet_url}]
             ]
         }
     

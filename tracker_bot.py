@@ -1532,7 +1532,8 @@ class TaskTrackerBot:
                     [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
                     [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day_Shedule/prayer.html'}],
                     [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/My_Day_Shedule/career.html'}],
-                    [{'text': '📚 Антихрупкость', 'url': 'https://brkme.github.io/My_Day_Shedule/taleb.html'}]
+                    [{'text': '📚 Антихрупкость', 'url': 'https://brkme.github.io/My_Day_Shedule/taleb.html'}],
+                    [{'text': '📜 Экклезиаст: Chelek', 'url': 'https://brkme.github.io/My_Day_Shedule/kohelet.html'}]
                 ]
             }
             
@@ -1560,7 +1561,8 @@ class TaskTrackerBot:
                     [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
                     [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day_Shedule/prayer.html'}],
                     [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/My_Day_Shedule/career.html'}],
-                    [{'text': '📚 Антихрупкость', 'url': 'https://brkme.github.io/My_Day_Shedule/taleb.html'}]
+                    [{'text': '📚 Антихрупкость', 'url': 'https://brkme.github.io/My_Day_Shedule/taleb.html'}],
+                    [{'text': '📜 Экклезиаст: Chelek', 'url': 'https://brkme.github.io/My_Day_Shedule/kohelet.html'}]
                 ]
             }
             

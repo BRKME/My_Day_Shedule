@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Экклезиаст — Chelek</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #1a1408;
+            --color-surface: #faf7f0;
+            --color-accent: #8b6914;
+            --color-accent-light: #b8862a;
+            --color-accent-soft: #f4ecd8;
+            --color-text: #2a2418;
+            --color-text-muted: #6b5d42;
+            --font-heading: 'Raleway', sans-serif;
+            --font-body: 'Raleway', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: var(--color-surface);
+            border-radius: 4px;
+            padding: 48px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--color-accent-soft);
+        }
+
+        .header h1 {
+            font-family: var(--font-heading);
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--color-accent);
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .header .subtitle {
+            color: var(--color-text-muted);
+            font-size: 15px;
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        .intro {
+            background: var(--color-accent-soft);
+            border-left: 3px solid var(--color-accent);
+            padding: 20px 24px;
+            margin-bottom: 32px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .intro p {
+            color: var(--color-text);
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+
+        .intro p:last-child {
+            margin-bottom: 0;
+        }
+
+        .intro strong {
+            color: var(--color-accent);
+            font-weight: 600;
+        }
+
+        .principle {
+            padding: 24px 0;
+            border-bottom: 1px solid var(--color-accent-soft);
+            transition: padding-left 0.2s ease;
+        }
+
+        .principle:last-of-type {
+            border-bottom: none;
+        }
+
+        .principle:hover {
+            padding-left: 6px;
+        }
+
+        .principle-header {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .principle-number {
+            display: inline-block;
+            min-width: 32px;
+            color: var(--color-accent);
+            font-weight: 600;
+            font-size: 18px;
+            font-family: var(--font-heading);
+        }
+
+        .principle-title {
+            font-family: var(--font-heading);
+            font-size: 19px;
+            font-weight: 600;
+            color: var(--color-text);
+            line-height: 1.3;
+        }
+
+        .principle-description {
+            color: var(--color-text);
+            font-size: 15px;
+            margin-left: 48px;
+            line-height: 1.7;
+        }
+
+        .principle-description p {
+            margin-bottom: 10px;
+        }
+
+        .principle-description p:last-child {
+            margin-bottom: 0;
+        }
+
+        .example {
+            margin-top: 14px;
+            padding: 12px 16px;
+            background: var(--color-accent-soft);
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--color-text-muted);
+            line-height: 1.6;
+        }
+
+        .example strong {
+            color: var(--color-accent);
+            font-weight: 600;
+        }
+
+        .quote {
+            margin-top: 40px;
+            padding: 28px 24px;
+            background: var(--color-bg);
+            color: var(--color-accent-soft);
+            border-radius: 4px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .quote p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .quote p:last-child {
+            margin-bottom: 0;
+        }
+
+        .quote .author {
+            font-size: 13px;
+            font-style: normal;
+            color: var(--color-accent-light);
+            margin-top: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 16px 8px;
+            }
+
+            .container {
+                padding: 32px 20px;
+            }
+
+            .header h1 {
+                font-size: 26px;
+            }
+
+            .principle {
+                padding: 20px 0;
+            }
+
+            .principle-title {
+                font-size: 17px;
+            }
+
+            .principle-description {
+                margin-left: 0;
+                margin-top: 8px;
+            }
+
+            .principle-header {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Экклезиаст · Chelek</h1>
+            <div class="subtitle">Бери свою долю здесь и сейчас</div>
+        </div>
+
+        <div class="intro">
+            <p>Экклезиаст — это еврейская мудрость: она разбирает иллюзии линейного прогресса и справедливости, чтобы вернуть человека к простому действию — брать свою долю здесь и сейчас. Экклезиаст не говорит «ничего не делай». Он говорит: <strong>делай, но бери дивиденды по ходу, а не в конце</strong>.</p>
+            <p><strong>Chelek</strong> (חלק) — не пытайся найти глобальный смысл или накопить вечное. Единственное, что имеет смысл — брать свою долю здесь и сейчас: есть, пить, радоваться труду и жизни с любимым человеком.</p>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">1</span>
+                <div class="principle-title">Про ROI: что ты получишь в итоге</div>
+            </div>
+            <div class="principle-description">
+                <p>Короткая дистанция (год-два): инвестиции работают. Умный заработает, глупый потеряет.</p>
+                <p>Длинная дистанция (вся жизнь): всё обнуляется. Смерть — равный аудитор для всех.</p>
+                <p><strong>Вывод:</strong> не строй стратегию, которая требует, чтобы ты жил вечно. Пенсионный план на 90 лет — ок. План «вот разбогатею и заживу» — самообман.</p>
+                <div class="example">
+                    <strong>Пример.</strong> Ты откладываешь отпуск на «когда стану директором». А через три года у тебя рак. Экклезиаст говорит: не жди. Бери свой отпуск сейчас, маленький, но настоящий.
+                </div>
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">2</span>
+                <div class="principle-title">Про мудрость: зачем быть умным, если всё равно ноль</div>
+            </div>
+            <div class="principle-description">
+                <p>Мудрость не сделает тебя бессмертным. Но мудрость снижает количество глупых потерь. Это страховка, а не ракета. Она не поднимет потолок, но поднимет пол.</p>
+                <div class="example">
+                    <strong>Пример.</strong> Умный не вложит все деньги в «гарантированный доход 300%». Глупый вложит. В итоге оба умрут. Но умный умрёт, не будучи нищим последние 10 лет жизни. Это не ноль.
+                </div>
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">3</span>
+                <div class="principle-title">Про накопление: когда копить умно, а когда нет</div>
+            </div>
+            <div class="principle-description">
+                <p><strong>Умно:</strong> накопить подушку на 3–6 месяцев. Безопасность — это свобода.</p>
+                <p><strong>Глупо:</strong> копить всю жизнь на «что-то большое», отказывая себе в малом.</p>
+                <p><strong>Правило:</strong> сначала буфер, потом дивиденды здесь и сейчас. Всё сверху — опционально.</p>
+                <div class="example">
+                    <strong>Пример.</strong> Ты копишь на квартиру 10 лет, ешь доширак. Экклезиаст скажет: лучше снимать комнату и иногда ходить в кафе. Потому что эти 10 лет — не подготовка к жизни. Это и есть жизнь.
+                </div>
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">4</span>
+                <div class="principle-title">Про тайминг: когда что-то делать</div>
+            </div>
+            <div class="principle-description">
+                <p>Коэлет не учит оптимизации. Он учит: если сейчас не время петь — не пой. Если рынок падает — не покупай только потому, что «надо инвестировать».</p>
+                <p>Признание цикла выше попытки его обыграть. Не борись с сезоном. Сей, когда время сеять. Отдыхай, когда время отдыхать.</p>
+                <div class="example">
+                    <strong>Пример.</strong> Ты выгорел, спишь по 4 часа, но продолжаешь работать, потому что «надо». Экклезиаст скажет: сейчас время спать и ничего не делать. Не геройствуй. Попытка пахать в несезон сожжёт тебя быстрее, чем любой кризис.
+                </div>
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">5</span>
+                <div class="principle-title">Про диверсификацию: не клади всё в одну корзину</div>
+            </div>
+            <div class="principle-description">
+                <p>Разложи на 7–8 частей. Деньги, навыки, связи, здоровье, источники дохода. Потому что «время и случай» случаются с любым. И ты не знаешь, какая беда придёт завтра.</p>
+                <div class="example">
+                    <strong>Пример.</strong> Ты вложил всё в один бизнес. Приходит ковид — бизнес умер, ты умер финансово. А если бы у тебя были: бизнес + фриланс + аренда + сбережения — ты бы просто пересел на другой поток. Не разорился.
+                </div>
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">6</span>
+                <div class="principle-title">Про Chelek: твоя ежедневная доля</div>
+            </div>
+            <div class="principle-description">
+                <p><strong>Chelek</strong> (חלק) — это то, что у тебя нельзя отнять. Не зарплата, не квартира, не портфель акций. А вкус еды сейчас, удовлетворение от сделанной работы сегодня, тепло разговора в эту минуту.</p>
+                <div class="example">
+                    <strong>Пример.</strong> Ты готовишь ужин. Можно думать: «как надоело, ещё 30 лет этого». А можно в этот же момент сказать: «я нарезаю помидор, я жив, у меня есть нож и доска, сейчас я буду есть». Второе — это Chelek. Оно бесплатно и всегда с тобой.
+                </div>
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">7</span>
+                <div class="principle-title">Про «время и случай»: главный враг любых планов</div>
+            </div>
+            <div class="principle-description">
+                <p>Ты можешь сделать всё идеально, а какой-то случайный дурак рушит твою стратегию. Не быстрый выигрывает гонку, не сильный битву.</p>
+                <p>Признай это. Не строй стратегию, которая требует идеальных обстоятельств.</p>
+                <div class="example">
+                    <strong>Пример.</strong> Ты готовился к собеседованию полгода. А в лифте застрял, опоздал, наниматель передумал. Можно сойти с ума от несправедливости. А можно сказать: «да, время и случай. Пойду в другое место». Второй проживёт дольше и спокойнее.
+                </div>
+            </div>
+        </div>
+
+        <div class="principle">
+            <div class="principle-header">
+                <span class="principle-number">8</span>
+                <div class="principle-title">Про репутацию: актив, который ты недооценил</div>
+            </div>
+            <div class="principle-description">
+                <p>«Доброе имя лучше дорогого масла» — это не про мораль, а про капитал. Репутация работает на тебя каждый день. Двери открываются, люди доверяют. И она не исчезает мгновенно при смерти — десятилетиями живёт в памяти.</p>
+                <div class="example">
+                    <strong>Пример.</strong> Два профессионала. Один гениальный, но подлый. Второй чуть хуже, но честный. В долгой перспективе второй получит больше заказов, рекомендаций, спокойных ночей. Это реальный ROI. Не бесконечный, но настоящий.
+                </div>
+            </div>
+        </div>
+
+        <div class="quote">
+            <p>Бери дивиденды по ходу, а не в конце.</p>
+            <p>Делай, но не строй вечное.</p>
+            <div class="author">Коэлет</div>
+        </div>
+    </div>
+</body>
+</html>
