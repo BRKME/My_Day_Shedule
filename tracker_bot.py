@@ -503,6 +503,25 @@ class TaskTrackerBot:
             logger.warning(f"⚠️ Ошибка загрузки states с GitHub: {e}")
         return {}
     
+    async def load_stats_from_github(self):
+        """Загружает stats.json с GitHub при старте"""
+        try:
+            content = await self._github_get_file("stats.json")
+            if content:
+                data = json.loads(content)
+                # Фильтруем только реальные даты
+                stats = {k: v for k, v in data.items() if k not in ['_info', '_format'] and '-' in k}
+                logger.info(f"✅ Загружено {len(stats)} дней статистики с GitHub")
+                
+                # Сохраняем локально
+                with open(self.stats_file, 'w', encoding='utf-8') as f:
+                    json.dump(stats, f, ensure_ascii=False, indent=2)
+                
+                return stats
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка загрузки stats с GitHub: {e}")
+        return {}
+    
     def get_today_key(self):
         """Возвращает ключ для сегодняшнего дня"""
         return datetime.now().strftime("%Y-%m-%d")
@@ -1673,6 +1692,9 @@ class TaskTrackerBot:
                 if k not in self.message_state:
                     self.message_state[k] = v
             logger.info(f"📊 Всего состояний: {len(self.message_state)}")
+        
+        # Загружаем stats с GitHub (для еженедельных отчётов)
+        await self.load_stats_from_github()
         
         logger.info("📊 Слушаю обновления...")
         
