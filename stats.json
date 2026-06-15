@@ -1304,5 +1304,35 @@
     "max_points": 15,
     "penalty": true,
     "penalty_pushups": 30
+  },
+  "2026-06-15": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "total": 15
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 6
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 40,
+    "points": 6,
+    "max_points": 15,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
