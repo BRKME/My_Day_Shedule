@@ -967,9 +967,17 @@ class PersonalScheduleNotifier:
         return reminders
 
     async def send_morning_photo(self):
-        """Отправляет мотивационное фото перед утренним сообщением"""
+        """Отправляет мотивационное фото перед утренним сообщением.
+        Случайно выбирает одну из двух картинок: motivation или reminder (50/50)."""
         try:
-            photo_url = "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_motivation.jpg"
+            import random
+            photos = [
+                "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_motivation.jpg",
+                "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_reminder.png",
+            ]
+            photo_url = random.choice(photos)
+            logger.info(f"🎲 Утренняя картинка: {photo_url.rsplit('/', 1)[-1]}")
+
             url = f"https://api.telegram.org/bot{self.telegram_token}/sendPhoto"
             
             payload = {
