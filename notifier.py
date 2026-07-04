@@ -1008,12 +1008,14 @@ class PersonalScheduleNotifier:
 
     async def send_morning_photo(self):
         """Отправляет мотивационное фото перед утренним сообщением.
-        Случайно выбирает одну из двух картинок: motivation или reminder (50/50)."""
+        Случайно выбирает одну из картинок пула (равновероятно)."""
         try:
             import random
             photos = [
                 "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_motivation.jpg",
                 "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_reminder.png",
+                "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_meaning_of_day.png",
+                "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_jewish_wisdom.png",
             ]
             photo_url = random.choice(photos)
             logger.info(f"🎲 Утренняя картинка: {photo_url.rsplit('/', 1)[-1]}")
