@@ -355,6 +355,20 @@ class PersonalScheduleNotifier:
         schedule = self.schedule.get(day_of_week, {})
         return date_str, day_of_week, schedule
 
+    MORNING_BOUNDARY = "Какую ценность"
+
+    def split_day_tasks(self, tasks):
+        """Сплит дневного списка на утренний и дневной блок (04.07.2026).
+
+        Утро — всё до задачи с вопросом «Какую ценность...» ВКЛЮЧИТЕЛЬНО,
+        день — остаток. Маркера нет (напр. нестандартный день) — fail-safe:
+        всё уходит в утро, дневной блок пуст (лучше одно полное сообщение,
+        чем потерянные задачи)."""
+        for i, t in enumerate(tasks):
+            if self.MORNING_BOUNDARY in t:
+                return tasks[:i + 1], tasks[i + 1:]
+        return tasks, []
+
     async def get_weather_forecast(self):
         """Получение погоды через Open-Meteo API (копия из Family_Bot)"""
         try:
@@ -652,7 +666,7 @@ class PersonalScheduleNotifier:
         logger.info(f"✅ Расписание сформировано: {successful_items}/{len(activities)} занятий")
         return schedule_text
 
-    async def format_morning_day_message(self, date_str, day_of_week, schedule):
+    async def format_morning_day_message(self, date_str, day_of_week, schedule, block='full'):
         day_names = {'monday': 'Понедельник', 'tuesday': 'Вторник', 'wednesday': 'Среда', 'thursday': 'Четверг', 'friday': 'Пятница', 'saturday': 'Суббота', 'sunday': 'Воскресенье'}
         day_ru = day_names.get(day_of_week, day_of_week)
         wisdom = self.get_random_wisdom()
@@ -676,40 +690,45 @@ class PersonalScheduleNotifier:
             content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
             return content
         
-        content = f"🌅 <b>План на {day_ru} {date_str}</b>\n\n"
+        header = {'morning': f"🌅 <b>Доброе утро! План на {day_ru} {date_str}</b>",
+                  'day': f"☀️ <b>Дневной блок · {day_ru} {date_str}</b>",
+                  'full': f"🌅 <b>План на {day_ru} {date_str}</b>"}[block]
+        content = header + "\n\n"
         
-        weather = await self.get_weather_forecast()
-        content += weather
+        if block in ('morning', 'full'):
+            weather = await self.get_weather_forecast()
+            content += weather
+
+            rates = await self.get_rates()
+            if rates:
+                content += rates
+
+            if day_of_week in ['monday', 'wednesday', 'friday']:
+                weekend_forecast = await self.get_weekend_forecast()
+                if weekend_forecast:
+                    content += weekend_forecast
+
+            content += "\n"
+
+            penalty_info = await self.check_yesterday_penalty()
+            if penalty_info:
+                content += f"{penalty_info}\n\n"
         
-        # Курсы валют
-        rates = await self.get_rates()
-        if rates:
-            content += rates
-        
-        if day_of_week in ['monday', 'wednesday', 'friday']:
-            weekend_forecast = await self.get_weekend_forecast()
-            if weekend_forecast:
-                content += weekend_forecast
-        
-        content += "\n"
-        
-        # Штраф за вчера (если есть) - с деталями
-        penalty_info = await self.check_yesterday_penalty()
-        if penalty_info:
-            content += f"{penalty_info}\n\n"
-        
-        if schedule.get('день'):
-            content += "<b>📋 Дневные задачи:</b>\n"
-            
-            if day_of_week == 'saturday':
+        all_tasks = schedule.get('день') or []
+        m_tasks, d_tasks = self.split_day_tasks(all_tasks)
+        block_tasks = {'morning': m_tasks, 'day': d_tasks, 'full': all_tasks}[block]
+        if block_tasks or block == 'day':
+            title = {'morning': '🌅 Утренние задачи', 'day': '📋 Задачи дня',
+                     'full': '📋 Дневные задачи'}[block]
+            content += f"<b>{title}:</b>\n"
+            if block in ('day', 'full') and day_of_week == 'saturday':
                 today = datetime.now()
                 last_saturday_day = self.get_last_day_of_month(today.year, today.month, 5)
                 if today.day == last_saturday_day:
                     content += "• Сделать фото-презентацию по итогам месяца\n"
-            
-            for task in schedule['день']:
+            for task in block_tasks:
                 content += f"• {task}\n"
-        if schedule.get('нельзя_день'):
+        if block in ('day', 'full') and schedule.get('нельзя_день'):
             content += "\n<b>⛔ Нельзя делать:</b>\n"
             for task in schedule['нельзя_день']:
                 content += f"• {task}\n"
@@ -719,13 +738,20 @@ class PersonalScheduleNotifier:
         #if kids_schedule_text:
         #    content += f"\n{kids_schedule_text}"
         
-        content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
-        
-        content += f'\n\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
-        content += f'\n🏢 <a href="{self.career_url}">Принципы карьеры</a>'
-        content += f'\n📚 <a href="{self.taleb_url}">Талеб: Антихрупкость</a>'
-        content += f'\n📜 <a href="{self.kohelet_url}">Экклезиаст: Chelek</a>'
-        
+        if block in ('day', 'full'):
+            content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
+
+        if block == 'morning':
+            content += f'\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
+        else:
+            if block == 'full':
+                content += f'\n\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
+            else:
+                content += "\n"
+            content += f'\n🏢 <a href="{self.career_url}">Принципы карьеры</a>'
+            content += f'\n📚 <a href="{self.taleb_url}">Талеб: Антихрупкость</a>'
+            content += f'\n📜 <a href="{self.kohelet_url}">Экклезиаст: Chelek</a>'
+
         return content
     
     def create_message_keyboard(self):
@@ -763,8 +789,18 @@ class PersonalScheduleNotifier:
             if today not in stats:
                 stats[today] = {}
             
-            # Сохраняем задачи (не перезаписываем completed если уже есть)
-            stats[today]['_tasks'] = tasks
+            # Сохраняем задачи. С разнесением на утро/день (04.07) блоки
+            # приходят двумя сообщениями — СЛИВАЕМ секции, не перезаписываем,
+            # иначе дневная отправка стирала бы утренние задачи из трекера.
+            existing = stats[today].get('_tasks', {})
+            merged = {}
+            for section in set(list(existing.keys()) + list(tasks.keys())):
+                seen_texts = []
+                for t in (existing.get(section, []) + tasks.get(section, [])):
+                    if t not in seen_texts:
+                        seen_texts.append(t)
+                merged[section] = seen_texts
+            stats[today]['_tasks'] = merged
             stats[today]['_message'] = message[:1000]  # Сохраняем первые 1000 символов
             stats[today]['_updated'] = datetime.now().isoformat()
             
@@ -1046,7 +1082,7 @@ class PersonalScheduleNotifier:
             # Сначала отправляем мотивационное фото
             await self.send_morning_photo()
             
-            message = await self.format_morning_day_message(date_str, day_of_week, schedule)
+            message = await self.format_morning_day_message(date_str, day_of_week, schedule, block='morning')
             add_button = True
             
             if day_of_week == 'sunday':
@@ -1086,7 +1122,13 @@ class PersonalScheduleNotifier:
                             if event_content:
                                 message += f"{event_content}"
         elif period == 'day':
-            message = await self.format_morning_day_message(date_str, day_of_week, schedule)
+            if day_of_week == 'sunday':
+                logger.info("☀️ Воскресенье — FamilyDay, дневной блок не отправляется")
+                return True
+            message = await self.format_morning_day_message(date_str, day_of_week, schedule, block='day')
+            if "•" not in message:
+                logger.info("☀️ Дневной блок пуст — не отправляем")
+                return True
             add_button = True
         elif period == 'evening':
             if day_of_week == 'sunday':

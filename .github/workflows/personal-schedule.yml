@@ -1,8 +1,9 @@
 name: Daily Schedule Notifier
 on:
   schedule:
-    - cron: '0 2 * * *'   # 07:00 MSK — утреннее
-    - cron: '0 15 * * *'   # 19:00 MSK — вечернее
+    - cron: '0 1 * * *'   # 04:00 MSK — утренний блок (на час раньше прежнего)
+    - cron: '0 3 * * *'   # 06:00 MSK — дневной блок (на час позже прежнего утра)
+    - cron: '0 15 * * *'  # 18:00 MSK — вечернее (без изменений)
     - cron: '0 10 * * 5'   # 13:00 MSK пятница — зачёт подтягивания
   workflow_dispatch:
     inputs:
@@ -47,10 +48,14 @@ jobs:
             if [[ "$DOW" -eq 5 && "$HOUR" -eq 10 ]]; then
               echo "period=pullups" >> $GITHUB_OUTPUT
               echo "✅ Определён период: PULLUPS (пятница)"
-            # Утро: 04:00-10:00 UTC (07:00-13:00 MSK)
-            elif [[ "$HOUR" -ge 4 && "$HOUR" -lt 10 ]]; then
+            # Утро: 00:00-03:00 UTC (крон 01:00 + дрейф GitHub)
+            elif [[ "$HOUR" -lt 3 ]]; then
               echo "period=morning" >> $GITHUB_OUTPUT
               echo "✅ Определён период: MORNING"
+            # День: 03:00-09:00 UTC (крон 03:00 + дрейф)
+            elif [[ "$HOUR" -ge 3 && "$HOUR" -lt 9 ]]; then
+              echo "period=day" >> $GITHUB_OUTPUT
+              echo "✅ Определён период: DAY"
             # Вечер: 16:00-22:00 UTC (19:00-01:00 MSK)
             elif [[ "$HOUR" -ge 16 && "$HOUR" -lt 22 ]]; then
               echo "period=evening" >> $GITHUB_OUTPUT
