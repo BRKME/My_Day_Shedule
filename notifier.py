@@ -718,7 +718,11 @@ class PersonalScheduleNotifier:
         m_tasks, d_tasks = self.split_day_tasks(all_tasks)
         block_tasks = {'morning': m_tasks, 'day': d_tasks, 'full': all_tasks}[block]
         if block_tasks or block == 'day':
-            title = {'morning': '🌅 Утренние задачи', 'day': '📋 Задачи дня',
+            # Заголовки обязаны содержать «Дневн» + 📋/☀️ — по ним парсят
+            # задачи И notifier, И tracker_bot на сервере (кнопки прогресса).
+            # Смена текста без учёта парсеров = задачи выпадают из трекинга.
+            title = {'morning': '📋 Дневные задачи · утро',
+                     'day': '☀️ Дневные задачи · день',
                      'full': '📋 Дневные задачи'}[block]
             content += f"<b>{title}:</b>\n"
             if block in ('day', 'full') and day_of_week == 'saturday':
