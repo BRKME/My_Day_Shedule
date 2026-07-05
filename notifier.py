@@ -1006,19 +1006,56 @@ class PersonalScheduleNotifier:
                 reminders.append({'key': event_key, 'event': event, 'type': 'event_day'})
         return reminders
 
+    async def _list_morning_images(self):
+        """Список raw-URL всех картинок из morning_images/ через GitHub API.
+
+        Новый файл в папке -> сразу в ротацию, код не трогаем. Возвращает []
+        при любом сбое (тогда send_morning_photo берёт fallback-список)."""
+        api = "https://api.github.com/repos/BRKME/My_Day_Shedule/contents/morning_images"
+        exts = ('.jpg', '.jpeg', '.png', '.webp')
+        headers = {"Accept": "application/vnd.github+json"}
+        token = os.environ.get("GITHUB_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api, headers=headers, timeout=15) as r:
+                    if r.status != 200:
+                        logger.warning(f"⚠️ GitHub API {r.status} — fallback на список")
+                        return []
+                    items = await r.json()
+            urls = [it["download_url"] for it in items
+                    if it.get("type") == "file"
+                    and it.get("name", "").lower().endswith(exts)
+                    and it.get("download_url")]
+            return sorted(urls)  # стабильный порядок -> детерминизм ротации
+        except Exception as e:
+            logger.warning(f"⚠️ Список картинок недоступен ({e}) — fallback")
+            return []
+
     async def send_morning_photo(self):
         """Отправляет мотивационное фото перед утренним сообщением.
-        Случайно выбирает одну из картинок пула (равновероятно)."""
+
+        Автопул (04.07.2026): картинки берутся из папки morning_images/ через
+        GitHub API — новый файл в папке попадает в ротацию без правки кода.
+        Выбор детерминированный: порядок мешается сидом года, картинка дня —
+        по дню года. Повторов нет, пока не показан весь пул. При недоступности
+        API — fallback на прежний жёсткий список (бот не молчит)."""
         try:
             import random
-            photos = [
-                "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_motivation.jpg",
-                "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_reminder.png",
-                "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_meaning_of_day.png",
-                "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_jewish_wisdom.png",
-            ]
-            photo_url = random.choice(photos)
-            logger.info(f"🎲 Утренняя картинка: {photo_url.rsplit('/', 1)[-1]}")
+            photos = await self._list_morning_images()
+            if not photos:
+                photos = [
+                    "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_images/morning_motivation.jpg",
+                    "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_images/morning_reminder.png",
+                    "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_images/morning_meaning_of_day.png",
+                    "https://raw.githubusercontent.com/BRKME/My_Day_Shedule/main/morning_images/morning_jewish_wisdom.png",
+                ]
+            now = datetime.now()
+            order = list(range(len(photos)))
+            random.Random(now.year).shuffle(order)
+            photo_url = photos[order[now.timetuple().tm_yday % len(photos)]]
+            logger.info(f"🎲 Утренняя картинка ({len(photos)} в пуле): {photo_url.rsplit('/', 1)[-1]}")
 
             url = f"https://api.telegram.org/bot{self.telegram_token}/sendPhoto"
             
