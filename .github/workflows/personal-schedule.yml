@@ -1,10 +1,8 @@
 name: Daily Schedule Notifier
+# Расписание управляется VPS-кроном через workflow_dispatch (/opt/myday/dispatch.sh)
+# GitHub schedule-кроны удалены из-за дрейфа до 4+ часов (инцидент 06.07.2026: день+день вместо утро+день)
+
 on:
-  schedule:
-    - cron: '0 1 * * *'   # 04:00 MSK — утренний блок (на час раньше прежнего)
-    - cron: '0 3 * * *'   # 06:00 MSK — дневной блок (на час позже прежнего утра)
-    - cron: '0 15 * * *'  # 18:00 MSK — вечернее (без изменений)
-    - cron: '0 10 * * 5'   # 13:00 MSK пятница — зачёт подтягивания
   workflow_dispatch:
     inputs:
       period:
@@ -14,6 +12,7 @@ on:
         type: choice
         options:
           - morning
+          - day
           - evening
           - pullups
 
@@ -25,56 +24,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-      
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install aiohttp requests
-      
-      - name: Определение периода (ИСПРАВЛЕНО)
-        id: period
-        run: |
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            HOUR=$(date -u +%H)
-            DOW=$(date -u +%u)  # 1=Mon, 5=Fri
-            echo "Текущий час UTC: $HOUR, день недели: $DOW"
-            
-            # Пятница 10:00 UTC = зачёт подтягивания
-            if [[ "$DOW" -eq 5 && "$HOUR" -eq 10 ]]; then
-              echo "period=pullups" >> $GITHUB_OUTPUT
-              echo "✅ Определён период: PULLUPS (пятница)"
-            # Утро: 00:00-03:00 UTC (крон 01:00 + дрейф GitHub)
-            elif [[ "$HOUR" -lt 3 ]]; then
-              echo "period=morning" >> $GITHUB_OUTPUT
-              echo "✅ Определён период: MORNING"
-            # День: 03:00-09:00 UTC (крон 03:00 + дрейф)
-            elif [[ "$HOUR" -ge 3 && "$HOUR" -lt 9 ]]; then
-              echo "period=day" >> $GITHUB_OUTPUT
-              echo "✅ Определён период: DAY"
-            # Вечер: 16:00-22:00 UTC (19:00-01:00 MSK)
-            elif [[ "$HOUR" -ge 16 && "$HOUR" -lt 22 ]]; then
-              echo "period=evening" >> $GITHUB_OUTPUT
-              echo "✅ Определён период: EVENING"
-            else
-              # Fallback на вечер (не должно случиться)
-              echo "period=evening" >> $GITHUB_OUTPUT
-              echo "⚠️ Неожиданный час: $HOUR, используем EVENING"
-            fi
-          else
-            echo "period=${{ inputs.period }}" >> $GITHUB_OUTPUT
-            echo "✅ Ручной запуск: ${{ inputs.period }}"
-          fi
-      
+
       - name: Отправка уведомления
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          echo "🚀 Запуск notifier.py с периодом: ${{ steps.period.outputs.period }}"
-          python notifier.py ${{ steps.period.outputs.period }}
+          echo "🚀 Запуск notifier.py с периодом: ${{ inputs.period }}"
+          python notifier.py ${{ inputs.period }}
