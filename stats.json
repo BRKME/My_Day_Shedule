@@ -1466,7 +1466,12 @@
     },
     "day": {
       "completed": [
-        4
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
       ],
       "total": 7
     },
@@ -1478,8 +1483,8 @@
       "completed": [],
       "total": 0
     },
-    "percentage": 14,
-    "points": 1,
+    "percentage": 85,
+    "points": 6,
     "max_points": 7,
     "penalty": false,
     "penalty_pushups": 0
