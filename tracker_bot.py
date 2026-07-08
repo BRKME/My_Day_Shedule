@@ -1438,8 +1438,16 @@ class TaskTrackerBot:
         state = self.message_state[message_id]
         today_key = self.get_today_key()
         
-        # Загружаем статистику
+        # Загружаем статистику. База — СВЕЖАЯ с GitHub (08.07: локальная копия
+        # сервера не содержит _tasks, которые пишет notifier из Actions;
+        # сохранение с локальной базы затирало их в репо при каждом нажатии).
         stats = self.load_stats()
+        try:
+            content = await self._github_get_file("stats.json")
+            if content:
+                stats = json.loads(content)
+        except Exception as e:
+            logger.warning(f"⚠️ GitHub stats как база недоступен ({e}) — локальная")
         
         # ЗАПОМИНАЕМ старое количество срывов ДО объединения (для проверки дублирования штрафов)
         previous_cant_do_count = 0
@@ -1485,7 +1493,11 @@ class TaskTrackerBot:
         
         logger.info(f"📊 ПОДСЧЁТ: day={len(state['completed']['day'])}/{merged_totals['day']}, evening={len(state['completed']['evening'])}/{merged_totals['evening']}, total={total_completed}/{total_tasks} ({percentage}%)")
         
-        stats[today_key] = {
+        # НЕ перезаписываем запись дня целиком: notifier хранит в ней _tasks
+        # (единая вселенная задач для чек-листов утро/день) — затирание ломало
+        # индексацию галочек между блоками. Merge поверх существующего.
+        _day_record = dict(stats.get(today_key) or {})
+        _day_record.update({
             'morning': {
                 'completed': state['completed']['morning'],
                 'total': merged_totals['morning']
@@ -1507,7 +1519,8 @@ class TaskTrackerBot:
             'max_points': total_tasks,
             'penalty': len(state['completed']['cant_do']) > 0,
             'penalty_pushups': len(state['completed']['cant_do']) * 30
-        }
+        })
+        stats[today_key] = _day_record
         
         # Сохраняем в файл
         save_success = await self.save_stats(stats)
