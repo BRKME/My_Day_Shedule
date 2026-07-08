@@ -217,6 +217,28 @@
                 flex-wrap: wrap;
             }
         }
+
+        .audio-block {
+            background: var(--color-accent-soft);
+            border: 1px solid var(--color-accent-light);
+            border-radius: 12px;
+            padding: 18px 22px;
+            margin: 26px 0;
+        }
+        .audio-block .audio-label {
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--color-accent);
+            margin-bottom: 10px;
+        }
+        .audio-block audio {
+            width: 100%;
+            display: block;
+            accent-color: var(--color-accent);
+        }
     </style>
 </head>
 <body>
@@ -229,6 +251,11 @@
         <div class="intro">
             <p>Экклезиаст — это еврейская мудрость: она учит: планируй и действуй, но получай радость по ходу пути, а не откладывай на потом.</p>
             <p>Не ищи глобального смысла — единственное, что ценно: <strong>есть, пить, наслаждаться трудом и жизнью с любимым человеком здесь и сейчас</strong>.</p>
+        </div>
+
+        <div class="audio-block">
+            <div class="audio-label">Слушать · 3 мин</div>
+            <audio controls preload="metadata" src="audio/eclisiast.mp3"></audio>
         </div>
 
         <div class="principle">
