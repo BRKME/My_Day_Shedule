@@ -742,32 +742,29 @@ class PersonalScheduleNotifier:
         #if kids_schedule_text:
         #    content += f"\n{kids_schedule_text}"
         
-        if block in ('day', 'full'):
+        # 08.07: все дополнительные блоки (мудрость, молитва, ссылки) — ТОЛЬКО
+        # в утреннем сообщении; день и вечер — рабочие (задачи/нельзя).
+        if block in ('morning', 'full'):
             content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
-
-        if block == 'morning':
-            content += f'\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
-        else:
-            if block == 'full':
-                content += f'\n\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
-            else:
-                content += "\n"
+            content += f'\n\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
             content += f'\n🏢 <a href="{self.career_url}">Принципы карьеры</a>'
             content += f'\n📚 <a href="{self.taleb_url}">Талеб: Антихрупкость</a>'
             content += f'\n📜 <a href="{self.kohelet_url}">Экклезиаст: Chelek</a>'
 
         return content
     
-    def create_message_keyboard(self):
-        return {
-            'inline_keyboard': [
-                [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
+    def create_message_keyboard(self, include_links=True):
+        """URL-кнопки — только в утреннем сообщении (08.07); день и вечер
+        получают лишь кнопку прогресса."""
+        rows = [[{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}]]
+        if include_links:
+            rows += [
                 [{'text': '🙏 Утренняя молитва', 'url': self.prayer_url}],
                 [{'text': '🏢 Принципы карьеры', 'url': self.career_url}],
                 [{'text': '📚 Талеб: Антихрупкость', 'url': self.taleb_url}],
                 [{'text': '📜 Экклезиаст: Chelek', 'url': self.kohelet_url}]
             ]
-        }
+        return {'inline_keyboard': rows}
     
     def save_today_tasks(self, message):
         """
@@ -915,7 +912,6 @@ class PersonalScheduleNotifier:
             content += "<b>📋 Вечерние задачи:</b>\n"
             for task in schedule['вечер']:
                 content += f"• {task}\n"
-        content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
         
         return content
 
@@ -1076,7 +1072,7 @@ class PersonalScheduleNotifier:
             logger.warning(f"⚠️ Ошибка отправки фото: {e}")
             return False
 
-    async def send_telegram_message(self, message, ss_content=None, add_progress_button=False):
+    async def send_telegram_message(self, message, ss_content=None, add_progress_button=False, with_link_buttons=True):
         try:
             # НОВОЕ: Сохраняем задачи для tracker_bot.py
             self.save_today_tasks(message)
@@ -1090,7 +1086,8 @@ class PersonalScheduleNotifier:
             }
             
             if add_progress_button:
-                payload['reply_markup'] = self.create_message_keyboard()
+                payload['reply_markup'] = self.create_message_keyboard(
+                    include_links=with_link_buttons)
             
             logger.info("📤 Отправка сообщения в Telegram...")
             async with aiohttp.ClientSession() as session:
@@ -1185,7 +1182,9 @@ class PersonalScheduleNotifier:
         else:
             logger.error(f"❌ Неизвестный период: {period}")
             return False
-        return await self.send_telegram_message(message, ss_content, add_progress_button=add_button)
+        return await self.send_telegram_message(
+            message, ss_content, add_progress_button=add_button,
+            with_link_buttons=(period == 'morning'))
 
 async def main(period):
     logger.info(f"🚀 Запуск для периода: {period}")
