@@ -1547,12 +1547,14 @@
       "total": 0
     },
     "evening": {
-      "completed": [],
-      "total": 0
+      "completed": [
+        1
+      ],
+      "total": 13
     },
-    "percentage": 100,
-    "points": 7,
-    "max_points": 7,
+    "percentage": 40,
+    "points": 8,
+    "max_points": 20,
     "penalty": false,
     "penalty_pushups": 0
   }
