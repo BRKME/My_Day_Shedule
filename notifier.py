@@ -759,11 +759,24 @@ class PersonalScheduleNotifier:
 
         return content
     
+    def is_vacation_today(self):
+        """Флаг отпуска на сегодня (пишется трекером в stats.json при нажатии
+        кнопки «Отпуск»). При недоступности stats — False (fail-safe: лучше
+        прислать блок, чем молча проглотить день)."""
+        try:
+            today_key = datetime.now().strftime("%Y-%m-%d")
+            stats = self._load_stats_from_github()
+            return bool(stats and stats.get(today_key, {}).get("vacation"))
+        except Exception as e:
+            logger.warning(f"⚠️ Проверка отпуска не удалась ({e}) — шлём блок")
+            return False
+
     def create_message_keyboard(self, include_links=True):
         """URL-кнопки — только в утреннем сообщении (08.07); день и вечер
         получают лишь кнопку прогресса."""
         rows = [[{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}]]
         if include_links:
+            rows.append([{'text': '🏖 Отпуск (пропустить день)', 'callback_data': 'vacation'}])
             rows += [
                 [{'text': '🙏 Утренняя молитва', 'url': self.prayer_url}],
                 [{'text': '🏢 Принципы карьеры', 'url': self.career_url}],
@@ -1168,6 +1181,9 @@ class PersonalScheduleNotifier:
                             if event_content:
                                 message += f"{event_content}"
         elif period == 'day':
+            if self.is_vacation_today():
+                logger.info("🏖 Отпуск сегодня — дневной блок не отправляется")
+                return True
             if day_of_week == 'sunday':
                 logger.info("☀️ Воскресенье — FamilyDay, дневной блок не отправляется")
                 return True
@@ -1177,6 +1193,9 @@ class PersonalScheduleNotifier:
                 return True
             add_button = True
         elif period == 'evening':
+            if self.is_vacation_today():
+                logger.info("🏖 Отпуск сегодня — вечернее сообщение не отправляется")
+                return True
             if day_of_week == 'sunday':
                 logger.info("🌙 Воскресенье — FamilyDay, вечернее сообщение не отправляется")
                 return True

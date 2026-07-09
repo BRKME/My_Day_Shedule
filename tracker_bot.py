@@ -1294,6 +1294,10 @@ class TaskTrackerBot:
             await self.save_progress(message_id)
             await self.answer_callback_query(callback_query_id, "✅ Прогресс сохранён!")
         
+        elif callback_data == 'vacation':
+            await self.set_vacation(message_id)
+            await self.answer_callback_query(callback_query_id, "🏖 Отпуск включён на сегодня")
+
         elif callback_data == 'cancel_update':
             # Отменяем обновление
             await self.cancel_update(message_id)
@@ -1582,6 +1586,43 @@ class TaskTrackerBot:
             # Логируем (без отправки нового сообщения)
             logger.info(f"💾 Прогресс сохранён: {percentage}%")
     
+    async def set_vacation(self, message_id):
+        """Кнопка «Отпуск» (08.07): помечает сегодня как отпускной —
+        дневной/вечерний блоки в этот день не выйдут (нотификатор читает
+        флаг из stats.json), — и заменяет текст утреннего сообщения на
+        карточку отпуска. Только на сегодня; назавтра всё вернётся само."""
+        today_key = self.get_today_key()
+        # база — свежий stats с GitHub (как в save_progress), чтобы не затереть
+        stats = self.load_stats()
+        try:
+            content = await self._github_get_file("stats.json")
+            if content:
+                stats = json.loads(content)
+        except Exception as e:
+            logger.warning(f"⚠️ stats с GitHub недоступен ({e}) — локальная база")
+
+        rec = dict(stats.get(today_key) or {})
+        rec["vacation"] = True
+        stats[today_key] = rec
+        await self.save_stats(stats)
+        try:
+            await self.sync_stats_to_github(stats)
+        except Exception as e:
+            logger.warning(f"⚠️ sync отпуска не удался ({e})")
+
+        # заменяем текст утреннего сообщения (id на руках — надёжно)
+        await self.edit_message(
+            message_id,
+            "🏖 <b>Отпуск</b>\n\nСегодня без плана. Дневной и вечерний блоки "
+            "пропущены. Хорошего отдыха!",
+            reply_markup=None)
+        # чистим состояние сообщения — кнопки больше не нужны
+        self.message_state.pop(message_id, None)
+        try:
+            self.save_message_states()
+        except Exception:
+            pass
+
     async def cancel_update(self, message_id):
         """Отменяет обновление, возвращает исходное сообщение"""
         if message_id in self.message_state:
