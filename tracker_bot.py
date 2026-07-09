@@ -1457,6 +1457,14 @@ class TaskTrackerBot:
         previous_cant_do_count = 0
         if today_key in stats and 'cant_do' in stats[today_key]:
             previous_cant_do_count = len(stats[today_key]['cant_do'].get('completed', []))
+
+        # Бинго-триггер (09.07): какие блоки БЫЛИ полными до этого нажатия —
+        # чтобы поздравить только за блок, закрытый именно сейчас, без повторов.
+        _prev_full = {}
+        for _sec in ('morning', 'day', 'evening'):
+            _rec = (stats.get(today_key) or {}).get(_sec, {})
+            _t = _rec.get('total', 0)
+            _prev_full[_sec] = _t > 0 and len(_rec.get('completed', [])) >= _t
         
         # ВАЖНО: Объединяем с существующими данными за сегодня!
         merged_totals = {}  # Сохраняем merged totals отдельно
@@ -1547,6 +1555,30 @@ class TaskTrackerBot:
                 logger.info(f"📤 Отправлен штраф: {current_cant_do_count} срывов (увеличилось с {previous_cant_do_count})")
             elif current_cant_do_count > 0:
                 logger.info(f"⏭️ Штраф уже отправлен ранее ({current_cant_do_count} срывов = {previous_cant_do_count}), пропускаем")
+
+            # Бинго-триггер (09.07): блок закрыт, если ВСЕ его задачи отмечены.
+            # Поздравляем только за блоки, ставшие полными ИМЕННО СЕЙЧАС
+            # (не были полными до нажатия) — без повторов на каждое сохранение.
+            try:
+                import bingo_messages as bingo
+                now_full = {}
+                for _sec in ('morning', 'day', 'evening'):
+                    _tot = merged_totals.get(_sec, 0)
+                    now_full[_sec] = _tot > 0 and len(state['completed'][_sec]) >= _tot
+                newly = [s for s in ('morning', 'day', 'evening')
+                         if now_full[s] and not _prev_full.get(s)]
+                perfect_now = all(now_full[s] for s in ('morning', 'day', 'evening'))
+                perfect_before = all(_prev_full.get(s) for s in ('morning', 'day', 'evening'))
+                if perfect_now and not perfect_before:
+                    # весь день закрыт впервые — жирное БИНГО (вместо блочного)
+                    await self.send_message(bingo.pick('bingo'))
+                    logger.info("🔥 БИНГО: идеальный день")
+                else:
+                    for _sec in newly:
+                        await self.send_message(bingo.pick(_sec))
+                        logger.info(f"🎉 Блок закрыт: {_sec}")
+            except Exception as e:
+                logger.warning(f"⚠️ Бинго-триггер: {e}")
             
             # ЭТАП 3: Обновляем исходное сообщение с прогресс-барами
             # ВАЖНО: используем clean_original, а НЕ original_text!
