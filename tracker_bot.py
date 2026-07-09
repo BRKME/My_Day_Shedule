@@ -1433,6 +1433,26 @@ class TaskTrackerBot:
         keyboard = self.create_checklist_keyboard(state['tasks'], state['completed'])
         await self.edit_message(message_id, text, keyboard)
     
+    def _redraw_keyboard(self, message_text=""):
+        """Клавиатура при перерисовке сообщения. Ссылки (молитва/карьера/
+        Талеб/Экклезиаст) — ТОЛЬКО в утреннем сообщении (09.07); день и вечер
+        получают лишь кнопку прогресса. Раньше трекер хардкодил ссылки во всех
+        трёх сообщениях при каждом edit — они «возвращались» в вечер/день."""
+        rows = [[{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}]]
+        header = (message_text or "").split("\n", 1)[0]
+        # Утреннее сообщение узнаём по заголовку «Доброе утро» (день —
+        # «Дневной блок», вечер — «Вечерний план»). Проверяем ТОЛЬКО первую
+        # строку, чтобы подзаголовок «Дневные задачи · утро» не сбивал.
+        is_morning = 'Доброе утро' in header
+        if is_morning:
+            rows += [
+                [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day_Shedule/prayer.html'}],
+                [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/My_Day_Shedule/career.html'}],
+                [{'text': '📚 Антихрупкость', 'url': 'https://brkme.github.io/My_Day_Shedule/taleb.html'}],
+                [{'text': '📜 Экклезиаст: Chelek', 'url': 'https://brkme.github.io/My_Day_Shedule/kohelet.html'}],
+            ]
+        return {'inline_keyboard': rows}
+
     async def save_progress(self, message_id):
         """Сохраняет прогресс в stats.json"""
         if message_id not in self.message_state:
@@ -1594,17 +1614,7 @@ class TaskTrackerBot:
                 state['completed']
             )
             
-            # Создаём клавиатуру с ОБЕИМИ кнопками
-            keyboard = {
-                'inline_keyboard': [
-                    [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
-                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day_Shedule/prayer.html'}],
-                    [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/My_Day_Shedule/career.html'}],
-                    [{'text': '📚 Антихрупкость', 'url': 'https://brkme.github.io/My_Day_Shedule/taleb.html'}],
-                    [{'text': '📜 Экклезиаст: Chelek', 'url': 'https://brkme.github.io/My_Day_Shedule/kohelet.html'}]
-                ]
-            }
-            
+            keyboard = self._redraw_keyboard(clean_text)
             await self.edit_message(message_id, updated_text, keyboard)
             
             # НЕ перезаписываем clean_original - он остаётся чистым!
@@ -1660,17 +1670,7 @@ class TaskTrackerBot:
         if message_id in self.message_state:
             original_text = self.message_state[message_id]['original_text']
             
-            # Создаём клавиатуру с ОБЕИМИ кнопками
-            keyboard = {
-                'inline_keyboard': [
-                    [{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}],
-                    [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day_Shedule/prayer.html'}],
-                    [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/My_Day_Shedule/career.html'}],
-                    [{'text': '📚 Антихрупкость', 'url': 'https://brkme.github.io/My_Day_Shedule/taleb.html'}],
-                    [{'text': '📜 Экклезиаст: Chelek', 'url': 'https://brkme.github.io/My_Day_Shedule/kohelet.html'}]
-                ]
-            }
-            
+            keyboard = self._redraw_keyboard(original_text)
             await self.edit_message(message_id, original_text, keyboard)
             
             # При отмене - очищаем состояние
