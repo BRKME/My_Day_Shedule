@@ -541,41 +541,47 @@ class TaskTrackerBot:
         """Возвращает мотивационное сообщение в RPG стиле"""
         import random
         
-        if percentage >= 95:
+        if percentage >= 100:
             phrases = [
-                "🏆 ACHIEVEMENT UNLOCKED: Титан Продуктивности",
-                "💎 Ты сегодня на уровне богов",
-                "⚡ КРИТИЧЕСКИЙ УДАР по прокрастинации!"
+                "👑 100%. День принадлежит тебе полностью.",
+                "👑 Абсолютный контроль. Так выглядит порядок.",
+                "👑 Ни одной сданной позиции. Красавчик."
             ]
-        elif percentage >= 90:
+        elif percentage >= 95:
             phrases = [
-                "🔥 ЛЕГЕНДА! Так держать!",
-                "⚡ +500 XP к силе воли",
-                "🎯 Почти идеально. Враги повержены."
+                "💎 Несгибаемый. Почти идеальный день.",
+                "💎 Такой уровень держат единицы.",
+                "💎 Ещё чуть-чуть — и корона."
             ]
-        elif percentage >= 80:
+        elif percentage >= 85:
             phrases = [
-                "💪 Спартанец! Щит не дрогнул.",
-                "🗡️ Достойный бой. Победа близка.",
-                "🔱 Отличный результат, воин!"
+                "🦾 Железная воля. День под контролем.",
+                "🦾 Ты сильнее своих отговорок.",
+                "🦾 Мощно. Завтра — добить до короны."
             ]
         elif percentage >= 70:
             phrases = [
-                "⚔️ Самурай на пути. Завтра — ещё один шаг.",
-                "🛡️ Хороший день. Меч наточен.",
-                "🎯 Достойно. Продолжай тренировки."
+                "🎯 Дисциплина работает. Держи темп.",
+                "🎯 Хороший день. Система крепнет.",
+                "🎯 Достойно. Следующий уровень рядом."
             ]
         elif percentage >= 50:
             phrases = [
-                "🔰 Воин растёт. Каждый бой — опыт.",
-                "⚔️ Неплохо. Завтра покажешь больше.",
-                "🛡️ Ты в игре. Это главное."
+                "⚙ Система запущена. Наращивай обороты.",
+                "⚙ Половина взята. Дожимай.",
+                "⚙ Рабочий день. Не идеальный — рабочий."
+            ]
+        elif percentage >= 30:
+            phrases = [
+                "🚶 Ты в режиме. Шаг за шагом.",
+                "🚶 Движение есть. Ускоряйся.",
+                "🚶 База заложена. Завтра — больше."
             ]
         else:
             phrases = [
-                "🌅 Новый день — новый шанс. Level Up ждёт.",
-                "🔰 Даже легенды начинали с нуля.",
-                "⚔️ Падать не страшно. Страшно не встать."
+                "😴 День ушёл в хаос. Завтра вернёшь контроль.",
+                "😴 Ноль драмы. Просто начни заново утром.",
+                "😴 Плохой день — не плохая жизнь. Перезапуск утром."
             ]
         
         return random.choice(phrases)
@@ -588,20 +594,20 @@ class TaskTrackerBot:
         """
         Определяет уровень по проценту выполнения — RPG стиль
         """
-        if percentage >= 95:
-            return {'name': 'TITAN', 'emoji': '💎', 'rank': 7, 'phrase': 'Невозможное стало возможным', 'bar': '🔷🔷🔷🔷🔷🔷🔷'}
-        elif percentage >= 90:
-            return {'name': 'LEGEND', 'emoji': '⚡', 'rank': 6, 'phrase': 'Имя войдёт в историю', 'bar': '🔶🔶🔶🔶🔶🔶⬜'}
-        elif percentage >= 80:
-            return {'name': 'SPARTAN', 'emoji': '🔱', 'rank': 5, 'phrase': '300 не сдались. И ты не сдашься.', 'bar': '🔹🔹🔹🔹🔹⬜⬜'}
+        if percentage >= 100:
+            return {'name': 'Абсолютный контроль', 'emoji': '👑', 'rank': 7, 'phrase': 'Идеальный день. Ноль слитого.', 'bar': '🟩🟩🟩🟩🟩🟩🟩'}
+        elif percentage >= 95:
+            return {'name': 'Несгибаемый', 'emoji': '💎', 'rank': 6, 'phrase': 'Почти безупречно', 'bar': '🟩🟩🟩🟩🟩🟩⬜'}
+        elif percentage >= 85:
+            return {'name': 'Железная воля', 'emoji': '🦾', 'rank': 5, 'phrase': 'Тебя не свернуть', 'bar': '🟩🟩🟩🟩🟩⬜⬜'}
         elif percentage >= 70:
-            return {'name': 'SAMURAI', 'emoji': '🗡️', 'rank': 4, 'phrase': 'Путь дисциплины и чести', 'bar': '🔸🔸🔸🔸⬜⬜⬜'}
+            return {'name': 'Дисциплина', 'emoji': '🎯', 'rank': 4, 'phrase': 'Ты управляешь днём', 'bar': '🟩🟩🟩🟩⬜⬜⬜'}
         elif percentage >= 50:
-            return {'name': 'WARRIOR', 'emoji': '⚔️', 'rank': 3, 'phrase': 'Воин просыпается', 'bar': '🔸🔸🔸⬜⬜⬜⬜'}
+            return {'name': 'Система', 'emoji': '⚙', 'rank': 3, 'phrase': 'Механизм работает', 'bar': '🟩🟩🟩⬜⬜⬜⬜'}
         elif percentage >= 30:
-            return {'name': 'APPRENTICE', 'emoji': '🛡️', 'rank': 2, 'phrase': 'Ученик на тропе', 'bar': '🔸🔸⬜⬜⬜⬜⬜'}
+            return {'name': 'Режим', 'emoji': '🚶', 'rank': 2, 'phrase': 'Ты в движении', 'bar': '🟩🟩⬜⬜⬜⬜⬜'}
         else:
-            return {'name': 'ROOKIE', 'emoji': '🔰', 'rank': 1, 'phrase': 'Каждый путь начинается с шага', 'bar': '🔸⬜⬜⬜⬜⬜⬜'}
+            return {'name': 'Хаос', 'emoji': '😴', 'rank': 1, 'phrase': 'Начни с одной задачи', 'bar': '🟩⬜⬜⬜⬜⬜⬜'}
     
     def get_level_bar(self, percentage):
         """
@@ -650,25 +656,25 @@ class TaskTrackerBot:
         rank_bar = level['bar']
         
         if is_black:
-            status = f"🖤 <b>DEMIGOD</b> (Level 8)\n"
+            status = f"🖤 <b>Легенда</b> (Уровень 8)\n"
             status += f"{rank_bar}\n"
-            status += f"⚡ {streak_90} дней на уровне богов"
+            status += f"⚡ {streak_90} дней подряд ≥90%"
         else:
-            status = f"{level['emoji']} <b>{level['name']}</b> (Level {level['rank']})\n"
+            status = f"{level['emoji']} <b>{level['name']}</b> (Уровень {level['rank']})\n"
             status += f"{rank_bar}\n"
             status += f"→ {level['phrase']}"
             
             # Показываем прогресс до следующего уровня
-            if percentage < 95:
-                next_levels = {30: 50, 50: 70, 70: 80, 80: 90, 90: 95}
-                for threshold, next_threshold in next_levels.items():
+            if percentage < 100:
+                thresholds = [30, 50, 70, 85, 95, 100]
+                for next_threshold in thresholds:
                     if percentage < next_threshold:
                         tasks_to_next = max(1, int((next_threshold - percentage) / 3))
-                        status += f"\n📈 +{tasks_to_next} задач до Level Up"
+                        status += f"\n📈 До следующего: +{tasks_to_next} задач"
                         break
             
             if streak_90 > 0:
-                status += f"\n🔥 Streak: {streak_90}/7 дней"
+                status += f"\n🔥 Серия: {streak_90}/7 дней"
         
         return status
     
@@ -1034,17 +1040,17 @@ class TaskTrackerBot:
         # Средний уровень
         avg_level = week_stats['level']
         message += f"\n<b>Средний:</b> {week_stats['avg']}%\n"
-        message += f"{avg_level['emoji']} <b>{avg_level['name']}</b> (Level {avg_level['rank']})\n"
+        message += f"{avg_level['emoji']} <b>{avg_level['name']}</b> (Уровень {avg_level['rank']})\n"
         message += f"{avg_level['bar']}\n"
         
         # Streak
         if streak_90 > 0:
-            message += f"\n🔥 Streak: {streak_90}/7 дней"
+            message += f"\n🔥 Серия: {streak_90}/7 дней"
         
         # Black level
         if is_black:
-            message += "\n\n🖤 <b>DEMIGOD ACHIEVED!</b>"
-            message += "\n⚡ Ты достиг уровня богов"
+            message += "\n\n🖤 <b>ЛЕГЕНДА!</b>"
+            message += "\n⚡ 7 дней подряд ≥90%. Это уже характер."
         
         # ТОП-3 ПРОБЛЕМНЫХ ЗАДАЧ
         top_failed = self.get_top_failed_tasks(stats, days=7)
@@ -1157,9 +1163,9 @@ class TaskTrackerBot:
         
         # Black level
         if streak_90 >= 7:
-            message += f"\n🖤 BLACK · {streak_90}d streak"
+            message += f"\n🖤 ЛЕГЕНДА · серия {streak_90} дней"
         elif streak_90 > 0:
-            message += f"\nStreak: {streak_90}/7"
+            message += f"\nСерия: {streak_90}/7"
         
         # Короткая мотивация
         message += "\n\n"
