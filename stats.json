@@ -1573,7 +1573,9 @@
       "total": 7
     },
     "cant_do": {
-      "completed": [],
+      "completed": [
+        0
+      ],
       "total": 3
     },
     "evening": {
@@ -1583,10 +1585,7 @@
     "percentage": 57,
     "points": 4,
     "max_points": 7,
-    "penalty": false,
-    "penalty_pushups": 0
-  },
-  "pullups": {
-    "2026-07-10": 13
+    "penalty": true,
+    "penalty_pushups": 30
   }
 }
