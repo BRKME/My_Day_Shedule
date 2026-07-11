@@ -381,18 +381,21 @@ class PersonalScheduleNotifier:
         schedule = self.schedule.get(day_of_week, {})
         return date_str, day_of_week, schedule
 
-    MORNING_BOUNDARY = "Читать 📖 в дороге"
+    # Приоритет границ утро/день: будни — дорога, суббота — «Мозг» (11.07.2026)
+    MORNING_BOUNDARIES = ("Читать 📖 в дороге", "Включи 🧠 Мозг")
 
     def split_day_tasks(self, tasks):
         """Сплит дневного списка на утренний и дневной блок (04.07.2026).
 
-        Утро — всё до задачи «Читать в дороге» ВКЛЮЧИТЕЛЬНО,
-        день — остаток. Маркера нет (напр. нестандартный день) — fail-safe:
-        всё уходит в утро, дневной блок пуст (лучше одно полное сообщение,
-        чем потерянные задачи)."""
-        for i, t in enumerate(tasks):
-            if self.MORNING_BOUNDARY in t:
-                return tasks[:i + 1], tasks[i + 1:]
+        Границы проверяются по приоритету (11.07.2026):
+        будни — «Читать в дороге», суббота (дороги нет) — «Включи Мозг».
+        Утро — всё до границы ВКЛЮЧИТЕЛЬНО, день — остаток.
+        Ни одного маркера нет — fail-safe: всё уходит в утро, дневной
+        блок пуст (лучше одно полное сообщение, чем потерянные задачи)."""
+        for marker in self.MORNING_BOUNDARIES:
+            for i, t in enumerate(tasks):
+                if marker in t:
+                    return tasks[:i + 1], tasks[i + 1:]
         return tasks, []
 
     async def get_weather_forecast(self):
@@ -763,9 +766,14 @@ class PersonalScheduleNotifier:
         # их все в единый cant_do (штрафы работают в каждом сообщении).
         forbidden_key = {'morning': 'нельзя_утро', 'day': 'нельзя_день',
                          'full': 'нельзя_день'}.get(block)
-        if forbidden_key and schedule.get(forbidden_key):
+        forbidden_tasks = list(schedule.get(forbidden_key) or [])
+        # Дневной блок пуст → он не отправится, его запреты не должны
+        # потеряться: показываем их в утреннем сообщении (11.07.2026)
+        if block == 'morning' and not d_tasks:
+            forbidden_tasks += schedule.get('нельзя_день') or []
+        if forbidden_tasks:
             content += "\n<b>⛔ Нельзя делать:</b>\n"
-            for task in schedule[forbidden_key]:
+            for task in forbidden_tasks:
                 content += f"• {task}\n"
             # full-режим (одно сообщение) — показать и дневные, и вечерние
             if block == 'full':
@@ -1231,10 +1239,13 @@ class PersonalScheduleNotifier:
             if day_of_week == 'sunday':
                 logger.info("☀️ Воскресенье — FamilyDay, дневной блок не отправляется")
                 return True
-            message = await self.format_morning_day_message(date_str, day_of_week, schedule, block='day')
-            if "•" not in message:
+            # Защита от пустого дня — по реальному списку задач, а не по «•»
+            # в тексте: буллеты «Нельзя» раньше обманывали проверку (11.07)
+            _, _d_tasks = self.split_day_tasks(schedule.get('день') or [])
+            if not _d_tasks:
                 logger.info("☀️ Дневной блок пуст — не отправляем")
                 return True
+            message = await self.format_morning_day_message(date_str, day_of_week, schedule, block='day')
             add_button = True
         elif period == 'evening':
             if self.is_vacation_today():
