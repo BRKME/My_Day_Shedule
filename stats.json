@@ -1590,5 +1590,30 @@
     "max_points": 7,
     "penalty": true,
     "penalty_pushups": 30
+  },
+  "2026-07-11": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        0
+      ],
+      "total": 10
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 1
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 10,
+    "points": 1,
+    "max_points": 10,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
