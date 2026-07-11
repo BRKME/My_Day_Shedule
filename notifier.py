@@ -826,6 +826,12 @@ class PersonalScheduleNotifier:
             
             # Парсим задачи из сообщения
             tasks = self.parse_tasks_from_message(message)
+
+            # Граница блоков (10.07, для бинго): утренние задачи парсятся в ту
+            # же секцию 'day', что и дневные. Утренняя отправка первая — её
+            # парс ДО merge равен ровно утреннему списку. Фиксируем длину как
+            # границу: _tasks['day'][:N] = утро, [N:] = день.
+            _is_morning_msg = 'Доброе утро' in (message or '').split('\n', 1)[0]
             
             # Загружаем существующую статистику
             stats = {}
@@ -851,6 +857,8 @@ class PersonalScheduleNotifier:
                         seen_texts.append(t)
                 merged[section] = seen_texts
             stats[today]['_tasks'] = merged
+            if _is_morning_msg and tasks.get('day'):
+                stats[today]['_morning_day_count'] = len(tasks['day'])
             stats[today]['_message'] = message[:1000]  # Сохраняем первые 1000 символов
             stats[today]['_updated'] = datetime.now().isoformat()
             

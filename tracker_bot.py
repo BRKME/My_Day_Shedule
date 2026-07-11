@@ -1459,6 +1459,27 @@ class TaskTrackerBot:
             ]
         return {'inline_keyboard': rows}
 
+    @staticmethod
+    def blocks_fullness(completed_day, day_total, morning_count,
+                        completed_evening, evening_total):
+        """Полнота блоков (10.07): утро и день делят секцию 'day' —
+        граница = morning_count (пишется нотификатором при утренней отправке).
+        morning: индексы [0..mc), day: [mc..day_total), evening: своя секция.
+        morning_count отсутствует/0 -> утро не выделяется (fallback: вся
+        секция 'day' считается блоком 'day'). Пустой блок полным не считается."""
+        cd = set(completed_day or [])
+        mc = morning_count or 0
+        out = {}
+        if mc > 0:
+            out['morning'] = all(i in cd for i in range(mc))
+            out['day'] = day_total > mc and all(i in cd for i in range(mc, day_total))
+        else:
+            out['morning'] = False
+            out['day'] = day_total > 0 and all(i in cd for i in range(day_total))
+        out['evening'] = evening_total > 0 and \
+            len(set(completed_evening or [])) >= evening_total
+        return out
+
     async def save_progress(self, message_id):
         """Сохраняет прогресс в stats.json"""
         if message_id not in self.message_state:
@@ -1486,11 +1507,12 @@ class TaskTrackerBot:
 
         # Бинго-триггер (09.07): какие блоки БЫЛИ полными до этого нажатия —
         # чтобы поздравить только за блок, закрытый именно сейчас, без повторов.
-        _prev_full = {}
-        for _sec in ('morning', 'day', 'evening'):
-            _rec = (stats.get(today_key) or {}).get(_sec, {})
-            _t = _rec.get('total', 0)
-            _prev_full[_sec] = _t > 0 and len(_rec.get('completed', [])) >= _t
+        _rec_day = (stats.get(today_key) or {}).get('day', {})
+        _rec_eve = (stats.get(today_key) or {}).get('evening', {})
+        _mc = (stats.get(today_key) or {}).get('_morning_day_count', 0)
+        _prev_full = self.blocks_fullness(
+            _rec_day.get('completed', []), _rec_day.get('total', 0), _mc,
+            _rec_eve.get('completed', []), _rec_eve.get('total', 0))
         
         # ВАЖНО: Объединяем с существующими данными за сегодня!
         merged_totals = {}  # Сохраняем merged totals отдельно
@@ -1587,10 +1609,9 @@ class TaskTrackerBot:
             # (не были полными до нажатия) — без повторов на каждое сохранение.
             try:
                 import bingo_messages as bingo
-                now_full = {}
-                for _sec in ('morning', 'day', 'evening'):
-                    _tot = merged_totals.get(_sec, 0)
-                    now_full[_sec] = _tot > 0 and len(state['completed'][_sec]) >= _tot
+                now_full = self.blocks_fullness(
+                    state['completed']['day'], merged_totals.get('day', 0), _mc,
+                    state['completed']['evening'], merged_totals.get('evening', 0))
                 newly = [s for s in ('morning', 'day', 'evening')
                          if now_full[s] and not _prev_full.get(s)]
                 perfect_now = all(now_full[s] for s in ('morning', 'day', 'evening'))
