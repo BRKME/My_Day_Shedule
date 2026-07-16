@@ -168,3 +168,22 @@ def test_merge_stats_empty_local():
     from tracker_bot import merge_stats
     github = {"2026-07-12": {"percentage": 80}}
     assert merge_stats(github, {}) == github
+
+
+def test_budget_window_uses_msk_not_utc():
+    """16.07: VPS в UTC, naive now() завышал окно на 3ч («запас 3ч 3м»
+    при реальных 3м). Рендер обязан считать окно по Europe/Moscow."""
+    from unittest.mock import patch
+    from zoneinfo import ZoneInfo
+    import notifier as nf
+    n = _notifier()
+    real_dt = datetime
+    with patch('notifier.datetime') as dt:
+        # 16:00 UTC == 19:00 MSK; naive now() вернул бы 16:00
+        dt.now = lambda tz=None: real_dt(2026, 7, 16, 19, 0,
+                                         tzinfo=ZoneInfo("Europe/Moscow")) \
+            if tz else real_dt(2026, 7, 16, 16, 0)
+        msg = asyncio.run(n.format_evening_message(
+            '16.07.2026', 'thursday', n.schedule['thursday']))
+    assert '~4ч 30м' in msg          # окно от 19:00 МСК, не от 16:00 UTC
+    assert '3ч' not in msg.split('\n')[1].replace('4ч 30м', '')

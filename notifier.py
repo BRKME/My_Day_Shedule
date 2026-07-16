@@ -1072,8 +1072,12 @@ class PersonalScheduleNotifier:
 
         evening = [normalize_task(t) for t in schedule.get('вечер', [])]
         if evening:
-            # Бюджет времени: VPS живёт в MSK, datetime.now() локально верен
-            content += budget_header(evening, datetime.now()) + "\n\n"
+            # Бюджет по МСК явно: VPS живёт в UTC, и naive datetime.now()
+            # завышал окно на 3 часа («запас 3ч 3м» вместо честных 3м —
+            # баг 16.07, пойман по первому же живому сообщению).
+            from zoneinfo import ZoneInfo
+            now_msk = datetime.now(ZoneInfo("Europe/Moscow"))
+            content += budget_header(evening, now_msk) + "\n\n"
             content += "<b>📋 Вечерние задачи:</b>\n"
             for task in evening:
                 content += f"• {task}\n"
