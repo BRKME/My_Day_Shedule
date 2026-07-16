@@ -7,6 +7,104 @@ import logging
 import random
 import sys
 import os
+import re
+
+# ── Рестайл вечернего сообщения (16.07, вариант Б) ──────────────────────────
+# Данные расписания НЕ меняются — нормализация на лету при рендере.
+# Инварианты активного текста (tracker_bot парсит и редактирует сообщение):
+# задачи начинаются с '• ', заголовки секций с маркерами, строки шапки
+# не начинаются с '📊' (чистятся как старые прогресс-бары) и с '•'.
+
+EVENING_END = "23:30"          # конец вечернего окна для бюджета времени
+
+_EMOJI_RE = re.compile(
+    '[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF]\uFE0F?'
+    '[\U0001F3FB-\U0001F3FF]?')
+_MIN_RE = re.compile(r'(\d+)\s*(?:min|мин|м)\b', re.IGNORECASE)
+
+
+def _lower_cyr(text: str) -> str:
+    """Опустить первую букву, только если она кириллическая: 'Есть'→'есть',
+    но 'Project' остаётся — латинские имена собственные не трогаем."""
+    if text and 'А' <= text[0] <= 'я' or text[:1] in ('Ё',):
+        return text[0].lower() + text[1:]
+    return text
+
+
+def task_minutes(task: str) -> int:
+    """Минуты из строки задачи в любом из форматов: '(30 min ...)', '— 30м'."""
+    m = _MIN_RE.search(task)
+    return int(m.group(1)) if m else 0
+
+
+def normalize_task(task: str) -> str:
+    """Единый формат строки: '{эмодзи} {Текст} — {N}м · <i>{мотивация}</i>'.
+
+    Принимает исторический формат ('Читать 📖 в дороге <i>(30 min это
+    Спорт для мозга)</i>') и не трогает уже нормальные строки. Данные
+    расписания остаются как есть — вся косметика на рендере.
+    """
+    src = task.strip()
+    # 1) вынуть <i>(...)</i>-хвост
+    minutes, motivation = 0, ''
+    m = re.search(r'<i>\s*\(?(.*?)\)?\s*</i>\s*$', src)
+    if m:
+        inner = m.group(1).strip()
+        src = src[:m.start()].strip()
+        mm = _MIN_RE.search(inner)
+        if mm:
+            minutes = int(mm.group(1))
+            inner = (inner[:mm.start()] + inner[mm.end():]).strip()
+            inner = re.sub(r'^(это|—|-|·)\s*', '', inner, flags=re.IGNORECASE)
+        motivation = inner.strip(' .()') + ('.' if inner.rstrip().endswith('.') else '')
+        motivation = motivation.strip()
+    # 2) эмодзи в начало строки
+    em = _EMOJI_RE.search(src)
+    if em and em.start() > 0:
+        emoji = em.group(0)
+        before = src[:em.start()].strip()
+        after = src[em.end():].strip()
+        text = (before + (' ' + _lower_cyr(after) if after else '')).strip()
+        src = f'{emoji} {text}'
+    # 3) собрать
+    out = src
+    if minutes:
+        out += f' — {minutes}м'
+    if motivation:
+        out += f' · <i>{_lower_cyr(motivation)}</i>'
+    return out
+
+
+def _fmt_dur(minutes: int) -> str:
+    h, m = divmod(max(0, int(minutes)), 60)
+    if h and m:
+        return f'{h}ч {m}м'
+    return f'{h}ч' if h else f'{m}м'
+
+
+def budget_header(tasks, now, end_hhmm: str = EVENING_END) -> str:
+    """Строка бюджета времени: план vs окно до конца вечера.
+
+    План, который не влезает, тренирует привычку его не выполнять —
+    перегруз показываем сразу, с кандидатом на перенос (самая длинная
+    задача). Строка начинается с '⏱' (не '📊' и не '•' — см. инварианты).
+    """
+    total = sum(task_minutes(t) for t in tasks)
+    eh, em = map(int, end_hhmm.split(':'))
+    window = (eh * 60 + em) - (now.hour * 60 + now.minute)
+    window = max(0, window)
+    head = f'⏱ В плане {_fmt_dur(total)} · окно до {end_hhmm} ~{_fmt_dur(window)}'
+    over = total - window
+    if over > 0:
+        head += f' · ⚠️ перегруз {_fmt_dur(over)}'
+        longest = max(tasks, key=task_minutes, default=None)
+        if longest and task_minutes(longest) > 0:
+            name = re.sub(r'\s*—\s*\d+м.*$', '', longest).strip()
+            head += (f'\n↪️ кандидат на перенос: {name} '
+                     f'({task_minutes(longest)}м)')
+    else:
+        head += f' · запас {_fmt_dur(-over)}'
+    return head
 import json
 import re
 import base64
@@ -970,20 +1068,23 @@ class PersonalScheduleNotifier:
         day_names = {'monday': 'Понедельник', 'tuesday': 'Вторник', 'wednesday': 'Среда', 'thursday': 'Четверг', 'friday': 'Пятница', 'saturday': 'Суббота', 'sunday': 'Воскресенье'}
         day_ru = day_names.get(day_of_week, day_of_week)
         wisdom = self.get_random_wisdom()
-        
-        content = f"🌙 <b>Вечерний план на {day_ru} {date_str}</b>\n\n"
-        
-        if schedule.get('вечер'):
+
+        content = f"🌙 <b>Вечерний план на {day_ru} {date_str}</b>\n"
+
+        evening = [normalize_task(t) for t in schedule.get('вечер', [])]
+        if evening:
+            # Бюджет времени: VPS живёт в MSK, datetime.now() локально верен
+            content += budget_header(evening, datetime.now()) + "\n\n"
             content += "<b>📋 Вечерние задачи:</b>\n"
-            for task in schedule['вечер']:
+            for task in evening:
                 content += f"• {task}\n"
 
         # Вечерние запреты (09.07) — штрафуемый подблок вечернего сообщения
         if schedule.get('нельзя_вечер'):
             content += "\n<b>⛔ Нельзя делать:</b>\n"
             for task in schedule['нельзя_вечер']:
-                content += f"• {task}\n"
-        
+                content += f"• {normalize_task(task)}\n"
+
         return content
 
     async def send_pullups_message(self):
