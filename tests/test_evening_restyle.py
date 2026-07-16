@@ -127,3 +127,19 @@ def test_budget_line_survives_progress_update():
     updated = tr.update_original_message_with_progress(
         msg, tasks, {'morning': [], 'day': [], 'cant_do': [], 'evening': [0]})
     assert '⏱' in updated                  # шапка бюджета не съедена очисткой
+
+
+# ── страж: расписание не должно возвращаться к перегрузу ────────────────────
+
+def test_no_evening_overload_any_day():
+    """16.07: все вечера пн–сб были перегружены (+45…+77м) — план, который
+    не влезает, тренирует привычку его не выполнять. После ребаланса
+    (Отдых 60→30, Pet Project 120→90, LP убран из пятницы) каждый вечер
+    обязан влезать в окно 19:00–23:30. Добавил задачу — тест напомнит."""
+    n = _notifier()
+    window = 270
+    for day, sched in n.schedule.items():
+        tasks = [normalize_task(t) for t in sched.get('вечер', [])]
+        total = sum(task_minutes(t) for t in tasks)
+        assert total <= window, (
+            f"{day}: план {total}м > окна {window}м — вечер снова перегружен")
