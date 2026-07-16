@@ -21,6 +21,15 @@ import base64
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+def merge_stats(github_stats: dict, local_stats: dict) -> dict:
+    """Слияние статистики: объединение дней, при конфликте локальный
+    день побеждает. Локальный stats.json на VPS — источник истины
+    (бот пишет в него каждое действие); GitHub — реплика, которая может
+    отставать (16.07: синк умер с отзывом PAT, репо застряло на 13.07,
+    и старая загрузка при рестарте откатила бы прогресс)."""
+    return {**github_stats, **local_stats}
+
+
 class TaskTrackerBot:
     def __init__(self):
         self.telegram_token = os.getenv('TELEGRAM_TOKEN', '')
@@ -504,19 +513,40 @@ class TaskTrackerBot:
         return {}
     
     async def load_stats_from_github(self):
-        """Загружает stats.json с GitHub при старте"""
+        """Загружает stats.json с GitHub при старте и СЛИВАЕТ с локальным.
+
+        Раньше репо-версия перезаписывала локальный файл — если синк на
+        запись падал (протухший токен, 401), рестарт бота откатывал
+        стату к последнему удачному пушу. Теперь при конфликте дня
+        побеждает локальная запись (см. merge_stats)."""
         try:
             content = await self._github_get_file("stats.json")
             if content:
                 data = json.loads(content)
                 # Фильтруем только реальные даты
-                stats = {k: v for k, v in data.items() if k not in ['_info', '_format'] and '-' in k}
-                logger.info(f"✅ Загружено {len(stats)} дней статистики с GitHub")
-                
+                github_stats = {k: v for k, v in data.items()
+                                if k not in ['_info', '_format'] and '-' in k}
+                logger.info(f"✅ Загружено {len(github_stats)} дней статистики с GitHub")
+
+                local_stats = {}
+                try:
+                    with open(self.stats_file, 'r', encoding='utf-8') as f:
+                        raw = json.load(f)
+                    local_stats = {k: v for k, v in raw.items()
+                                   if k not in ['_info', '_format'] and '-' in k}
+                except (FileNotFoundError, json.JSONDecodeError):
+                    pass
+
+                stats = merge_stats(github_stats, local_stats)
+                if local_stats and stats != github_stats:
+                    ahead = sorted(set(local_stats) - set(github_stats))
+                    logger.info(f"🛡 Локальная стата впереди GitHub "
+                                f"({len(ahead)} дн.: {ahead[-3:]}) — слито без отката")
+
                 # Сохраняем локально
                 with open(self.stats_file, 'w', encoding='utf-8') as f:
                     json.dump(stats, f, ensure_ascii=False, indent=2)
-                
+
                 return stats
         except Exception as e:
             logger.warning(f"⚠️ Ошибка загрузки stats с GitHub: {e}")

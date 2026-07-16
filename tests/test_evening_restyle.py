@@ -143,3 +143,28 @@ def test_no_evening_overload_any_day():
         total = sum(task_minutes(t) for t in tasks)
         assert total <= window, (
             f"{day}: план {total}м > окна {window}м — вечер снова перегружен")
+
+
+# ── старт бота не должен откатывать локальную стату гитхабовской ────────────
+
+def test_merge_stats_local_wins():
+    """16.07: GitHub-синк умер с отзывом PAT (401), локальная стата на VPS
+    ушла вперёд гитхабовской. Старый load_stats_from_github ПЕРЕЗАПИСЫВАЛ
+    локальный stats.json репо-версией при каждом старте — рестарт бота
+    (например, от autoupdate) откатил бы прогресс к 13.07. Слияние:
+    объединение дней, при конфликте локальный день побеждает."""
+    from tracker_bot import merge_stats
+    github = {"2026-07-12": {"percentage": 80},
+              "2026-07-13": {"percentage": None}}
+    local = {"2026-07-13": {"percentage": 90},
+             "2026-07-15": {"percentage": 100}}
+    merged = merge_stats(github, local)
+    assert merged["2026-07-12"]["percentage"] == 80    # только в GitHub — взят
+    assert merged["2026-07-13"]["percentage"] == 90    # конфликт — локальный
+    assert merged["2026-07-15"]["percentage"] == 100   # только локально — цел
+
+
+def test_merge_stats_empty_local():
+    from tracker_bot import merge_stats
+    github = {"2026-07-12": {"percentage": 80}}
+    assert merge_stats(github, {}) == github
