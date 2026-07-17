@@ -187,3 +187,54 @@ def test_budget_window_uses_msk_not_utc():
             '16.07.2026', 'thursday', n.schedule['thursday']))
     assert '~4ч 30м' in msg          # окно от 19:00 МСК, не от 16:00 UTC
     assert '3ч' not in msg.split('\n')[1].replace('4ч 30м', '')
+
+
+# ── утренний/дневной рендер в новом стандарте ───────────────────────────────
+
+def _morning_message(day='friday', block='morning'):
+    from unittest.mock import patch, AsyncMock
+    n = _notifier()
+    n.get_weather_forecast = AsyncMock(return_value="")
+    n.get_rates = AsyncMock(return_value="")
+    n.get_weekend_forecast = AsyncMock(return_value="")
+    n.check_yesterday_penalty = AsyncMock(return_value="")
+    return asyncio.run(n.format_morning_day_message(
+        '17.07.2026', day, n.schedule[day], block=block))
+
+
+def test_morning_tasks_normalized():
+    msg = _morning_message()
+    assert '• 📖 Читать в дороге — 25м · <i>спорт для мозга</i>' in msg
+    assert '(25 min' not in msg                      # старый формат ушёл
+    assert '• 💊 Прими витамины' in msg              # эмодзи в начало
+
+
+def test_morning_has_plan_total_line():
+    msg = _morning_message()
+    line = [l for l in msg.split('\n') if l.startswith('⏱')]
+    assert len(line) == 1                            # сумма есть, ровно одна
+    assert 'В плане' in line[0]
+    assert 'окно' not in line[0] and 'запас' not in line[0]  # без окна утром
+
+
+def test_morning_roundtrip_with_tracker():
+    from tracker_bot import TaskTrackerBot
+    msg = _morning_message()
+    tr = TaskTrackerBot.__new__(TaskTrackerBot)
+    tasks = tr.parse_tasks(msg)
+    n = _notifier()
+    m_tasks, _ = n.split_day_tasks(n.schedule['friday'].get('день') or [])
+    assert len(tasks['morning' if 'morning' in tasks else 'day']) >= len(m_tasks) \
+        or len(tasks['day']) == len(m_tasks)         # число задач не потеряно
+    assert len(tasks['cant_do']) >= 1
+
+
+def test_day_block_also_normalized():
+    msg = _morning_message(block='day')
+    assert '(30 min' not in msg and '(60 min' not in msg
+
+
+def test_flag_emoji_pair_not_split():
+    """Флаги — пары regional indicators; 🇬🇧 рвался на «🇬 … 🇧» (17.07)."""
+    assert normalize_task('Занятия 🇬🇧 English на YouTube <i>(20 min)</i>') == \
+        '🇬🇧 Занятия English на YouTube — 20м'

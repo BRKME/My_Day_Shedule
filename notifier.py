@@ -18,8 +18,9 @@ import re
 EVENING_END = "23:30"          # конец вечернего окна для бюджета времени
 
 _EMOJI_RE = re.compile(
-    '[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF]\uFE0F?'
-    '[\U0001F3FB-\U0001F3FF]?')
+    '(?:[\U0001F1E6-\U0001F1FF]{2}'          # флаги — пары regional indicators
+    '|[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF]\uFE0F?'
+    '[\U0001F3FB-\U0001F3FF]?)')
 _MIN_RE = re.compile(r'(\d+)\s*(?:min|мин|м)\b', re.IGNORECASE)
 
 
@@ -851,13 +852,20 @@ class PersonalScheduleNotifier:
                      'day': '☀️ Дневные задачи · день',
                      'full': '📋 Дневные задачи'}[block]
             content += f"<b>{title}:</b>\n"
+            # Сумма плана (стандарт 16.07). Окно не считаем: у утра нет
+            # фиксированного конца, как 23:30 у вечера — врать «запасом»
+            # хуже, чем не показывать его.
+            _norm = [normalize_task(t) for t in block_tasks]
+            _total = sum(task_minutes(t) for t in _norm)
+            if _total:
+                content += f"⏱ В плане {_fmt_dur(_total)}\n"
             if block in ('day', 'full') and day_of_week == 'saturday':
                 today = datetime.now()
                 last_saturday_day = self.get_last_day_of_month(today.year, today.month, 5)
                 if today.day == last_saturday_day:
                     content += "• Сделать фото-презентацию по итогам месяца\n"
             for task in block_tasks:
-                content += f"• {task}\n"
+                content += f"• {normalize_task(task)}\n"
         # Нельзя-подблоки разнесены по времени (09.07): утро/день/вечер.
         # Каждый рендерится своим блоком «⛔ Нельзя делать» — парсеры соберут
         # их все в единый cant_do (штрафы работают в каждом сообщении).
@@ -871,12 +879,12 @@ class PersonalScheduleNotifier:
         if forbidden_tasks:
             content += "\n<b>⛔ Нельзя делать:</b>\n"
             for task in forbidden_tasks:
-                content += f"• {task}\n"
+                content += f"• {normalize_task(task)}\n"
             # full-режим (одно сообщение) — показать и дневные, и вечерние
             if block == 'full':
                 for extra in ('нельзя_вечер',):
                     for task in schedule.get(extra, []):
-                        content += f"• {task}\n"
+                        content += f"• {normalize_task(task)}\n"
         
         # Добавляем расписание детей
         #kids_schedule_text = self.get_kids_schedule(day_of_week)
