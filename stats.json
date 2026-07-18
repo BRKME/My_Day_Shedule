@@ -1652,5 +1652,8 @@
     "max_points": 13,
     "penalty": false,
     "penalty_pushups": 0
+  },
+  "2026-07-18": {
+    "vacation": true
   }
 }
