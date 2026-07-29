@@ -1676,5 +1676,32 @@
   },
   "2026-07-28": {
     "vacation": true
+  },
+  "2026-07-29": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        0,
+        1,
+        6
+      ],
+      "total": 7
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 1
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 42,
+    "points": 3,
+    "max_points": 7,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
