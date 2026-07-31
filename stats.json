@@ -1665,9 +1665,6 @@
   "2026-07-24": {
     "vacation": true
   },
-  "pullups": {
-    "2026-07-24": 10
-  },
   "2026-07-25": {
     "vacation": true
   },
@@ -1737,5 +1734,8 @@
     "max_points": 7,
     "penalty": false,
     "penalty_pushups": 0
+  },
+  "pullups": {
+    "2026-07-31": 13
   }
 }
