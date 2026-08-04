@@ -258,7 +258,7 @@ class PersonalScheduleNotifier:
                 days_old = (datetime.now() - datetime.strptime(last_date, "%Y-%m-%d")).days
                 if days_old > 3:
                     logger.warning(f"⚠️ Данные устарели! Последняя запись: {last_date} ({days_old} дней назад)")
-                    logger.warning("⚠️ Проверь GITHUB_TOKEN на Railway - синхронизация не работает!")
+                    logger.warning("⚠️ Проверь GITHUB_TOKEN в secrets репозитория — синхронизация не работает!")
             
             # Проверяем есть ли данные за вчера
             if yesterday_key not in stats:
@@ -587,7 +587,7 @@ class PersonalScheduleNotifier:
             
             logger.info(f"✅ Задачи сохранены в stats.json: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
             
-            # Синхронизируем с GitHub для tracker_bot на Railway
+            # Синхронизируем с GitHub — отсюда tracker_bot на VPS берёт задачи дня
             self.sync_stats_to_github(stats)
             
         except Exception as e:

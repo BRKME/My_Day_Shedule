@@ -3,9 +3,9 @@
 Telegram бот для отслеживания выполнения задач - v2.0
 Исправления v2.0:
 1. Все HTTP → aiohttp (не блокирует event loop)
-2. message_states синхронизируются с GitHub (переживает рестарт Railway)
+2. message_states синхронизируются с GitHub (переживает рестарт сервиса)
 3. Исправлен check_schedule (.seconds → .total_seconds())
-4. Добавлен Procfile для Railway
+4. Деплой: systemd на VPS (Railway отключён 07.2026)
 """
 
 import asyncio
@@ -20,7 +20,7 @@ import base64
 
 from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
                   github_contents_url, github_headers, merge_stats,
-                  normalize_task, prune_message_states)
+                  normalize_task, prune_message_states, summarize_day)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -363,7 +363,7 @@ class TaskTrackerBot:
     async def _github_put_file(self, path, content, message="auto update"):
         """Записывает файл на GitHub (async)"""
         if not self.github_token:
-            logger.warning("⚠️ GITHUB_TOKEN не найден в переменных окружения Railway!")
+            logger.warning("⚠️ GITHUB_TOKEN не найден! Проверь /etc/systemd/system/myday-bot.service")
             return False
         try:
             url = github_contents_url(path, self.github_repo)
@@ -486,7 +486,7 @@ class TaskTrackerBot:
             return False
     
     async def sync_message_states_to_github(self):
-        """Синхронизирует message_states.json с GitHub (переживает рестарт Railway)"""
+        """Синхронизирует message_states.json с GitHub (переживает рестарт сервиса)"""
         try:
             self.message_state = prune_message_states(self.message_state)
             data = {str(k): v for k, v in self.message_state.items()}
@@ -973,20 +973,14 @@ class TaskTrackerBot:
         logger.info(f"📊 DEBUG evening: completed={evening.get('completed', [])}, total={evening.get('total', 0)}")
         logger.info(f"📊 DEBUG cant_do: completed={cant_do.get('completed', [])}, total={cant_do.get('total', 0)}")
         
-        # НОВАЯ ЛОГИКА: Считаем ТОЛЬКО полезные задачи (без НЕЛЬЗЯ)
-        day_done = len(day.get('completed', []))
-        day_total = day.get('total', 0)
-        
-        evening_done = len(evening.get('completed', []))
-        evening_total = evening.get('total', 0)
-        
-        # ИТОГО: День + Вечер (БЕЗ "НЕЛЬЗЯ"!)
-        overall_done = day_done + evening_done
-        overall_total = day_total + evening_total
-        overall_perc = int((overall_done / overall_total * 100)) if overall_total > 0 else 0
-        
-        # Срывы в НЕЛЬЗЯ считаем отдельно
-        cant_do_fails = len(cant_do.get('completed', []))
+        # Арифметика — в core.summarize_day (покрыта тестами):
+        # «Нельзя делать» в процент не входит, срывы считаются отдельно.
+        _s = summarize_day(today_data)
+        day_done, day_total = _s['day_done'], _s['day_total']
+        evening_done, evening_total = _s['evening_done'], _s['evening_total']
+        overall_done, overall_total = _s['overall_done'], _s['overall_total']
+        overall_perc = _s['percentage']
+        cant_do_fails = _s['fails']
         
         logger.info(f"📊 CALCULATED: day={day_done}/{day_total}, evening={evening_done}/{evening_total}, total={overall_done}/{overall_total} ({overall_perc}%)")
         
@@ -1758,7 +1752,7 @@ class TaskTrackerBot:
             return []
     
     async def health_check(self, request):
-        """HTTP endpoint для Railway health check"""
+        """HTTP endpoint health check (порт 8080, слушает и внешний скан)"""
         return web.Response(text="OK", status=200)
     
     async def webhook_handler(self, request):
@@ -1830,7 +1824,7 @@ class TaskTrackerBot:
         # Создаём persistent aiohttp session (одна на весь бот)
         self.session = aiohttp.ClientSession()
         
-        # Загружаем message_states с GitHub (переживает рестарт Railway)
+        # Загружаем message_states с GitHub (переживает рестарт сервиса)
         github_states = await self.load_message_states_from_github()
         if github_states:
             self.merge_github_states(github_states)
@@ -1841,7 +1835,7 @@ class TaskTrackerBot:
         
         logger.info("📊 Слушаю обновления...")
         
-        # Запускаем HTTP сервер для Railway
+        # HTTP сервер: health check и keepalive
         app = web.Application()
         app.router.add_get('/', self.health_check)
         app.router.add_get('/health', self.health_check)

@@ -191,6 +191,37 @@ def merge_stats(github_stats: dict, local_stats: dict) -> dict:
     return {**github_stats, **local_stats}
 
 
+def summarize_day(day_data: dict) -> dict:
+    """Итоги дня: день, вечер, общий процент и срывы.
+
+    «Нельзя делать» в процент НЕ входит — это запреты, а не задачи;
+    засчитывать их в прогресс значит поощрять срыв. Срывы возвращаются
+    отдельным числом.
+
+    Процент режется по 100: список выполненных переживает сокращение
+    расписания, и без клампа итоги показывали бы 120%.
+    """
+    day = day_data.get('day') or {}
+    evening = day_data.get('evening') or {}
+    cant_do = day_data.get('cant_do') or {}
+
+    day_done = len(day.get('completed', []))
+    day_total = day.get('total', 0)
+    evening_done = len(evening.get('completed', []))
+    evening_total = evening.get('total', 0)
+
+    overall_done = day_done + evening_done
+    overall_total = day_total + evening_total
+    percentage = (min(100, int(overall_done / overall_total * 100))
+                  if overall_total > 0 else 0)
+
+    return {'day_done': day_done, 'day_total': day_total,
+            'evening_done': evening_done, 'evening_total': evening_total,
+            'overall_done': overall_done, 'overall_total': overall_total,
+            'percentage': percentage,
+            'fails': len(cant_do.get('completed', []))}
+
+
 def prune_message_states(states: dict, keep_last: int = STATE_KEEP_LAST) -> dict:
     """Оставить только `keep_last` самых свежих состояний сообщений.
 
