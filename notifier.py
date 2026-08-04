@@ -504,9 +504,11 @@ class PersonalScheduleNotifier:
         if block in ('morning', 'full'):
             content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
             # Одна страница на сутки вместо простыни из пяти ссылок.
+            # В выходные страницы нет — page_of_the_day вернёт None.
             _p = page_of_the_day(datetime.now().date())
-            content += (f'\n\n{_p["emoji"]} <a href="{page_url(_p)}">'
-                        f'{_p["title"]}</a>')
+            if _p:
+                content += (f'\n\n{_p["emoji"]} <a href="{page_url(_p)}">'
+                            f'{_p["title"]}</a>')
 
         return content
     
@@ -531,8 +533,9 @@ class PersonalScheduleNotifier:
             # Кнопка та же страница, что и ссылка в тексте: выбор
             # детерминирован от даты, поэтому расхождения не будет.
             page = page_of_the_day(datetime.now().date())
-            rows.append([{'text': f'{page["emoji"]} {page["title"]}',
-                          'url': page_url(page)}])
+            if page:
+                rows.append([{'text': f'{page["emoji"]} {page["title"]}',
+                              'url': page_url(page)}])
         return {'inline_keyboard': rows}
     
     def save_today_tasks(self, message):
