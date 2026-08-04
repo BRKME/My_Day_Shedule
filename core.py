@@ -15,6 +15,7 @@
 """
 import json
 import os
+import random
 import re
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
@@ -257,6 +258,73 @@ def load_schedule() -> dict:
 def load_kids_schedule() -> dict:
     """Расписание занятий детей из data/kids_schedule.json."""
     return _load_json('kids_schedule.json')
+
+
+# ── Страница дня ─────────────────────────────────────────────────────────
+# Пять страниц-эссе на GitHub Pages. Раньше утреннее сообщение несло все
+# пять ссылок — простыня, которую перестаёшь замечать. Теперь одна в день.
+
+PAGES_BASE = "https://brkme.github.io/My_Day_Shedule/"
+
+PAGES = (
+    {'key': 'prayer',  'emoji': '🙏', 'title': 'Утренняя молитва',
+     'file': 'prayer.html'},
+    {'key': 'career',  'emoji': '🏢', 'title': 'Принципы карьеры',
+     'file': 'career.html'},
+    {'key': 'taleb',   'emoji': '📚', 'title': 'Талеб: Антихрупкость',
+     'file': 'taleb.html'},
+    {'key': 'kohelet', 'emoji': '📜', 'title': 'Экклезиаст: Chelek',
+     'file': 'kohelet.html'},
+    {'key': 'stoic',   'emoji': '🏛', 'title': 'Стоицизм: дихотомия контроля',
+     'file': 'stoic.html'},
+)
+
+
+def page_url(page: dict) -> str:
+    return PAGES_BASE + page['file']
+
+
+def _cycle_order(cycle: int) -> list:
+    """Порядок страниц внутри одной колоды.
+
+    На шве колод независимая тасовка ставила одну страницу рядом с самой
+    собой: «Стоицизм в четверг и в субботу» читается как поломка, хотя
+    формально это честный рандом. Поэтому начало новой колоды разводится
+    с хвостом предыдущей — повтор не ближе чем через три дня.
+
+    Правка трогает только первые три позиции: хвост колоды остаётся
+    сырым, и следующий цикл может опереться на него, не пересчитывая
+    исправленный порядок рекурсивно.
+    """
+    n = len(PAGES)
+    order = random.Random(cycle).sample(range(n), n)
+    prev = random.Random(cycle - 1).sample(range(n), n)
+    banned_first = {prev[-1], prev[-2]}      # не повторяться через 1 и 2 дня
+    banned_second = {prev[-1]}               # и через 2 дня тоже
+
+    head = order[:3]
+    first = next(x for x in head if x not in banned_first)
+    head.remove(first)
+    second = next(x for x in head if x not in banned_second)
+    head.remove(second)
+    return [first, second, head[0]] + order[3:]
+
+
+def page_of_the_day(day) -> dict:
+    """Одна страница на сутки: случайный порядок без повторов внутри цикла.
+
+    Пять дней — колода из всех пяти страниц, затем она тасуется заново.
+    Чистый random.choice выдавал бы одну страницу три утра подряд и
+    молчал бы про другую неделю.
+
+    Выбор детерминирован от даты, а не от вызова: текст сообщения и
+    кнопка клавиатуры собираются разными вызовами, и без этого в тексте
+    оказался бы Талеб, а на кнопке — молитва. Заодно переживает рестарт
+    и повторный запуск workflow, не требуя хранить состояние.
+    """
+    n = len(PAGES)
+    cycle, position = divmod(day.toordinal(), n)
+    return PAGES[_cycle_order(cycle)[position]]
 
 
 # ── GitHub Contents API ──────────────────────────────────────────────────

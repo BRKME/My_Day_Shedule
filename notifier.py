@@ -23,6 +23,7 @@ from core import (EVENING_END, budget_header, fmt_dur as _fmt_dur,
                   load_kids_schedule, load_schedule, _lower_cyr,
                   normalize_task, task_minutes,
                   github_contents_url, github_headers)
+from core import page_of_the_day, page_url
 from core import MORNING_BOUNDARIES as _CORE_BOUNDARIES
 from core import split_day_tasks as _core_split_day_tasks
 
@@ -502,11 +503,10 @@ class PersonalScheduleNotifier:
         # в утреннем сообщении; день и вечер — рабочие (задачи/нельзя).
         if block in ('morning', 'full'):
             content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
-            content += f'\n\n🙏 <a href="{self.prayer_url}">Утренняя молитва</a>'
-            content += f'\n🏢 <a href="{self.career_url}">Принципы карьеры</a>'
-            content += f'\n📚 <a href="{self.taleb_url}">Талеб: Антихрупкость</a>'
-            content += f'\n📜 <a href="{self.kohelet_url}">Экклезиаст: Chelek</a>'
-            content += f'\n🏛 <a href="{self.stoic_url}">Стоицизм: дихотомия контроля</a>'
+            # Одна страница на сутки вместо простыни из пяти ссылок.
+            _p = page_of_the_day(datetime.now().date())
+            content += (f'\n\n{_p["emoji"]} <a href="{page_url(_p)}">'
+                        f'{_p["title"]}</a>')
 
         return content
     
@@ -528,13 +528,11 @@ class PersonalScheduleNotifier:
         rows = [[{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}]]
         if include_links:
             rows.append([{'text': '🏖 Отпуск (пропустить день)', 'callback_data': 'vacation'}])
-            rows += [
-                [{'text': '🙏 Утренняя молитва', 'url': self.prayer_url}],
-                [{'text': '🏢 Принципы карьеры', 'url': self.career_url}],
-                [{'text': '📚 Талеб: Антихрупкость', 'url': self.taleb_url}],
-                [{'text': '📜 Экклезиаст: Chelek', 'url': self.kohelet_url}],
-                [{'text': '🏛 Стоицизм: дихотомия контроля', 'url': self.stoic_url}]
-            ]
+            # Кнопка та же страница, что и ссылка в тексте: выбор
+            # детерминирован от даты, поэтому расхождения не будет.
+            page = page_of_the_day(datetime.now().date())
+            rows.append([{'text': f'{page["emoji"]} {page["title"]}',
+                          'url': page_url(page)}])
         return {'inline_keyboard': rows}
     
     def save_today_tasks(self, message):
