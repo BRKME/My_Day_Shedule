@@ -84,3 +84,34 @@ def test_file_stays_small_after_prune(bot):
     bot.message_state = {i: _state(i) for i in range(1, 501)}
     bot.save_message_states()
     assert os.path.getsize(bot.message_state_file) < 50_000
+
+
+def test_startup_merge_prunes(bot):
+    """Старт: локальные состояния из файла + догрузка с GitHub.
+
+    Прополка только на записи оставляла процесс с полным набором в памяти
+    до первого нажатия кнопки (лог 04.08: «Загружено 20 … Всего: 64»).
+    """
+    bot.message_state = {i: _state(i) for i in range(1, 65)}     # локальный файл
+    github = {i: _state(i) for i in range(1, 21)}                # реплика в репо
+
+    bot.merge_github_states(github)
+
+    assert len(bot.message_state) == STATE_KEEP_LAST
+    assert max(bot.message_state) == 64
+
+
+def test_startup_merge_prefers_local_state():
+    """Локальное состояние новее реплики — GitHub не должен его затирать."""
+    os.environ.setdefault('TELEGRAM_TOKEN', 'test-token')
+    b = TaskTrackerBot()
+    b.message_state = {5: {'clean_original': 'локальное'}}
+    b.merge_github_states({5: {'clean_original': 'из репо'}})
+    assert b.message_state[5]['clean_original'] == 'локальное'
+
+
+def test_startup_merge_adds_missing_from_github():
+    b = TaskTrackerBot()
+    b.message_state = {5: _state(5)}
+    b.merge_github_states({6: _state(6)})
+    assert set(b.message_state) == {5, 6}

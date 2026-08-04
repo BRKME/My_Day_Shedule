@@ -516,6 +516,19 @@ class TaskTrackerBot:
             logger.warning(f"⚠️ Ошибка загрузки states с GitHub: {e}")
         return {}
     
+    def merge_github_states(self, github_states):
+        """Догрузить состояния из репо-реплики к локальным и прополоть.
+
+        Локальные новее (процесс пишет их на каждое нажатие), поэтому с
+        GitHub берём только отсутствующие ключи. Прополка сразу после
+        слияния: иначе процесс держит в памяти весь исторический набор до
+        первого нажатия кнопки (04.08: «Загружено 20 … Всего: 64»)."""
+        for k, v in github_states.items():
+            if k not in self.message_state:
+                self.message_state[k] = v
+        self.message_state = prune_message_states(self.message_state)
+        return self.message_state
+
     async def load_stats_from_github(self):
         """Загружает stats.json с GitHub при старте и СЛИВАЕТ с локальным.
 
@@ -1820,10 +1833,7 @@ class TaskTrackerBot:
         # Загружаем message_states с GitHub (переживает рестарт Railway)
         github_states = await self.load_message_states_from_github()
         if github_states:
-            # Объединяем с локальными (локальные могут быть новее)
-            for k, v in github_states.items():
-                if k not in self.message_state:
-                    self.message_state[k] = v
+            self.merge_github_states(github_states)
             logger.info(f"📊 Всего состояний: {len(self.message_state)}")
         
         # Загружаем stats с GitHub (для еженедельных отчётов)
