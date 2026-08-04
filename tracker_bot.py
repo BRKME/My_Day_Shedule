@@ -18,16 +18,15 @@ import os
 import re
 import base64
 
+from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
+                  github_contents_url, github_headers, merge_stats,
+                  normalize_task, prune_message_states)
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def merge_stats(github_stats: dict, local_stats: dict) -> dict:
-    """Слияние статистики: объединение дней, при конфликте локальный
-    день побеждает. Локальный stats.json на VPS — источник истины
-    (бот пишет в него каждое действие); GitHub — реплика, которая может
-    отставать (16.07: синк умер с отзывом PAT, репо застряло на 13.07,
-    и старая загрузка при рестарте откатила бы прогресс)."""
-    return {**github_stats, **local_stats}
+# merge_stats, get_level, prune_message_states — в core.py (04.08.2026),
+# общие с notifier.py.
 
 
 class TaskTrackerBot:
@@ -41,7 +40,7 @@ class TaskTrackerBot:
             raise ValueError("❌ TELEGRAM_CHAT_ID не найден в переменных окружения!")
         
         self.github_token = os.getenv('GITHUB_TOKEN', '')
-        self.github_repo = "BRKME/My_Day_Shedule"
+        self.github_repo = GITHUB_REPO
         
         self.stats_file = "stats.json"
         self.message_state_file = "message_states.json"
@@ -349,11 +348,8 @@ class TaskTrackerBot:
         if not self.github_token:
             return None
         try:
-            url = f"https://api.github.com/repos/{self.github_repo}/contents/{path}"
-            headers = {
-                "Authorization": f"token {self.github_token}",
-                "Accept": "application/vnd.github.v3+json"
-            }
+            url = github_contents_url(path, self.github_repo)
+            headers = github_headers(self.github_token)
             async with self.session.get(url, headers=headers, timeout=10) as response:
                 if response.status == 200:
                     data = await response.json()
@@ -370,11 +366,8 @@ class TaskTrackerBot:
             logger.warning("⚠️ GITHUB_TOKEN не найден в переменных окружения Railway!")
             return False
         try:
-            url = f"https://api.github.com/repos/{self.github_repo}/contents/{path}"
-            headers = {
-                "Authorization": f"token {self.github_token}",
-                "Accept": "application/vnd.github.v3+json"
-            }
+            url = github_contents_url(path, self.github_repo)
+            headers = github_headers(self.github_token)
             
             # Получаем текущий SHA файла
             sha = None
@@ -474,8 +467,15 @@ class TaskTrackerBot:
         return {'morning': [], 'day': [], 'cant_do': [], 'evening': []}
     
     def save_message_states(self):
-        """Сохраняет состояния сообщений ЛОКАЛЬНО (быстро, для toggle)"""
+        """Сохраняет состояния сообщений ЛОКАЛЬНО (быстро, для toggle).
+
+        Перед записью — прополка (04.08.2026): держим только последние
+        STATE_KEEP_LAST состояний. Прогресс правится лишь у свежих
+        сообщений, а файл целиком уезжал в каждый коммит синка."""
         try:
+            # Прополка и в памяти тоже — иначе процесс помнит одно,
+            # а рестарт поднимает другое.
+            self.message_state = prune_message_states(self.message_state)
             # Преобразуем int ключи в строки для JSON
             data = {str(k): v for k, v in self.message_state.items()}
             with open(self.message_state_file, 'w', encoding='utf-8') as f:
@@ -488,6 +488,7 @@ class TaskTrackerBot:
     async def sync_message_states_to_github(self):
         """Синхронизирует message_states.json с GitHub (переживает рестарт Railway)"""
         try:
+            self.message_state = prune_message_states(self.message_state)
             data = {str(k): v for k, v in self.message_state.items()}
             content = json.dumps(data, ensure_ascii=False, indent=2)
             return await self._github_put_file(
@@ -505,6 +506,9 @@ class TaskTrackerBot:
             content = await self._github_get_file("message_states.json")
             if content:
                 data = json.loads(content)
+                # Прополка на загрузке: репо-версия может быть старой и
+                # раздутой — незачем тащить её обратно в память и в синк.
+                data = prune_message_states(data)
                 states = {int(k): v for k, v in data.items()}
                 logger.info(f"✅ Загружено {len(states)} состояний сообщений с GitHub")
                 return states
@@ -621,24 +625,10 @@ class TaskTrackerBot:
     # ═══════════════════════════════════════════════════════════════════════════════
     
     def get_level(self, percentage):
-        """
-        Определяет уровень по проценту выполнения — RPG стиль
-        """
-        if percentage >= 100:
-            return {'name': 'Абсолютный контроль', 'emoji': '👑', 'rank': 7, 'phrase': 'Идеальный день. Ноль слитого.', 'bar': '🟩🟩🟩🟩🟩🟩🟩'}
-        elif percentage >= 95:
-            return {'name': 'Несгибаемый', 'emoji': '💎', 'rank': 6, 'phrase': 'Почти безупречно', 'bar': '🟩🟩🟩🟩🟩🟩⬜'}
-        elif percentage >= 85:
-            return {'name': 'Железная воля', 'emoji': '🦾', 'rank': 5, 'phrase': 'Тебя не свернуть', 'bar': '🟩🟩🟩🟩🟩⬜⬜'}
-        elif percentage >= 70:
-            return {'name': 'Дисциплина', 'emoji': '🎯', 'rank': 4, 'phrase': 'Ты управляешь днём', 'bar': '🟩🟩🟩🟩⬜⬜⬜'}
-        elif percentage >= 50:
-            return {'name': 'Система', 'emoji': '⚙', 'rank': 3, 'phrase': 'Механизм работает', 'bar': '🟩🟩🟩⬜⬜⬜⬜'}
-        elif percentage >= 30:
-            return {'name': 'Режим', 'emoji': '🚶', 'rank': 2, 'phrase': 'Ты в движении', 'bar': '🟩🟩⬜⬜⬜⬜⬜'}
-        else:
-            return {'name': 'Хаос', 'emoji': '😴', 'rank': 1, 'phrase': 'Начни с одной задачи', 'bar': '🟩⬜⬜⬜⬜⬜⬜'}
-    
+        """Уровень по проценту выполнения. Таблица уровней — в core.LEVELS,
+        общая с notifier (раньше лестница if/elif жила только здесь)."""
+        return _core_get_level(percentage)
+
     def get_level_bar(self, percentage):
         """
         Создаёт визуальную шкалу уровня

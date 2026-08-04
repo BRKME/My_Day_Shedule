@@ -1,2 +1,8 @@
-aiohttp==3.9.1
-# notifier.py (GitHub Actions) also needs: requests — installed in workflow yaml
+# Рантайм обоих процессов.
+# notifier.py — GitHub Actions (workflow ставит именно этот файл, руками
+# ничего не доставляет: расхождение CI и прода уже приводило к сюрпризам).
+# tracker_bot.py — systemd на VPS.
+aiohttp>=3.9,<4
+requests>=2.31,<3
+
+# Тесты: pip install -r requirements.txt -r requirements-dev.txt
