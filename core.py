@@ -17,6 +17,7 @@ import json
 import os
 import random
 import re
+from datetime import date as _date
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
@@ -380,7 +381,6 @@ def is_bracelet_day(day) -> bool:
 def _bracelet_ordinal(block: int) -> int:
     """Ordinal счастливого дня внутри блока (только будние дни)."""
     start = block * BRACELET_PERIOD
-    from datetime import date as _date
     weekdays = [start + i for i in range(BRACELET_PERIOD)
                 if _date.fromordinal(start + i).weekday() < 5]
     return random.Random(block).choice(weekdays)
@@ -405,6 +405,35 @@ def bracelet_quote(day) -> dict:
     order = random.Random(deck).sample(range(len(STOIC_QUOTES)),
                                        len(STOIC_QUOTES))
     return STOIC_QUOTES[order[position]]
+
+
+def parse_ddmmyyyy(text, default=None):
+    """Дата из строки вида «08.08.2026». Нужна там, где сообщение должно
+    зависеть от своей даты, а не от системных часов: рендер и перерисовка
+    вызываются в другое время, чем отправка."""
+    m = re.search(r'(\d{2})\.(\d{2})\.(\d{4})', text or '')
+    if m:
+        d, mo, y = (int(x) for x in m.groups())
+        try:
+            return _date(y, mo, d)
+        except ValueError:
+            pass
+    return default
+
+
+# ── Субботняя ремарка ────────────────────────────────────────────────────
+# Фраза держится ради второго прочтения: не «работай в выходные», а «не
+# жди пятницы всю неделю». Расшифровка обязательна — без неё цитата
+# читается наоборот и подтачивает то, что в расписании защищено
+# осознанно: разгруженную субботу и воскресенье без задач.
+
+SATURDAY_NOTE = {
+    'quote': 'Выходные — для бедных.',
+    'source': 'друг-миллионер',
+    'meaning': ('Речь не о том, чтобы работать в субботу. Речь о том, чтобы '
+                'не ждать пятницы всю неделю: выходные придуманы для тех, '
+                'чьим временем распоряжается кто-то другой.'),
+}
 
 
 # ── GitHub Contents API ──────────────────────────────────────────────────

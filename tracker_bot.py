@@ -20,6 +20,7 @@ import base64
 
 from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
                   is_bracelet_day, page_of_the_day, page_url,
+                  parse_ddmmyyyy,
                   github_contents_url, github_headers, merge_stats,
                   normalize_task, prune_message_states, summarize_day)
 
@@ -1493,15 +1494,8 @@ class TaskTrackerBot:
 
     @staticmethod
     def _message_date(header):
-        """Дата из заголовка сообщения («... 05.08.2026»), иначе сегодня."""
-        m = re.search(r'(\d{2})\.(\d{2})\.(\d{4})', header or '')
-        if m:
-            d, mo, y = (int(x) for x in m.groups())
-            try:
-                return date(y, mo, d)
-            except ValueError:
-                pass
-        return date.today()
+        """Дата из заголовка сообщения, иначе сегодня."""
+        return parse_ddmmyyyy(header, date.today())
 
     @staticmethod
     def blocks_fullness(completed_day, day_total, morning_count,

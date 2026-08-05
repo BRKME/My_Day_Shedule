@@ -23,7 +23,8 @@ from core import (EVENING_END, budget_header, fmt_dur as _fmt_dur,
                   load_kids_schedule, load_schedule, _lower_cyr,
                   normalize_task, task_minutes,
                   github_contents_url, github_headers)
-from core import (bracelet_quote, is_bracelet_day,
+from core import (SATURDAY_NOTE, bracelet_quote, is_bracelet_day,
+                  parse_ddmmyyyy,
                   page_of_the_day, page_url)
 from core import MORNING_BOUNDARIES as _CORE_BOUNDARIES
 from core import split_day_tasks as _core_split_day_tasks
@@ -502,10 +503,17 @@ class PersonalScheduleNotifier:
         # 08.07: все дополнительные блоки (мудрость, молитва, ссылки) — ТОЛЬКО
         # в утреннем сообщении; день и вечер — рабочие (задачи/нельзя).
         if block in ('morning', 'full'):
+            # Субботняя ремарка идёт ПЕРЕД мудростью дня и без буллетов:
+            # строка, начатая с «• », попала бы в чек-лист и сдвинула
+            # индексы прогресса.
+            if day_of_week == 'saturday':
+                content += (f"\n💰 <i>«{SATURDAY_NOTE['quote']}»</i> — "
+                            f"{SATURDAY_NOTE['source']}\n"
+                            f"{SATURDAY_NOTE['meaning']}\n")
             content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
             # Одна страница на сутки вместо простыни из пяти ссылок.
             # В выходные страницы нет — page_of_the_day вернёт None.
-            _p = page_of_the_day(self.today_msk())
+            _p = page_of_the_day(parse_ddmmyyyy(date_str, self.today_msk()))
             if _p:
                 content += (f'\n\n{_p["emoji"]} <a href="{page_url(_p)}">'
                             f'{_p["title"]}</a>')
