@@ -23,7 +23,8 @@ from core import (EVENING_END, budget_header, fmt_dur as _fmt_dur,
                   load_kids_schedule, load_schedule, _lower_cyr,
                   normalize_task, task_minutes,
                   github_contents_url, github_headers)
-from core import page_of_the_day, page_url
+from core import (bracelet_quote, is_bracelet_day,
+                  page_of_the_day, page_url)
 from core import MORNING_BOUNDARIES as _CORE_BOUNDARIES
 from core import split_day_tasks as _core_split_day_tasks
 
@@ -504,7 +505,7 @@ class PersonalScheduleNotifier:
             content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
             # Одна страница на сутки вместо простыни из пяти ссылок.
             # В выходные страницы нет — page_of_the_day вернёт None.
-            _p = page_of_the_day(datetime.now().date())
+            _p = page_of_the_day(self.today_msk())
             if _p:
                 content += (f'\n\n{_p["emoji"]} <a href="{page_url(_p)}">'
                             f'{_p["title"]}</a>')
@@ -531,7 +532,7 @@ class PersonalScheduleNotifier:
             rows.append([{'text': '🏖 Отпуск (пропустить день)', 'callback_data': 'vacation'}])
             # Кнопка та же страница, что и ссылка в тексте: выбор
             # детерминирован от даты, поэтому расхождения не будет.
-            page = page_of_the_day(datetime.now().date())
+            page = page_of_the_day(self.today_msk())
             if page:
                 rows.append([{'text': f'{page["emoji"]} {page["title"]}',
                               'url': page_url(page)}])
@@ -902,11 +903,58 @@ class PersonalScheduleNotifier:
             logger.error(f"❌ Ошибка: {e}")
             return False
 
+    @staticmethod
+    def today_msk():
+        """Сегодняшняя дата по Москве. Окружение (и Actions, и VPS) живёт
+        в UTC, поэтому naive now() у полуночи указывал бы на вчера."""
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("Europe/Moscow")).date()
+
+    def format_bracelet_message(self, date_str, day=None):
+        """Сообщение дня белого браслета.
+
+        Ни одной строки с «• »: трекер парсит задачи именно по этому
+        маркеру, и любой буллет превратил бы удачный день в чек-лист,
+        который потом уйдёт в статистику как невыполненный.
+        """
+        day = day or self.today_msk()
+        day_ru = self.DAY_NAMES_MAP.get(
+            ['monday', 'tuesday', 'wednesday', 'thursday', 'friday',
+             'saturday', 'sunday'][day.weekday()], '')
+        q = bracelet_quote(day)
+        return (
+            f"🤍 <b>БЕЛЫЙ БРАСЛЕТ · {day_ru} {date_str}</b>\n\n"
+            f"Сегодня твой супер-удачный день.\n"
+            f"Надень белый браслет — и иди делать то, что откладывал.\n\n"
+            f"Плана нет. Задач нет. Ничего отмечать не нужно.\n"
+            f"Один день в десять дней ты ничего не должен — "
+            f"ни себе, ни таблице.\n\n"
+            f"🔮 <b>Предсказание дня</b>\n"
+            f"<i>«{q['text']}»</i>\n"
+            f"— {q['author']}\n\n"
+            f"{q['practice']}"
+        )
+
     async def send_message_for_period(self, period):
         date_str, day_of_week, schedule = self.get_today_schedule()
         ss_content = None
         add_button = False
         
+        # Белый браслет: раз в десять дней задачи отменяются целиком.
+        # Проверка до всех веток, чтобы день и вечер тоже промолчали.
+        # Дата по МСК: Actions живут в UTC, и «какой сегодня день» обязано
+        # совпадать с тем, что видит человек (наивный now() уже давал
+        # трёхчасовую ошибку в бюджете вечера, баг 16.07).
+        _today = self.today_msk()
+        if is_bracelet_day(_today):
+            if period != 'morning':
+                logger.info("🤍 Белый браслет — %s не отправляется", period)
+                return True
+            await self.send_morning_photo()
+            return await self.send_telegram_message(
+                self.format_bracelet_message(date_str, _today),
+                None, add_progress_button=False, with_link_buttons=False)
+
         if period == 'morning':
             # Сначала отправляем мотивационное фото
             await self.send_morning_photo()

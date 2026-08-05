@@ -354,6 +354,59 @@ def page_of_the_day(day):
     return PAGES[_cycle_order(cycle)[position]]
 
 
+# ── Белый браслет ────────────────────────────────────────────────────────
+# Раз в десять дней выпадает супер-удачный день: задачи отменяются, утро
+# приносит одно мотивирующее сообщение и предсказание из стоиков.
+
+BRACELET_PERIOD = 10             # длина блока, ровно один день на блок
+
+
+def is_bracelet_day(day) -> bool:
+    """Выпал ли на эту дату белый браслет.
+
+    Один день на каждые десять календарных — и только будний: в субботу и
+    воскресенье задач почти нет, отменять там нечего, и удача пропала бы
+    зря. Внутри блока день выбирается среди будних, поэтому попадание не
+    привязано к дню недели — иначе это было бы не везение, а расписание.
+
+    Детерминировано от даты: утреннее сообщение и проверки дневного и
+    вечернего блоков выполняются разными запусками workflow и обязаны
+    сойтись в одном ответе.
+    """
+    block, _ = divmod(day.toordinal(), BRACELET_PERIOD)
+    return day.toordinal() == _bracelet_ordinal(block)
+
+
+def _bracelet_ordinal(block: int) -> int:
+    """Ordinal счастливого дня внутри блока (только будние дни)."""
+    start = block * BRACELET_PERIOD
+    from datetime import date as _date
+    weekdays = [start + i for i in range(BRACELET_PERIOD)
+                if _date.fromordinal(start + i).weekday() < 5]
+    return random.Random(block).choice(weekdays)
+
+
+def load_stoic_quotes() -> list:
+    return _load_json('stoic_quotes.json')
+
+
+STOIC_QUOTES = tuple(load_stoic_quotes())
+
+
+def bracelet_quote(day) -> dict:
+    """Предсказание дня: колода из всех двадцати цитат тасуется и
+    раздаётся по одной, так что повторов не будет, пока не выйдет вся.
+
+    Считается от номера блока, а не от даты: два браслета подряд с одной
+    и той же цитатой обесценили бы механику.
+    """
+    block, _ = divmod(day.toordinal(), BRACELET_PERIOD)
+    deck, position = divmod(block, len(STOIC_QUOTES))
+    order = random.Random(deck).sample(range(len(STOIC_QUOTES)),
+                                       len(STOIC_QUOTES))
+    return STOIC_QUOTES[order[position]]
+
+
 # ── GitHub Contents API ──────────────────────────────────────────────────
 # Транспорт у процессов разный (notifier — requests, tracker_bot — aiohttp),
 # общее здесь только формирование URL и кодирование содержимого.

@@ -19,7 +19,7 @@ import re
 import base64
 
 from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
-                  page_of_the_day, page_url,
+                  is_bracelet_day, page_of_the_day, page_url,
                   github_contents_url, github_headers, merge_stats,
                   normalize_task, prune_message_states, summarize_day)
 
@@ -1019,6 +1019,20 @@ class TaskTrackerBot:
         await self.send_telegram_message(message)
         logger.info(f"📊 Итоги дня отправлены: {overall_perc}% (day={day_done}/{day_total}, evening={evening_done}/{evening_total})")
     
+    def week_day_row(self, day, stats):
+        """Строка одного дня в полоске недели.
+
+        День белого браслета помечается отдельно: задач в этот день нет по
+        правилам игры, и рисовать его как «0% 😴» — врать самому себе,
+        превращая награду в упрёк.
+        """
+        name = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][day.weekday()]
+        if is_bracelet_day(day):
+            return f"{name} 🤍 белый браслет"
+        perc = stats.get(day.strftime("%Y-%m-%d"), {}).get('percentage', 0)
+        level = self.get_level(perc)
+        return f"{name} {self.get_progress_bar(perc, 7)} {perc}% {level['emoji']}"
+
     async def send_weekly_summary(self):
         """Отправляет итоги недели с Level System и топ-3 проблемных задач"""
         stats = self.load_stats()
@@ -1032,25 +1046,10 @@ class TaskTrackerBot:
         
         for i in range(6, -1, -1):
             day = today - timedelta(days=i)
-            day_key = day.strftime("%Y-%m-%d")
-            day_name = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][day.weekday()]
-            
-            if day_key in stats:
-                percentage = stats[day_key].get('percentage', 0)
-                level = self.get_level(percentage)
-                week_data.append({
-                    'name': day_name,
-                    'percentage': percentage,
-                    'date': day.strftime('%d.%m'),
-                    'level': level
-                })
-            else:
-                week_data.append({
-                    'name': day_name,
-                    'percentage': 0,
-                    'date': day.strftime('%d.%m'),
-                    'level': self.get_level(0)
-                })
+            week_data.append({'row': self.week_day_row(day, stats),
+                              'percentage': stats.get(
+                                  day.strftime("%Y-%m-%d"), {}).get(
+                                      'percentage', 0)})
         
         # Формируем сообщение
         week_start = (today - timedelta(days=6)).strftime('%d.%m')
@@ -1060,10 +1059,7 @@ class TaskTrackerBot:
         
         # Дни недели с эмодзи уровня
         for day_data in week_data:
-            perc = day_data['percentage']
-            level = day_data['level']
-            bar = self.get_progress_bar(perc, 7)
-            message += f"{day_data['name']} {bar} {perc}% {level['emoji']}\n"
+            message += f"{day_data['row']}\n"
         
         # Средний уровень
         avg_level = week_stats['level']
