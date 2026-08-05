@@ -317,6 +317,37 @@
             font-size: 1.7rem;
         }
 
+        .audio-player {
+            background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 16px rgba(70, 89, 107, 0.3);
+        }
+
+        .audio-player .audio-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .audio-player .play-icon {
+            font-size: 1.4rem;
+        }
+
+        .audio-player .audio-title {
+            color: #fff;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 32px 20px;
@@ -352,6 +383,16 @@
         </div>
         <h1>Стоицизм <span>сила там, где кончается твой контроль</span></h1>
         <p class="subtitle">Мир не обязан идти по твоему плану. Обязан идти по плану только ты сам.</p>
+    </div>
+
+    <div class="audio-player">
+        <div class="audio-header">
+            <span class="play-icon">🎧</span>
+            <span class="audio-title">Прослушать · 11:38</span>
+        </div>
+        <audio controls preload="metadata">
+            <source src="stoic.mp3?v=1" type="audio/mpeg">
+        </audio>
     </div>
 
     <div class="section">
