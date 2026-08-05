@@ -56,12 +56,11 @@ class PersonalScheduleNotifier:
         if not self.chat_id:
             raise ValueError("❌ TELEGRAM_CHAT_ID не найден в переменных окружения!")
         
-        self.prayer_url = "https://brkme.github.io/My_Day_Shedule/prayer.html"
-        self.ss_url = "https://brkme.github.io/My_Day_Shedule/ss.html"
-        self.career_url = "https://brkme.github.io/My_Day_Shedule/career.html"
-        self.taleb_url = "https://brkme.github.io/My_Day_Shedule/taleb.html"
-        self.kohelet_url = "https://brkme.github.io/My_Day_Shedule/kohelet.html"
-        self.stoic_url = "https://brkme.github.io/My_Day_Shedule/stoic.html"
+        # Страницы-эссе живут в core.PAGES (одна на будний день). Отдельные
+        # атрибуты убраны 05.08.2026: они дублировали список, и копия в
+        # tracker_bot уже разъехалась — после первого нажатия кнопки
+        # возвращались все четыре старые ссылки.
+        self.ss_url = "https://brkme.github.io/My_Day_Shedule/ss.html"  # Семейный совет
         
         self.wisdoms = [
     "Фокусируешься на решениях — находишь их даже в безвыходных, казалось бы, ситуациях. Концентрируешься на проблемах — получаешь их в полном объёме и даже больше."

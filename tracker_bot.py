@@ -13,12 +13,13 @@ import aiohttp
 from aiohttp import web
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import os
 import re
 import base64
 
 from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
+                  page_of_the_day, page_url,
                   github_contents_url, github_headers, merge_stats,
                   normalize_task, prune_message_states, summarize_day)
 
@@ -1467,24 +1468,44 @@ class TaskTrackerBot:
         await self.edit_message(message_id, text, keyboard)
     
     def _redraw_keyboard(self, message_text=""):
-        """Клавиатура при перерисовке сообщения. Ссылки (молитва/карьера/
-        Талеб/Экклезиаст) — ТОЛЬКО в утреннем сообщении (09.07); день и вечер
-        получают лишь кнопку прогресса. Раньше трекер хардкодил ссылки во всех
-        трёх сообщениях при каждом edit — они «возвращались» в вечер/день."""
+        """Клавиатура при перерисовке сообщения. Ссылка на страницу дня —
+        ТОЛЬКО в утреннем сообщении (09.07); день и вечер получают лишь
+        кнопку прогресса. Раньше трекер хардкодил ссылки во всех трёх
+        сообщениях при каждом edit — они «возвращались» в вечер/день.
+
+        Список страниц берётся из core (05.08.2026). До этого он был
+        прописан здесь копией и разъехался с нотификатором: утром
+        приходила одна страница дня, а после первого нажатия трекер
+        перерисовывал клавиатуру и возвращал все четыре старые ссылки.
+
+        Дата берётся из заголовка самого сообщения, а не из системных
+        часов: правка вчерашнего сообщения не должна подменять ссылку на
+        сегодняшнюю страницу."""
         rows = [[{'text': '🔄 Обновить прогресс', 'callback_data': 'update_progress'}]]
         header = (message_text or "").split("\n", 1)[0]
         # Утреннее сообщение узнаём по заголовку «Доброе утро» (день —
         # «Дневной блок», вечер — «Вечерний план»). Проверяем ТОЛЬКО первую
         # строку, чтобы подзаголовок «Дневные задачи · утро» не сбивал.
-        is_morning = 'Доброе утро' in header
-        if is_morning:
-            rows += [
-                [{'text': '🙏 Утренняя молитва', 'url': 'https://brkme.github.io/My_Day_Shedule/prayer.html'}],
-                [{'text': '🏢 Принципы карьеры', 'url': 'https://brkme.github.io/My_Day_Shedule/career.html'}],
-                [{'text': '📚 Антихрупкость', 'url': 'https://brkme.github.io/My_Day_Shedule/taleb.html'}],
-                [{'text': '📜 Экклезиаст: Chelek', 'url': 'https://brkme.github.io/My_Day_Shedule/kohelet.html'}],
-            ]
+        if 'Доброе утро' not in header:
+            return {'inline_keyboard': rows}
+
+        page = page_of_the_day(self._message_date(header))
+        if page:
+            rows.append([{'text': f'{page["emoji"]} {page["title"]}',
+                          'url': page_url(page)}])
         return {'inline_keyboard': rows}
+
+    @staticmethod
+    def _message_date(header):
+        """Дата из заголовка сообщения («... 05.08.2026»), иначе сегодня."""
+        m = re.search(r'(\d{2})\.(\d{2})\.(\d{4})', header or '')
+        if m:
+            d, mo, y = (int(x) for x in m.groups())
+            try:
+                return date(y, mo, d)
+            except ValueError:
+                pass
+        return date.today()
 
     @staticmethod
     def blocks_fullness(completed_day, day_total, morning_count,

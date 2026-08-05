@@ -173,3 +173,54 @@ def test_morning_message_has_link_on_weekday():
             if 'url' in b]
     assert len(urls) == 1
     assert urls[0] in msg
+
+
+# ── Перерисовка сообщения трекером ───────────────────────────────────────
+
+def _tracker():
+    import os
+    os.environ.setdefault('TELEGRAM_TOKEN', 'test-token')
+    os.environ.setdefault('TELEGRAM_CHAT_ID', 'test-chat')
+    from tracker_bot import TaskTrackerBot
+    return TaskTrackerBot()
+
+
+def test_redraw_keeps_single_page_link():
+    """Инцидент 05.08.2026: утром пришла одна ссылка, но после первого
+    нажатия трекер перерисовывал клавиатуру со своим захардкоженным
+    списком — возвращались все прежние страницы, кроме Стоицизма."""
+    b = _tracker()
+    header = '🌅 <b>Доброе утро! План на Среда 05.08.2026</b>\n\n• задача'
+    kb = b._redraw_keyboard(header)
+    urls = [x['url'] for row in kb['inline_keyboard'] for x in row if 'url' in x]
+    assert len(urls) == 1, f'ожидалась одна ссылка, пришло {len(urls)}: {urls}'
+
+
+def test_redraw_link_matches_the_message_date():
+    """Кнопка должна вести на страницу того дня, к которому относится
+    сообщение, а не на сегодняшнюю: вечером правишь утреннее сообщение —
+    ссылка не должна подмениться."""
+    b = _tracker()
+    for d in (date(2026, 8, 5), date(2026, 8, 6), date(2026, 8, 7)):
+        header = f'🌅 <b>Доброе утро! План на Среда {d.strftime("%d.%m.%Y")}</b>'
+        kb = b._redraw_keyboard(header)
+        urls = [x['url'] for row in kb['inline_keyboard'] for x in row
+                if 'url' in x]
+        assert urls == [page_url(page_of_the_day(d))], d
+
+
+def test_redraw_has_no_link_on_weekend():
+    b = _tracker()
+    header = '🌅 <b>Доброе утро! План на Суббота 08.08.2026</b>'
+    kb = b._redraw_keyboard(header)
+    assert not [x for row in kb['inline_keyboard'] for x in row if 'url' in x]
+
+
+def test_redraw_day_and_evening_have_no_links():
+    """Ссылки только в утреннем сообщении — правило от 09.07.2026."""
+    b = _tracker()
+    for header in ('☀️ <b>Дневной блок · Среда 05.08.2026</b>',
+                   '🌙 <b>Вечерний план на Среда 05.08.2026</b>'):
+        kb = b._redraw_keyboard(header)
+        assert not [x for row in kb['inline_keyboard'] for x in row
+                    if 'url' in x], header
