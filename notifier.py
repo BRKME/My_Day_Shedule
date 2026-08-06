@@ -24,6 +24,7 @@ from core import (EVENING_END, budget_header, fmt_dur as _fmt_dur,
                   normalize_task, task_minutes,
                   github_contents_url, github_headers)
 from core import (SATURDAY_NOTE, bracelet_quote, is_bracelet_day,
+                  task_of_the_day,
                   parse_ddmmyyyy,
                   page_of_the_day, page_url)
 from core import MORNING_BOUNDARIES as _CORE_BOUNDARIES
@@ -423,6 +424,13 @@ class PersonalScheduleNotifier:
                 for k in self.kids_schedule[kids_day]:
                     content += f"• {k['child']} {k['activity']} {k['time']}\n"
             
+            # Задание дня программы «365 дней». Без буллета: строка с «• »
+            # попала бы в чек-лист и сдвинула индексы прогресса.
+            _t = task_of_the_day(parse_ddmmyyyy(date_str, self.today_msk()))
+            if _t:
+                content += (f"\n🎯 <b>Задание дня · {_t['category']}</b>\n"
+                            f"{_t['task']}\n"
+                            f"<i>{_t['why']}</i>\n")
             content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
             return content
         
@@ -503,6 +511,13 @@ class PersonalScheduleNotifier:
         # 08.07: все дополнительные блоки (мудрость, молитва, ссылки) — ТОЛЬКО
         # в утреннем сообщении; день и вечер — рабочие (задачи/нельзя).
         if block in ('morning', 'full'):
+            # Задание дня программы «365 дней». Без буллета: строка с «• »
+            # попала бы в чек-лист и сдвинула индексы прогресса.
+            _t = task_of_the_day(parse_ddmmyyyy(date_str, self.today_msk()))
+            if _t:
+                content += (f"\n🎯 <b>Задание дня · {_t['category']}</b>\n"
+                            f"{_t['task']}\n"
+                            f"<i>{_t['why']}</i>\n")
             # Субботняя ремарка идёт ПЕРЕД мудростью дня и без буллетов:
             # строка, начатая с «• », попала бы в чек-лист и сдвинула
             # индексы прогресса.

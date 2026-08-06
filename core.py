@@ -436,6 +436,104 @@ SATURDAY_NOTE = {
 }
 
 
+# ── Задание дня: программа «365 дней улучшений» ──────────────────────────
+# Пул в data/daily_tasks.json. Одно задание в день, порядок случайный, но
+# колодой: пока колода не пройдена, повторов нет. Трекинга нет — задание
+# не входит в процент дня, чтобы в тяжёлый день человек не сливал именно
+# развитие, оно дороже прочего.
+
+WEEKEND_CATEGORIES = ('Семья', 'Отцовство', 'Друзья')
+
+
+def load_daily_tasks() -> list:
+    return _load_json('daily_tasks.json')
+
+
+DAILY_TASKS = tuple(load_daily_tasks())
+_WEEKDAY_POOL = tuple(t for t in DAILY_TASKS
+                      if t['category'] not in WEEKEND_CATEGORIES)
+_WEEKEND_POOL = tuple(t for t in DAILY_TASKS
+                      if t['category'] in WEEKEND_CATEGORIES)
+
+
+def _deck(pool, cycle: int, weekday_deck: bool) -> list:
+    """Порядок заданий внутри одной колоды.
+
+    Тасовка задаётся номером колоды, дальше порядок собирается жадно под
+    два правила нагрузки:
+
+    • два эмоционально дорогих задания не идут подряд — «признай промах
+      перед женой» два дня кряду ведёт к тому, что программу бросают;
+    • задания, требующие заметного усилия, не попадают в понедельник и
+      пятницу: в начале и в конце недели сил меньше всего.
+
+    День недели считается от абсолютного номера буднего дня, а не от
+    позиции в колоде: длина пула не кратна пяти, и позиция уезжает от
+    дня недели на каждом новом круге.
+
+    Жадная сборка, а не перестановки: swap чинит одно нарушение и создаёт
+    другое, и порядок перестаёт быть предсказуемым.
+    """
+    rest = random.Random(cycle).sample(list(pool), len(pool))
+    prev_load = None
+    if cycle > 0:
+        prev_load = _deck_tail_load(pool, cycle - 1, weekday_deck)
+    out = []
+    base = cycle * len(pool)
+    for pos in range(len(rest)):
+        weekday = (base + pos) % 5          # 0 — понедельник, 4 — пятница
+        pick = None
+        for cand in rest:
+            load = cand.get('load', 'light')
+            if load == 'high' and prev_load == 'high':
+                continue
+            if weekday_deck and load == 'effort' and weekday in (0, 4):
+                continue
+            pick = cand
+            break
+        if pick is None:            # запас: правила несовместимы с остатком
+            pick = rest[0]
+        rest.remove(pick)
+        out.append(pick)
+        prev_load = pick.get('load', 'light')
+    return out
+
+
+def _deck_tail_load(pool, cycle: int, weekday_deck: bool):
+    """Нагрузка последнего задания предыдущей колоды — чтобы шов между
+    колодами не свёл два дорогих задания вплотную. Считается по сырой
+    тасовке, без рекурсии в предыдущий шов."""
+    rest = random.Random(cycle).sample(list(pool), len(pool))
+    return rest[-1].get('load', 'light')
+
+
+def _weekend_index(day) -> int:
+    """Номер выходного дня от той же эпохи, что и будничный счётчик."""
+    weeks, rest = divmod(day.toordinal() - _EPOCH_MONDAY, 7)
+    return weeks * 2 + (rest - 5)
+
+
+def task_of_the_day(day):
+    """Задание дня или None, если задания сегодня нет.
+
+    Выходные получают только семью, отцовство и друзей: в эти дни человек
+    рядом с близкими, и остальные категории там неуместны. В день белого
+    браслета задания нет — иначе «сегодня ты ничего не должен» становится
+    неправдой.
+
+    Выбор детерминирован от даты: текст сообщения и клавиатура собираются
+    разными вызовами и обязаны сойтись на одном задании.
+    """
+    if is_bracelet_day(day):
+        return None
+    if day.weekday() >= 5:
+        pool, index, weekday_deck = _WEEKEND_POOL, _weekend_index(day), False
+    else:
+        pool, index, weekday_deck = _WEEKDAY_POOL, _weekday_index(day), True
+    cycle, position = divmod(index, len(pool))
+    return _deck(pool, cycle, weekday_deck)[position]
+
+
 # ── GitHub Contents API ──────────────────────────────────────────────────
 # Транспорт у процессов разный (notifier — requests, tracker_bot — aiohttp),
 # общее здесь только формирование URL и кодирование содержимого.
