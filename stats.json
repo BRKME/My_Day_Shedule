@@ -1801,22 +1801,29 @@
     },
     "day": {
       "completed": [
-        0
+        0,
+        1,
+        2,
+        3,
+        4,
+        6
       ],
       "total": 7
     },
     "cant_do": {
-      "completed": [],
+      "completed": [
+        0
+      ],
       "total": 1
     },
     "evening": {
       "completed": [],
       "total": 0
     },
-    "percentage": 14,
-    "points": 1,
+    "percentage": 85,
+    "points": 6,
     "max_points": 7,
-    "penalty": false,
-    "penalty_pushups": 0
+    "penalty": true,
+    "penalty_pushups": 30
   }
 }
