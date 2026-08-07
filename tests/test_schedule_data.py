@@ -71,3 +71,17 @@ def test_exercises_are_not_duplicated_within_a_day():
     for day, sections in load_schedule().items():
         for name, tasks in sections.items():
             assert len(tasks) == len(set(tasks)), f'{day}/{name}: дубль'
+
+
+def test_weekdays_have_two_distinct_sets_of_each_exercise():
+    """Два подхода задуманы специально, но строки обязаны различаться:
+    одинаковые отмечаются по индексам, и по сообщению не понять, какую
+    именно нажал."""
+    sched = load_schedule()
+    for day in ('monday', 'tuesday', 'wednesday', 'thursday'):
+        tasks = sched[day]['день']
+        pull = [t for t in tasks if 'одтян' in t]
+        abs_ = [t for t in tasks if 'пресс' in t]
+        assert len(pull) == 2 and len(set(pull)) == 2, f'{day}: подтягивания'
+        assert len(abs_) == 2 and len(set(abs_)) == 2, f'{day}: пресс'
+        assert 'подход 1' in ' '.join(pull) and 'подход 2' in ' '.join(pull)
