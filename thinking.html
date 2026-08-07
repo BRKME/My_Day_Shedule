@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Критическое мышление — Десять приёмов</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #101316;
+            --color-surface: #f6f7f8;
+            --color-accent: #3f464d;
+            --color-accent-light: #78828c;
+            --color-accent-soft: #e5e7ea;
+            --color-text: #1b2229;
+            --color-text-muted: #5f6b76;
+            --font-main: 'Raleway', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            background: var(--color-surface);
+            border-radius: 4px;
+            padding: 48px 44px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .column-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 24px;
+        }
+
+        .column-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--color-accent);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        h1 {
+            font-family: var(--font-main);
+            font-size: 2.2rem;
+            font-weight: 500;
+            color: var(--color-text);
+            letter-spacing: 0.01em;
+            margin-bottom: 16px;
+        }
+
+        h1 span {
+            display: block;
+            font-size: 1.7rem;
+            font-weight: 400;
+            color: var(--color-text-muted);
+            margin-top: 8px;
+        }
+
+        .subtitle {
+            background: var(--color-accent-soft);
+            padding: 20px 24px;
+            border-radius: 3px;
+            border-left: 3px solid var(--color-accent);
+            font-size: 1.6rem;
+            font-weight: 400;
+            color: var(--color-text);
+        }
+
+        .section {
+            margin: 44px 0;
+        }
+
+        .section-title {
+            font-family: var(--font-main);
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--color-accent-soft);
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 4px;
+            padding: 24px;
+            border-left: 3px solid var(--color-accent-light);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h3 {
+            font-family: var(--font-main);
+            font-size: 1.7rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            font-size: 1.6rem;
+            color: var(--color-text);
+        }
+
+        .card.not-mine {
+            border-left-color: var(--color-text-muted);
+            background: #f2f4f6;
+        }
+
+        .card.not-mine h3 {
+            color: var(--color-text-muted);
+        }
+
+        .principle-box {
+            background: var(--color-accent-soft);
+            border-radius: 4px;
+            padding: 32px;
+            margin: 36px 0;
+        }
+
+        .principle-box h2 {
+            font-family: var(--font-main);
+            font-size: 1.7rem;
+            color: var(--color-accent);
+            margin-bottom: 12px;
+        }
+
+        .principle-box > p {
+            color: var(--color-text);
+            margin-bottom: 20px;
+        }
+
+        .principle-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .principle-item {
+            background: #fff;
+            padding: 12px 20px;
+            border-radius: 3px;
+            font-size: 1.6rem;
+            color: var(--color-text);
+            border-bottom: 2px solid var(--color-accent-light);
+        }
+
+        .quote {
+            text-align: center;
+            padding: 36px;
+            background: var(--color-accent);
+            color: #fff;
+            border-radius: 4px;
+            margin: 40px 0;
+        }
+
+        .quote p {
+            font-family: var(--font-main);
+            font-size: 1.7rem;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .quote .author {
+            display: block;
+            margin-top: 16px;
+            font-size: 1.5rem;
+            font-weight: 400;
+            opacity: 0.75;
+        }
+
+        .practice {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--color-accent-soft);
+        }
+
+        .practice:last-child {
+            border-bottom: none;
+        }
+
+        .practice-time {
+            flex-shrink: 0;
+            width: 44px;
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            padding-top: 2px;
+            white-space: nowrap;
+        }
+
+        .practice-body h3 {
+            font-family: var(--font-main);
+            font-size: 1.65rem;
+            font-weight: 500;
+            color: var(--color-text);
+            margin-bottom: 6px;
+        }
+
+        .practice-body p {
+            font-size: 1.6rem;
+            color: var(--color-text);
+        }
+
+        .daily {
+            background: #fff;
+            border-radius: 4px;
+            padding: 32px;
+            margin: 36px 0;
+            border: 1px solid var(--color-accent-soft);
+        }
+
+        .daily h2 {
+            font-family: var(--font-main);
+            font-size: 1.6rem;
+            color: var(--color-accent);
+            margin-bottom: 24px;
+        }
+
+        .daily-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin: 16px 0;
+            font-size: 1.6rem;
+            color: var(--color-text);
+        }
+
+        .daily-item::before {
+            content: '';
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            background: var(--color-accent-light);
+            border-radius: 50%;
+            margin-top: 8px;
+        }
+
+        .daily-item strong {
+            color: var(--color-accent);
+        }
+
+        .daily-result {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--color-accent-soft);
+            font-family: var(--font-main);
+            font-size: 1.7rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            text-align: center;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 44px;
+            padding-top: 24px;
+            border-top: 1px solid var(--color-accent-soft);
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: var(--color-accent-soft);
+            color: var(--color-accent);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 1.6rem;
+            font-weight: 500;
+        }
+
+        .footer-icons {
+            color: var(--color-text-muted);
+            font-size: 1.7rem;
+        }
+
+        .audio-player {
+            background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 16px rgba(63, 70, 77, 0.3);
+        }
+
+        .audio-player .audio-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .audio-player .play-icon {
+            font-size: 1.4rem;
+        }
+
+        .audio-player .audio-title {
+            color: #fff;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 32px 20px;
+            }
+
+            h1 {
+                font-size: 1.9rem;
+            }
+
+            .practice {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .practice-time {
+                width: auto;
+                white-space: normal;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="column-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="10.5" cy="10.5" r="6.5"/>
+                <path d="M15.5 15.5L21 21"/>
+                <path d="M7.5 10.5h6M10.5 7.5v6"/>
+            </svg>
+        </div>
+        <h1>Критическое мышление <span>десять приёмов, а не десять правил</span></h1>
+        <p class="subtitle">Десять способов поймать себя до того, как ты сделал вывод.</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Десять приёмов</div>
+
+        <div class="practice">
+            <div class="practice-time">1</div>
+            <div class="practice-body">
+                <h3>Пауза в три секунды</h3>
+                <p>Первая мысль приходит не потому, что она верная, а потому что быстрая — мозг выдаёт готовый шаблон раньше, чем успевает подумать. Три секунды паузы отделяют реакцию от суждения.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">2</div>
+            <div class="practice-body">
+                <h3>Что заставило бы меня передумать</h3>
+                <p>Самый неприятный вопрос из всех. Не «мог ли я ошибаться» — на это легко ответить «конечно, мог» и остаться при своём. Назови конкретный факт, после которого ты скажешь «я был неправ». Не находится — ты не рассуждаешь, ты веришь. Это нормально, но пусть называется своим именем.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">3</div>
+            <div class="practice-body">
+                <h3>Спорь со сказанным, а не со сказавшим</h3>
+                <p>Перепиши утверждение без имени автора и оцени заново. Оценка изменилась — ты оценивал не аргумент.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">4</div>
+            <div class="practice-body">
+                <h3>Что ещё может быть правдой</h3>
+                <p>Не «правда ли это», а именно так. Настоящая альтернатива — та, при которой те же самые факты выглядели бы точно так же. Одной достаточно, выдуманные ради галочки только мешают.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">5</div>
+            <div class="practice-body">
+                <h3>Уверенность числом</h3>
+                <p>Вместо «я уверен» скажи: скорее да, вероятно, почти наверняка. И проверь ставкой — поставил бы деньги в такой пропорции? Не можешь выбрать ступень — значит, не знаешь, и это тоже ответ.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">6</div>
+            <div class="practice-body">
+                <h3>Половина споров — про слова</h3>
+                <p>Спроси, что человек имеет в виду под этим словом. Часто выясняется, что спорили вы о разном, и спор кончается сам.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">7</div>
+            <div class="practice-body">
+                <h3>Рядом не значит из-за</h3>
+                <p>Два события совпали по времени — проверь две вещи, прежде чем связывать их: не наоборот ли работает связь и не стоит ли за обоими третье. Обратное направление — самая частая из этих ошибок.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">8</div>
+            <div class="practice-body">
+                <h3>Чего не сказали</h3>
+                <p>Смотри не только на то, что тебе сообщили, но и на то, что осталось за кадром. И проверь, случайно ли оно там осталось.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">9</div>
+            <div class="practice-body">
+                <h3>Цифры без базы — пустой звук</h3>
+                <p>Услышал процент — попроси абсолютные числа, прежде чем реагировать. «Рост на двести процентов» — это от одного до трёх или от тысячи до трёх тысяч? Разные новости.</p>
+            </div>
+        </div>
+
+        <div class="practice">
+            <div class="practice-time">10</div>
+            <div class="practice-body">
+                <h3>Дальше одной точки</h3>
+                <p>Прежде чем радоваться результату, спроси: что будет через год, через десять лет. Быстрый эффект часто берёт в долг у будущего.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="tags">
+            <span class="tag">пауза</span>
+            <span class="tag">опровержение</span>
+            <span class="tag">альтернативы</span>
+            <span class="tag">определения</span>
+            <span class="tag">база сравнения</span>
+        </div>
+        <div class="footer-icons">Критическое мышление</div>
+    </div>
+
+</div>
+</body>
+</html>

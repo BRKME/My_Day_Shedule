@@ -278,6 +278,8 @@ PAGES = (
      'file': 'kohelet.html'},
     {'key': 'stoic',   'emoji': '🏛', 'title': 'Стоицизм: дихотомия контроля',
      'file': 'stoic.html'},
+    {'key': 'thinking', 'emoji': '🔎', 'title': 'Критическое мышление',
+     'file': 'thinking.html'},
 )
 
 

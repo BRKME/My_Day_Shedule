@@ -17,10 +17,16 @@ sys.path.insert(0, '.')
 from core import PAGES, page_of_the_day, page_url
 
 
-def test_five_pages_registered():
-    assert len(PAGES) == 5
+def test_all_pages_registered():
+    assert len(PAGES) == 6
     keys = {p['key'] for p in PAGES}
-    assert keys == {'prayer', 'career', 'taleb', 'kohelet', 'stoic'}
+    assert keys == {'prayer', 'career', 'taleb', 'kohelet', 'stoic', 'thinking'}
+
+
+def test_every_page_file_exists():
+    import os
+    for p in PAGES:
+        assert os.path.exists(p['file']), p['file']
 
 
 def test_every_page_has_emoji_title_and_file():
@@ -63,13 +69,13 @@ def test_every_page_appears_within_two_weeks():
     """Пропуск выходных рвёт колоду, но ни одна страница не должна
     выпадать из оборота надолго."""
     for offset in range(0, 120, 10):
-        window = set(_weekday_keys(date(2026, 8, 5) + timedelta(days=offset), 10))
-        assert len(window) == 5, f'со сдвигом {offset} показаны только {window}'
+        window = set(_weekday_keys(date(2026, 8, 5) + timedelta(days=offset), 12))
+        assert len(window) == len(PAGES), f'со сдвигом {offset}: {window}'
 
 
 def test_no_page_starves_over_a_month():
     """За 20 будней каждая страница должна выпасть хотя бы трижды."""
-    seen = _weekday_keys(date(2026, 8, 5), 20)
+    seen = _weekday_keys(date(2026, 8, 5), 24)
     for p in PAGES:
         assert seen.count(p['key']) >= 3, f'{p["key"]}: {seen.count(p["key"])}'
 
@@ -78,7 +84,7 @@ def test_order_is_not_a_fixed_rotation():
     """Иначе это не рандом, а расписание: понедельник всегда молитва."""
     start = date(2026, 8, 5)
     keys = _weekday_keys(start, 60)
-    cycles = [tuple(keys[i:i + 5]) for i in range(0, 60, 5)]
+    cycles = [tuple(keys[i:i + len(PAGES)]) for i in range(0, 60, len(PAGES))]
     assert len(set(cycles)) > 1
 
 
