@@ -24,6 +24,7 @@ from core import (EVENING_END, budget_header, fmt_dur as _fmt_dur,
                   normalize_task, task_minutes,
                   github_contents_url, github_headers)
 from core import (SATURDAY_NOTE, bracelet_quote, is_bracelet_day,
+                  wisdom_of_the_day,
                   task_of_the_day,
                   parse_ddmmyyyy,
                   page_of_the_day, page_url)
@@ -65,9 +66,7 @@ class PersonalScheduleNotifier:
         # возвращались все четыре старые ссылки.
         self.ss_url = "https://brkme.github.io/My_Day_Shedule/ss.html"  # Семейный совет
         
-        self.wisdoms = [
-    "Фокусируешься на решениях — находишь их даже в безвыходных, казалось бы, ситуациях. Концентрируешься на проблемах — получаешь их в полном объёме и даже больше."
-]
+        # Мудрости живут в core.WISDOMS — общий источник для всех веток.
         
         self.recurring_events = {
             'tarelka': {'name': 'Семейная традиция - Путешествие на тарелке', 'file': 'tarelka.txt', 'rule': 'last_saturday'},
@@ -92,8 +91,11 @@ class PersonalScheduleNotifier:
 
         self.schedule = load_schedule()
 
-    def get_random_wisdom(self):
-        return random.choice(self.wisdoms)
+    def get_random_wisdom(self, day=None):
+        """Мудрость дня. Имя метода историческое: выбор больше не
+        случайный, а от даты — иначе повторная сборка сообщения могла бы
+        подменить текст под уже отправленным."""
+        return wisdom_of_the_day(day or self.today_msk())
 
     def get_today_schedule(self):
         now = datetime.now()
@@ -406,7 +408,7 @@ class PersonalScheduleNotifier:
     async def format_morning_day_message(self, date_str, day_of_week, schedule, block='full'):
         day_names = {'monday': 'Понедельник', 'tuesday': 'Вторник', 'wednesday': 'Среда', 'thursday': 'Четверг', 'friday': 'Пятница', 'saturday': 'Суббота', 'sunday': 'Воскресенье'}
         day_ru = day_names.get(day_of_week, day_of_week)
-        wisdom = self.get_random_wisdom()
+        wisdom = self.get_random_wisdom(parse_ddmmyyyy(date_str, self.today_msk()))
         
         # Sunday = FamilyDay, minimal message
         if day_of_week == 'sunday':
@@ -711,7 +713,7 @@ class PersonalScheduleNotifier:
     async def format_evening_message(self, date_str, day_of_week, schedule):
         day_names = {'monday': 'Понедельник', 'tuesday': 'Вторник', 'wednesday': 'Среда', 'thursday': 'Четверг', 'friday': 'Пятница', 'saturday': 'Суббота', 'sunday': 'Воскресенье'}
         day_ru = day_names.get(day_of_week, day_of_week)
-        wisdom = self.get_random_wisdom()
+        wisdom = self.get_random_wisdom(parse_ddmmyyyy(date_str, self.today_msk()))
 
         content = f"🌙 <b>Вечерний план на {day_ru} {date_str}</b>\n"
 
