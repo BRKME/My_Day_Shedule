@@ -56,3 +56,18 @@ def test_kids_schedule_entries_have_required_fields():
         for lesson in lessons:
             assert set(lesson) >= {'child', 'activity', 'time'}, f'{day}: {lesson}'
             assert '-' in lesson['time'], f'{day}: время без диапазона'
+
+
+def test_friday_has_no_pullups_or_abs_in_day_block():
+    """В пятницу отдельным сообщением приходит зачёт по подтягиваниям —
+    те же упражнения в дневном блоке дублируют его и портят процент."""
+    for task in load_schedule()['friday']['день']:
+        assert 'одтян' not in task and 'пресс' not in task, task
+
+
+def test_exercises_are_not_duplicated_within_a_day():
+    """Одна и та же строка дважды в секции ломает прогресс: обе задачи
+    отмечаются по индексам, и человек не понимает, какую именно нажал."""
+    for day, sections in load_schedule().items():
+        for name, tasks in sections.items():
+            assert len(tasks) == len(set(tasks)), f'{day}/{name}: дубль'
