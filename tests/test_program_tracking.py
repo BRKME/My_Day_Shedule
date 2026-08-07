@@ -221,3 +221,53 @@ def test_weekly_summary_shows_programme_line(bot, monkeypatch):
     bot.record_task_result(today - timedelta(days=1), 'done')
     line = bot.program_week_line(today)
     assert line.startswith('🎯 Задания недели:')
+
+
+# ── Кнопки в момент отправки, а не только при перерисовке ────────────────
+
+def _notifier_at(d):
+    from datetime import datetime
+    from unittest.mock import patch
+    from notifier import PersonalScheduleNotifier
+    n = PersonalScheduleNotifier()
+
+    class FixedDT(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(d.year, d.month, d.day, 7, 30, tzinfo=tz)
+
+    with patch('notifier.datetime', FixedDT):
+        return n.create_message_keyboard()
+
+
+def test_sent_message_already_has_task_buttons():
+    """Кнопки должны быть в сообщении сразу. Инцидент: они были только в
+    перерисовке трекера, то есть утром отметить задание было нечем."""
+    kb = _notifier_at(date(2026, 8, 12))
+    data = [b.get('callback_data') for row in kb['inline_keyboard'] for b in row]
+    assert 'task_done' in data and 'task_skip' in data
+
+
+def test_sent_keyboard_has_no_task_buttons_on_bracelet_day():
+    kb = _notifier_at(date(2026, 8, 21))
+    data = [b.get('callback_data') for row in kb['inline_keyboard'] for b in row]
+    assert 'task_done' not in data
+
+
+def test_sunday_morning_keeps_task_buttons(bot):
+    """Воскресный заголовок — «🌅 Воскресенье», без «Доброе утро».
+    Трекер узнавал утро по этой фразе и в воскресенье терял и кнопки
+    задания, и ссылку на страницу дня."""
+    header = '🌅 <b>Воскресенье 23.08.2026</b>'
+    data = [b.get('callback_data')
+            for row in bot._redraw_keyboard(header)['inline_keyboard']
+            for b in row]
+    assert 'task_done' in data
+
+
+def test_full_block_header_also_counts_as_morning(bot):
+    header = '🌅 <b>План на Среда 12.08.2026</b>'
+    data = [b.get('callback_data')
+            for row in bot._redraw_keyboard(header)['inline_keyboard']
+            for b in row]
+    assert 'task_done' in data

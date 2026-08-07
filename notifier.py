@@ -555,6 +555,13 @@ class PersonalScheduleNotifier:
             rows.append([{'text': '🏖 Отпуск (пропустить день)', 'callback_data': 'vacation'}])
             # Кнопка та же страница, что и ссылка в тексте: выбор
             # детерминирован от даты, поэтому расхождения не будет.
+            # Кнопки задания дня — сразу в отправляемом сообщении.
+            # Раньше они были только в перерисовке трекера, то есть утром
+            # отметить задание было нечем.
+            if task_of_the_day(self.today_msk()):
+                rows.append([{'text': 'Сделал', 'callback_data': 'task_done'},
+                             {'text': 'Не сегодня', 'callback_data': 'task_skip'}])
+
             page = page_of_the_day(self.today_msk())
             if page:
                 rows.append([{'text': f'{page["emoji"]} {page["title"]}',
