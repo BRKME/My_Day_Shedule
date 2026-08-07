@@ -19,6 +19,7 @@ import re
 import base64
 
 from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
+                  task_of_the_day,
                   is_bracelet_day, page_of_the_day, page_url,
                   parse_ddmmyyyy,
                   github_contents_url, github_headers, merge_stats,
@@ -43,6 +44,12 @@ class TaskTrackerBot:
         
         self.github_token = os.getenv('GITHUB_TOKEN', '')
         self.github_repo = GITHUB_REPO
+
+        # Программа «365 дней»: отметки заданий храним ОТДЕЛЬНО от stats.json.
+        # Задание не входит в процент дня — иначе в тяжёлый день сольётся
+        # именно развитие, оно дороже прочего и первым идёт под нож.
+        self.program_file = "program.json"
+        self.program = self.load_program()
         
         self.stats_file = "stats.json"
         self.message_state_file = "message_states.json"
@@ -417,6 +424,36 @@ class TaskTrackerBot:
             f"stats: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         )
     
+    async def sync_program_to_github(self):
+        """Отметки заданий в репозиторий — отдельным файлом от stats.json."""
+        content = json.dumps(self.program, ensure_ascii=False, indent=2)
+        return await self._github_put_file(
+            "program.json",
+            content,
+            f"program: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        )
+
+    async def edit_message_keyboard(self, message_id, keyboard):
+        """Заменить только клавиатуру, не трогая текст сообщения.
+
+        editMessageText переписал бы текст целиком, а прогресс в нём
+        хранится по индексам строк — правка текста ради кнопки сломала бы
+        отметки задач.
+        """
+        try:
+            url = (f"https://api.telegram.org/bot{self.telegram_token}"
+                   f"/editMessageReplyMarkup")
+            payload = {'chat_id': self.chat_id, 'message_id': message_id,
+                       'reply_markup': json.dumps(keyboard)}
+            async with self.session.post(url, json=payload) as resp:
+                if resp.status != 200:
+                    logger.error("❌ Клавиатура не обновлена: %s", resp.status)
+                    return False
+                return True
+        except Exception as e:
+            logger.error(f"❌ Ошибка обновления клавиатуры: {e}")
+            return False
+
     def load_message_states(self):
         """Загружает состояния сообщений из файла"""
         try:
@@ -1062,6 +1099,12 @@ class TaskTrackerBot:
         for day_data in week_data:
             message += f"{day_data['row']}\n"
         
+        # Программа «365 дней» — отдельной строкой: у неё свой учёт и она
+        # не влияет ни на процент, ни на уровень.
+        _prog = self.program_week_line(today.date() if hasattr(today, 'date') else today)
+        if _prog:
+            message += f"\n{_prog}\n"
+
         # Средний уровень
         avg_level = week_stats['level']
         message += f"\n<b>Средний:</b> {week_stats['avg']}%\n"
@@ -1320,6 +1363,19 @@ class TaskTrackerBot:
             await self.toggle_task(message_id, period, task_idx)
             await self.answer_callback_query(callback_query_id)
         
+        elif callback_data in ('task_done', 'task_skip'):
+            # Задание дня. Отметка идёт в program.json и не трогает
+            # статистику дня — это разные учёты.
+            day = self._message_date((message_text or "").split("\n", 1)[0])
+            status = 'done' if callback_data == 'task_done' else 'skip'
+            if self.record_task_result(day, status):
+                await self.sync_program_to_github()
+                await self.edit_message_keyboard(
+                    message_id, self._redraw_keyboard(message_text))
+            await self.answer_callback_query(
+                callback_query_id,
+                "Записал ✅" if status == 'done' else "Ок, отложили")
+
         elif callback_data == 'save_progress':
             # Сохраняем прогресс
             await self.save_progress(message_id)
@@ -1464,6 +1520,64 @@ class TaskTrackerBot:
         keyboard = self.create_checklist_keyboard(state['tasks'], state['completed'])
         await self.edit_message(message_id, text, keyboard)
     
+    def load_program(self):
+        """Отметки заданий дня. Отсутствие файла — нормальный первый запуск."""
+        try:
+            with open(self.program_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
+
+    def save_program(self):
+        try:
+            with open(self.program_file, 'w', encoding='utf-8') as f:
+                json.dump(self.program, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error(f"❌ Не сохранил program.json: {e}")
+
+    def record_task_result(self, day, status):
+        """Отметить задание дня как «сделал» или «не сегодня».
+
+        «Не сегодня» — равноправный ответ, а не провал: он даёт ровно те
+        же данные и нужен, чтобы чинить пул, а не оценивать человека.
+        Категория сохраняется — без неё нельзя увидеть, какие темы
+        стабильно не делаются.
+        """
+        task = task_of_the_day(day)
+        if not task:
+            return False
+        self.program[day.strftime("%Y-%m-%d")] = {
+            'status': status,
+            'category': task['category'],
+            'task': task['task'],
+        }
+        self.save_program()
+        return True
+
+    def program_week_line(self, day):
+        """Строка про задания недели для воскресного итога.
+
+        Без стрика: на длинной дистанции один пропуск на 340-й день
+        обнуляет год, и человек бросает программу целиком.
+        """
+        answered, done, skipped_cats = 0, 0, []
+        for i in range(7):
+            key = (day - timedelta(days=i)).strftime("%Y-%m-%d")
+            rec = self.program.get(key)
+            if not rec:
+                continue
+            answered += 1
+            if rec['status'] == 'done':
+                done += 1
+            else:
+                skipped_cats.append(rec['category'])
+        if not answered:
+            return ''
+        line = f"🎯 Задания недели: {done} из {answered}"
+        if skipped_cats:
+            line += f" · отложено: {', '.join(dict.fromkeys(skipped_cats))}"
+        return line
+
     def _redraw_keyboard(self, message_text=""):
         """Клавиатура при перерисовке сообщения. Ссылка на страницу дня —
         ТОЛЬКО в утреннем сообщении (09.07); день и вечер получают лишь
@@ -1486,7 +1600,17 @@ class TaskTrackerBot:
         if 'Доброе утро' not in header:
             return {'inline_keyboard': rows}
 
-        page = page_of_the_day(self._message_date(header))
+        day = self._message_date(header)
+        if task_of_the_day(day):
+            status = self.program.get(day.strftime("%Y-%m-%d"), {}).get('status')
+            rows.append([
+                {'text': ('✅ Сделал' if status == 'done' else 'Сделал'),
+                 'callback_data': 'task_done'},
+                {'text': ('👉 Не сегодня' if status == 'skip' else 'Не сегодня'),
+                 'callback_data': 'task_skip'},
+            ])
+
+        page = page_of_the_day(day)
         if page:
             rows.append([{'text': f'{page["emoji"]} {page["title"]}',
                           'url': page_url(page)}])
