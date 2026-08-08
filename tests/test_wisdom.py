@@ -48,3 +48,30 @@ def test_morning_message_uses_the_wisdom_of_that_date():
     msg = asyncio.run(n.format_morning_day_message(
         '12.08.2026', 'wednesday', n.schedule['wednesday'], block='morning'))
     assert wisdom_of_the_day(date(2026, 8, 12)) in msg
+
+
+def test_no_wisdom_on_weekend():
+    """В субботу мудрость дублировала ремарку «выходные — для бедных»:
+    два одинаковых по жанру блока подряд читаются как повтор."""
+    import asyncio
+    import os
+    os.environ.setdefault('TELEGRAM_TOKEN', 'test-token')
+    from notifier import PersonalScheduleNotifier
+
+    n = PersonalScheduleNotifier()
+    for day, ds in (('saturday', '08.08.2026'), ('sunday', '09.08.2026')):
+        msg = asyncio.run(n.format_morning_day_message(
+            ds, day, n.schedule[day], block='morning'))
+        assert 'Мудрость дня' not in msg, day
+
+
+def test_wisdom_stays_on_weekdays():
+    import asyncio
+    import os
+    os.environ.setdefault('TELEGRAM_TOKEN', 'test-token')
+    from notifier import PersonalScheduleNotifier
+
+    n = PersonalScheduleNotifier()
+    msg = asyncio.run(n.format_morning_day_message(
+        '12.08.2026', 'wednesday', n.schedule['wednesday'], block='morning'))
+    assert 'Мудрость дня' in msg

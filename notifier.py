@@ -433,7 +433,7 @@ class PersonalScheduleNotifier:
                 content += (f"\n🎯 <b>Задание дня · {_t['category']}</b>\n"
                             f"{_t['task']}\n"
                             f"<i>{_t['why']}</i>\n")
-            content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
+            # Воскресенье — выходной: мудрости нет, как и в субботу.
             return content
         
         header = {'morning': f"🌅 <b>Доброе утро! План на {day_ru} {date_str}</b>",
@@ -527,7 +527,11 @@ class PersonalScheduleNotifier:
                 content += (f"\n💰 <i>«{SATURDAY_NOTE['quote']}»</i> — "
                             f"{SATURDAY_NOTE['source']}\n"
                             f"{SATURDAY_NOTE['meaning']}\n")
-            content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
+            # В выходные мудрости нет: в субботу она дублировала ремарку
+            # «выходные — для бедных» — два блока одного жанра подряд
+            # читаются как повтор.
+            if day_of_week not in ('saturday', 'sunday'):
+                content += f"\n<b>Мудрость дня:</b>\n{wisdom}"
             # Одна страница на сутки вместо простыни из пяти ссылок.
             # В выходные страницы нет — page_of_the_day вернёт None.
             _p = page_of_the_day(parse_ddmmyyyy(date_str, self.today_msk()))
