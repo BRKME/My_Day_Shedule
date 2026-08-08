@@ -121,17 +121,17 @@ def test_load_kids_schedule_uses_russian_day_names():
 
 
 def test_split_day_tasks_morning_includes_boundary():
-    tasks = ['a', 'Читать 📖 в дороге', 'b', 'c']
+    tasks = ['a', 'Читать в дороге', 'b', 'c']
     morning, day = split_day_tasks(tasks)
-    assert morning == ['a', 'Читать 📖 в дороге']
+    assert morning == ['a', 'Читать в дороге']
     assert day == ['b', 'c']
 
 
 def test_split_day_tasks_falls_back_to_brain_marker():
-    """Суббота: дороги нет, граница — «Включи 🧠 Мозг»."""
-    tasks = ['a', 'Включи 🧠 Мозг', 'b']
+    """Суббота: дороги нет, граница — «Включи мозг»."""
+    tasks = ['a', 'Включи мозг', 'b']
     morning, day = split_day_tasks(tasks)
-    assert morning == ['a', 'Включи 🧠 Мозг']
+    assert morning == ['a', 'Включи мозг']
     assert day == ['b']
 
 

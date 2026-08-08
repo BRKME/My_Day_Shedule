@@ -32,7 +32,7 @@ EVENING_END = "23:30"          # конец вечернего окна для �
 STATE_KEEP_LAST = 20
 
 # Приоритет границ утро/день: будни — дорога, суббота — «Мозг» (11.07.2026)
-MORNING_BOUNDARIES = ("Читать 📖 в дороге", "Включи 🧠 Мозг")
+MORNING_BOUNDARIES = ("Читать в дороге", "Включи мозг")
 
 _EMOJI_RE = re.compile(
     '(?:[\U0001F1E6-\U0001F1FF]{2}'          # флаги — пары regional indicators
