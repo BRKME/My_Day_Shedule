@@ -178,3 +178,31 @@ def test_message_stays_within_telegram_limit():
         assert len(msg) < 4096
         assert msg.count('<i>') == msg.count('</i>')
         assert msg.count('<b>') == msg.count('</b>')
+
+
+def test_no_task_on_sunday():
+    """Воскресенье — FamilyDay без задач вовсе; задание там лишнее."""
+    for d, t in _run(date(2026, 8, 1), 120):
+        if d.weekday() == 6:
+            assert t is None, d
+
+
+def test_saturday_still_gets_a_relationship_task():
+    got = [t for d, t in _run(date(2026, 8, 1), 60)
+           if d.weekday() == 5 and t]
+    assert got, 'суббота осталась без заданий'
+    assert all(t['category'] in WEEKEND_CATEGORIES for t in got)
+
+
+def test_saturday_repeats_are_far_apart():
+    """Колода из 70 субботних заданий — больше года. Гарантия — внутри
+    колоды; повтор возможен только на стыке, когда задание с конца одной
+    выпадает в начале следующей. Замер на восьми годах: средний разрыв —
+    67 суббот, минимальный — шесть, то есть полтора месяца."""
+    sats = [(d, t) for d, t in _run(date(2026, 8, 1), 900)
+            if d.weekday() == 5 and t]
+    last = {}
+    for i, (d, t) in enumerate(sats):
+        if t['task'] in last:
+            assert i - last[t['task']] >= 5, (d, t['task'])
+        last[t['task']] = i

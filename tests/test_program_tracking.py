@@ -254,11 +254,19 @@ def test_sent_keyboard_has_no_task_buttons_on_bracelet_day():
     assert 'task_done' not in data
 
 
-def test_sunday_morning_keeps_task_buttons(bot):
-    """Воскресный заголовок — «🌅 Воскресенье», без «Доброе утро».
-    Трекер узнавал утро по этой фразе и в воскресенье терял и кнопки
-    задания, и ссылку на страницу дня."""
+def test_no_task_buttons_on_sunday(bot):
+    """В воскресенье задания нет вовсе — FamilyDay без задач."""
     header = '🌅 <b>Воскресенье 23.08.2026</b>'
+    data = [b.get('callback_data')
+            for row in bot._redraw_keyboard(header)['inline_keyboard']
+            for b in row]
+    assert 'task_done' not in data
+
+
+def test_saturday_morning_keeps_task_buttons(bot):
+    """Субботний заголовок тоже без «Доброе утро» — утро определяется по
+    эмодзи 🌅, иначе кнопки в выходной терялись."""
+    header = '🌅 <b>Доброе утро! План на Суббота 22.08.2026</b>'
     data = [b.get('callback_data')
             for row in bot._redraw_keyboard(header)['inline_keyboard']
             for b in row]

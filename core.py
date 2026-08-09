@@ -509,27 +509,35 @@ def _deck_tail_load(pool, cycle: int, weekday_deck: bool):
     return rest[-1].get('load', 'light')
 
 
-def _weekend_index(day) -> int:
-    """Номер выходного дня от той же эпохи, что и будничный счётчик."""
-    weeks, rest = divmod(day.toordinal() - _EPOCH_MONDAY, 7)
-    return weeks * 2 + (rest - 5)
+def _saturday_index(day) -> int:
+    """Номер субботы от той же эпохи, что и будничный счётчик.
+
+    Считаем только субботы: воскресенье — FamilyDay без задач, заданий там
+    нет. Раньше индекс шёл по обоим выходным, и субботняя колода
+    проматывалась вдвое быстрее нужного.
+    """
+    weeks, _ = divmod(day.toordinal() - _EPOCH_MONDAY, 7)
+    return weeks
 
 
 def task_of_the_day(day):
     """Задание дня или None, если задания сегодня нет.
 
-    Выходные получают только семью, отцовство и друзей: в эти дни человек
-    рядом с близкими, и остальные категории там неуместны. В день белого
-    браслета задания нет — иначе «сегодня ты ничего не должен» становится
-    неправдой.
+    Суббота получает только семью, отцовство и друзей: в этот день человек
+    рядом с близкими, и остальные категории там неуместны. В воскресенье
+    задания нет вовсе — это FamilyDay, там и обычных задач не бывает. В
+    день белого браслета задания тоже нет, иначе «сегодня ты ничего не
+    должен» становится неправдой.
 
     Выбор детерминирован от даты: текст сообщения и клавиатура собираются
     разными вызовами и обязаны сойтись на одном задании.
     """
     if is_bracelet_day(day):
         return None
-    if day.weekday() >= 5:
-        pool, index, weekday_deck = _WEEKEND_POOL, _weekend_index(day), False
+    if day.weekday() == 6:
+        return None
+    if day.weekday() == 5:
+        pool, index, weekday_deck = _WEEKEND_POOL, _saturday_index(day), False
     else:
         pool, index, weekday_deck = _WEEKDAY_POOL, _weekday_index(day), True
     cycle, position = divmod(index, len(pool))
