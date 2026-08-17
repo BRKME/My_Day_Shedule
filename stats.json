@@ -1882,5 +1882,30 @@
     "max_points": 6,
     "penalty": false,
     "penalty_pushups": 0
+  },
+  "2026-08-18": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [],
+      "total": 0
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 2
+    },
+    "evening": {
+      "completed": [
+        7
+      ],
+      "total": 13
+    },
+    "percentage": 7,
+    "points": 1,
+    "max_points": 13,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
