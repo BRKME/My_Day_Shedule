@@ -1908,5 +1908,8 @@
     "penalty": false,
     "penalty_pushups": 0,
     "vacation": true
+  },
+  "2026-08-19": {
+    "vacation": true
   }
 }
