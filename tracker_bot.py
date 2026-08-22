@@ -19,7 +19,7 @@ import re
 import base64
 
 from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
-                  task_of_the_day,
+                  task_of_the_day, weight_verdict,
                   is_bracelet_day, page_of_the_day, page_url,
                   parse_ddmmyyyy,
                   github_contents_url, github_headers, merge_stats,
@@ -299,8 +299,13 @@ class TaskTrackerBot:
                     content = f.read()
                     # Убираем _info и _format если они есть
                     data = json.loads(content)
-                    # Фильтруем только реальные даты
-                    stats = {k: v for k, v in data.items() if k not in ['_info', '_format'] and '-' in k}
+                    # Отбрасываем только служебные ключи. Раньше здесь
+                    # стоял фильтр «оставить всё с дефисом», то есть
+                    # только даты — и секции pullups и weight пропадали.
+                    # История подтягиваний уцелела лишь потому, что
+                    # читается в обход этой функции.
+                    stats = {k: v for k, v in data.items()
+                             if k not in ('_info', '_format')}
                     return stats
             return {}
         except Exception as e:
@@ -338,6 +343,29 @@ class TaskTrackerBot:
         
         await self.save_stats(stats)
     
+    async def save_weight(self, value):
+        """Сохраняет контрольное взвешивание. Отдельная секция stats.json,
+        как у подтягиваний: это история, а не задача дня."""
+        stats = self.load_stats()
+        today_key = self.get_today_key()
+        stats.setdefault('weight', {})[today_key] = value
+        logger.info(f"⚖️ Вес за {today_key}: {value} кг")
+        await self.save_stats(stats)
+
+    def get_last_weight(self, days=7):
+        """Последний вес за N дней — для сравнения «со вчера».
+
+        Старше недели не берём: сравнивать сегодняшний вес с месячной
+        давностью и называть это «со вчера» — врать самому себе.
+        """
+        weight_data = self.load_stats().get('weight', {})
+        today = datetime.now()
+        for i in range(days):
+            day_key = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+            if day_key in weight_data:
+                return weight_data[day_key], day_key
+        return None, None
+
     def get_last_pullups(self, days=7):
         """Получает последний результат подтягиваний за N дней"""
         stats = self.load_stats()
@@ -1342,6 +1370,25 @@ class TaskTrackerBot:
         """Обрабатывает callback от кнопок"""
         logger.info(f"📞 Получен callback: {callback_data}")
         
+        if callback_data.startswith('weight_'):
+            # Взвешивание — своя история в stats.json, на процент дня и
+            # уровень не влияет.
+            try:
+                value = float(callback_data.split('_', 1)[1])
+            except ValueError:
+                await self.answer_callback_query(callback_query_id, "Не понял")
+                return
+            previous, _ = self.get_last_weight(days=7)
+            await self.save_weight(value)
+            await self.sync_stats_to_github(self.load_stats())
+            await self.answer_callback_query(
+                callback_query_id, weight_verdict(value, previous))
+            await self.edit_message(
+                message_id,
+                f"⚖️ <b>КОНТРОЛЬНОЕ ВЗВЕШИВАНИЕ</b>\n\n"
+                f"{weight_verdict(value, previous)}")
+            return
+
         if callback_data == 'update_progress':
             # Показываем чек-лист
             await self.show_checklist(message_id, message_text)

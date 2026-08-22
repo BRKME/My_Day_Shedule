@@ -560,6 +560,59 @@ def wisdom_of_the_day(day) -> str:
     return WISDOMS[day.toordinal() % len(WISDOMS)]
 
 
+# ── Контрольное взвешивание ──────────────────────────────────────────────
+# По аналогии с зачётом по подтягиваниям, но с двумя отличиями: вес
+# дробный, а цель убывающая — 15 подтягиваний это «не меньше», а 85 кг
+# «не больше».
+
+WEIGHT_GOAL = 85.0
+WEIGHT_STEP = 0.5
+
+
+def weight_buttons(previous=None, rows=4, per_row=4):
+    """Кнопки со значениями веса, центрированные на последнем результате.
+
+    Вчера было 88 — сегодня почти наверняка 87–89, и эти значения должны
+    оказаться под пальцем. Диапазон от цели до дальних значений давал бы
+    три десятка кнопок, из которых нужны две.
+
+    Истории ещё нет — центрируем на цели, чтобы не гадать.
+    """
+    center = previous if previous is not None else WEIGHT_GOAL
+    total = rows * per_row
+    start = center - (total // 2) * WEIGHT_STEP
+    values = [round(start + i * WEIGHT_STEP, 1) for i in range(total)]
+    # Цель всегда должна быть среди кнопок, иначе достигнутый результат
+    # придётся вводить руками.
+    if WEIGHT_GOAL not in values:
+        values[0] = WEIGHT_GOAL
+        values.sort()
+    return [values[i:i + per_row] for i in range(0, total, per_row)]
+
+
+def weight_verdict(current, previous=None):
+    """Строка результата: изменение и расстояние до цели.
+
+    Без оценок вроде «много» или «плохо»: цифра сама всё говорит, а
+    упрёк в утреннем сообщении делает взвешивание неприятным — и его
+    начинают пропускать.
+    """
+    parts = [f"⚖️ {current} кг"]
+    if previous is not None:
+        delta = round(current - previous, 1)
+        if delta > 0:
+            parts.append(f"+{delta} со вчера")
+        elif delta < 0:
+            parts.append(f"−{abs(delta)} со вчера")
+        else:
+            parts.append("столько же")
+    if current <= WEIGHT_GOAL:
+        parts.append("🎯 цель взята")
+    else:
+        parts.append(f"до цели {round(current - WEIGHT_GOAL, 1)} кг")
+    return " · ".join(parts)
+
+
 # ── GitHub Contents API ──────────────────────────────────────────────────
 # Транспорт у процессов разный (notifier — requests, tracker_bot — aiohttp),
 # общее здесь только формирование URL и кодирование содержимого.

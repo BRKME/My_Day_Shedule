@@ -217,8 +217,13 @@ def test_weekly_summary_shows_programme_line(bot, monkeypatch):
     monkeypatch.setattr(type(bot), 'send_telegram_message', fake_send,
                         raising=False)
 
+    # «Вчера» может оказаться воскресеньем или днём браслета — тогда
+    # задания нет и записывать нечего. Берём ближайший день недели, где
+    # задание точно есть.
     today = datetime.now().date()
-    bot.record_task_result(today - timedelta(days=1), 'done')
+    day = next(today - timedelta(days=i) for i in range(1, 8)
+               if task_of_the_day(today - timedelta(days=i)))
+    bot.record_task_result(day, 'done')
     line = bot.program_week_line(today)
     assert line.startswith('🎯 Задания недели:')
 

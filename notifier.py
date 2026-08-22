@@ -23,7 +23,8 @@ from core import (EVENING_END, budget_header, fmt_dur as _fmt_dur,
                   load_kids_schedule, load_schedule, _lower_cyr,
                   normalize_task, task_minutes,
                   github_contents_url, github_headers)
-from core import (SATURDAY_NOTE, bracelet_quote, is_bracelet_day,
+from core import (SATURDAY_NOTE, WEIGHT_GOAL, bracelet_quote,
+                  is_bracelet_day, weight_buttons,
                   wisdom_of_the_day,
                   task_of_the_day,
                   parse_ddmmyyyy,
@@ -741,6 +742,34 @@ class PersonalScheduleNotifier:
 
         return content
 
+    def weight_keyboard(self, previous=None):
+        """Кнопки взвешивания вокруг последнего результата."""
+        return {'inline_keyboard': [
+            [{'text': f'{v}', 'callback_data': f'weight_{v}'} for v in row]
+            for row in weight_buttons(previous)
+        ]}
+
+    async def send_weight_message(self):
+        """Утреннее контрольное взвешивание с кнопками."""
+        previous = self.last_known_weight()
+        message = "⚖️ <b>КОНТРОЛЬНОЕ ВЗВЕШИВАНИЕ</b>\n\n"
+        message += "Сколько на весах?\n"
+        message += f"Цель: {WEIGHT_GOAL} кг 🎯"
+        if previous is not None:
+            message += f"\nПрошлый раз: {previous} кг"
+        return await self.send_telegram_message(
+            message, self.weight_keyboard(previous),
+            add_progress_button=False, with_link_buttons=False)
+
+    def last_known_weight(self):
+        """Последний вес из stats.json — чтобы центрировать кнопки."""
+        try:
+            with open('stats.json', 'r', encoding='utf-8') as f:
+                data = json.load(f).get('weight', {})
+            return data[max(data)] if data else None
+        except Exception:
+            return None
+
     async def send_pullups_message(self):
         """Отправляет сообщение для зачёта по подтягиваниям с кнопками"""
         message = "💪 <b>ЗАЧЁТ ПО ПОДТЯГИВАНИЯМ</b>\n\n"
@@ -1058,6 +1087,11 @@ class PersonalScheduleNotifier:
                 return True
             message = await self.format_evening_message(date_str, day_of_week, schedule)
             add_button = True
+        elif period == 'weight':
+            # Контрольное взвешивание: своё сообщение с кнопками, история
+            # копится в stats.json отдельной секцией.
+            return await self.send_weight_message()
+
         elif period == 'pullups':
             # Отдельная логика для подтягиваний
             return await self.send_pullups_message()

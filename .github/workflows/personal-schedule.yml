@@ -15,6 +15,7 @@ on:
           - day
           - evening
           - pullups
+          - weight
 
 jobs:
   send-notification:
