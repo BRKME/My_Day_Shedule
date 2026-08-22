@@ -236,3 +236,20 @@ def test_weight_message_is_sent_with_its_own_request(monkeypatch):
     kb = _j.loads(payload['reply_markup'])
     data = [b['callback_data'] for row in kb['inline_keyboard'] for b in row]
     assert all(d.startswith('weight_') for d in data)
+
+
+def test_entry_point_accepts_every_dispatcher_period():
+    """Точка входа проверяет период по своему списку. Ветка в диспетчере
+    была добавлена, а список — нет, и скрипт выходил с ошибкой ещё до
+    отправки: workflow падал, сообщение не приходило."""
+    import re
+    src = open('notifier.py', encoding='utf-8').read()
+
+    entry = re.search(r"sys\.argv\[1\] not in \(([^)]+)\)", src).group(1)
+    allowed = set(re.findall(r"'(\w+)'", entry))
+
+    handled = set(re.findall(r"period == '(\w+)'", src))
+    handled.discard('morning')          # morning участвует и в другом сравнении
+
+    assert 'weight' in allowed
+    assert handled <= allowed, f'в диспетчере есть, в списке нет: {handled - allowed}'

@@ -1133,7 +1133,12 @@ async def main(period):
         sys.exit(1)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or sys.argv[1] not in ('morning', 'day', 'evening', 'pullups'):
-        print("❌ Использование: python notifier.py <morning|day|evening|pullups>")
+    # Список обязан совпадать с ветками send_message_for_period: ветку
+    # weight добавили, а сюда забыли — и скрипт выходил с ошибкой ещё до
+    # отправки. На это стоит тест.
+    if len(sys.argv) != 2 or sys.argv[1] not in ('morning', 'day', 'evening',
+                                                 'pullups', 'weight'):
+        print("❌ Использование: python notifier.py "
+              "<morning|day|evening|pullups|weight>")
         sys.exit(1)
     asyncio.run(main(sys.argv[1]))
