@@ -189,3 +189,50 @@ def test_load_stats_keeps_section_keys(bot, tmp_path):
     assert 'weight' in stats and 'pullups' in stats
     assert '_info' not in stats
     assert '2026-08-20' in stats
+
+
+def test_weight_message_is_sent_with_its_own_request(monkeypatch):
+    """send_telegram_message умеет только кнопку прогресса: второй его
+    параметр — ss_content, и переданная туда клавиатура уходила не в то
+    поле, из-за чего Telegram отвечал ошибкой, а workflow падал."""
+    import asyncio
+    import os
+    os.environ.setdefault('TELEGRAM_TOKEN', 'test-token')
+    from notifier import PersonalScheduleNotifier
+
+    n = PersonalScheduleNotifier()
+    captured = {}
+
+    class FakeResp:
+        status = 200
+
+        async def text(self):
+            return ''
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+    class FakeSession:
+        def post(self, url, json=None, timeout=None):
+            captured['payload'] = json
+            return FakeResp()
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+    monkeypatch.setattr('notifier.aiohttp.ClientSession', lambda *a, **kw: FakeSession())
+    assert asyncio.run(n.send_weight_message()) is True
+
+    payload = captured['payload']
+    assert 'reply_markup' in payload, 'клавиатура не ушла'
+    assert 'ВЗВЕШИВАНИЕ' in payload['text']
+    import json as _j
+    kb = _j.loads(payload['reply_markup'])
+    data = [b['callback_data'] for row in kb['inline_keyboard'] for b in row]
+    assert all(d.startswith('weight_') for d in data)

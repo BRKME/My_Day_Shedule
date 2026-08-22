@@ -757,9 +757,29 @@ class PersonalScheduleNotifier:
         message += f"Цель: {WEIGHT_GOAL} кг 🎯"
         if previous is not None:
             message += f"\nПрошлый раз: {previous} кг"
-        return await self.send_telegram_message(
-            message, self.weight_keyboard(previous),
-            add_progress_button=False, with_link_buttons=False)
+        # Свой запрос, а не send_telegram_message: тот умеет только кнопку
+        # прогресса, а его второй параметр — ss_content, и клавиатура,
+        # переданная туда, уходила не в то поле. Подтягивания по той же
+        # причине шлются отдельно.
+        url = f"https://api.telegram.org/bot{self.telegram_token}/sendMessage"
+        payload = {
+            'chat_id': self.chat_id,
+            'text': message,
+            'parse_mode': 'HTML',
+            'reply_markup': json.dumps(self.weight_keyboard(previous)),
+        }
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, timeout=30) as response:
+                    if response.status == 200:
+                        logger.info("✅ Сообщение взвешивания отправлено")
+                        return True
+                    logger.error("❌ Telegram отклонил взвешивание: %s",
+                                 await response.text())
+                    return False
+        except Exception as e:
+            logger.error(f"❌ Ошибка отправки взвешивания: {e}")
+            return False
 
     def last_known_weight(self):
         """Последний вес из stats.json — чтобы центрировать кнопки."""
