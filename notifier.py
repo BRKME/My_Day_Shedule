@@ -745,7 +745,9 @@ class PersonalScheduleNotifier:
     def weight_keyboard(self, previous=None):
         """Кнопки взвешивания вокруг последнего результата."""
         return {'inline_keyboard': [
-            [{'text': f'{v}', 'callback_data': f'weight_{v}'} for v in row]
+            # Ярлык без дробной части при целом килограмме: «88», а не
+            # «88.0». В callback_data значение остаётся полным.
+            [{'text': f'{v:g}', 'callback_data': f'weight_{v}'} for v in row]
             for row in weight_buttons(previous)
         ]}
 

@@ -38,13 +38,22 @@ def test_buttons_are_centred_on_the_last_weight():
     должны быть под пальцем, а не в конце длинного списка."""
     values = [b for row in weight_buttons(88.0) for b in row]
     assert 88.0 in values
-    assert 87.5 in values and 88.5 in values
+    assert 87.0 in values and 89.0 in values
 
 
-def test_buttons_have_a_step_of_half_a_kilo():
+def test_buttons_have_a_step_of_one_kilo():
+    """Шаг в полкило давал слишком узкий диапазон: при цели 85 кнопки
+    заканчивались на 88.5, и вес 91 нажать было нечем."""
     values = sorted(b for row in weight_buttons(86.0) for b in row)
     steps = {round(b - a, 1) for a, b in zip(values, values[1:])}
-    assert steps == {0.5}
+    assert steps == {1.0}
+
+
+def test_range_covers_real_weight_without_history():
+    """Первый запуск: истории нет, центр — цель. Диапазон обязан
+    доставать до реального веса, иначе нажать нечего."""
+    values = [b for row in weight_buttons(None) for b in row]
+    assert max(values) >= 92.0
 
 
 def test_first_time_buttons_are_around_the_goal():
@@ -253,3 +262,13 @@ def test_entry_point_accepts_every_dispatcher_period():
 
     assert 'weight' in allowed
     assert handled <= allowed, f'в диспетчере есть, в списке нет: {handled - allowed}'
+
+
+def test_button_labels_have_no_pointless_decimals():
+    """При шаге в килограмм «88.0» — лишний шум, нужно «88»."""
+    import os
+    os.environ.setdefault('TELEGRAM_TOKEN', 'test-token')
+    from notifier import PersonalScheduleNotifier
+    kb = PersonalScheduleNotifier().weight_keyboard(previous=88.0)
+    labels = [b['text'] for row in kb['inline_keyboard'] for b in row]
+    assert '88' in labels and '88.0' not in labels

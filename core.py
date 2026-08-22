@@ -566,7 +566,7 @@ def wisdom_of_the_day(day) -> str:
 # «не больше».
 
 WEIGHT_GOAL = 85.0
-WEIGHT_STEP = 0.5
+WEIGHT_STEP = 1.0
 
 
 def weight_buttons(previous=None, rows=4, per_row=4):
@@ -578,7 +578,10 @@ def weight_buttons(previous=None, rows=4, per_row=4):
 
     Истории ещё нет — центрируем на цели, чтобы не гадать.
     """
-    center = previous if previous is not None else WEIGHT_GOAL
+    # Без истории центр смещаем вверх от цели: цель — это то, куда идёшь,
+    # а не то, что на весах. Симметричный диапазон вокруг 85 не доставал
+    # до реального веса, и нажать было нечего.
+    center = previous if previous is not None else WEIGHT_GOAL + 3
     total = rows * per_row
     start = center - (total // 2) * WEIGHT_STEP
     values = [round(start + i * WEIGHT_STEP, 1) for i in range(total)]
