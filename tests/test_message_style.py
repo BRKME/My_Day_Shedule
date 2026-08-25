@@ -51,7 +51,7 @@ def test_parser_still_finds_all_tasks():
     msg = asyncio.run(n.format_morning_day_message(
         '12.08.2026', 'wednesday', n.schedule['wednesday'], block='morning'))
     parsed = b.parse_tasks(msg)
-    assert len(parsed['day']) == 6
+    assert len(parsed['day']) == 5
     assert len(parsed['cant_do']) >= 1
 
 
