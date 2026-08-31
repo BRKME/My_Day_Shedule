@@ -1984,21 +1984,22 @@
     },
     "day": {
       "completed": [
-        4
+        4,
+        6
       ],
-      "total": 5
+      "total": 8
     },
     "cant_do": {
       "completed": [],
-      "total": 1
+      "total": 3
     },
     "evening": {
       "completed": [],
       "total": 0
     },
-    "percentage": 20,
-    "points": 1,
-    "max_points": 5,
+    "percentage": 25,
+    "points": 2,
+    "max_points": 8,
     "penalty": false,
     "penalty_pushups": 0
   }
