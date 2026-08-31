@@ -1976,5 +1976,30 @@
     "max_points": 6,
     "penalty": true,
     "penalty_pushups": 30
+  },
+  "2026-08-31": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        4
+      ],
+      "total": 5
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 1
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 20,
+    "points": 1,
+    "max_points": 5,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
