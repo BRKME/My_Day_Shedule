@@ -2017,7 +2017,8 @@
     "day": {
       "completed": [
         0,
-        2
+        2,
+        3
       ],
       "total": 4
     },
@@ -2029,8 +2030,8 @@
       "completed": [],
       "total": 0
     },
-    "percentage": 50,
-    "points": 2,
+    "percentage": 75,
+    "points": 3,
     "max_points": 4,
     "penalty": false,
     "penalty_pushups": 0
