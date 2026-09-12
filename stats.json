@@ -2008,5 +2008,31 @@
   },
   "pullups": {
     "2026-09-11": 10
+  },
+  "2026-09-12": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        0,
+        2
+      ],
+      "total": 4
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 2
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 50,
+    "points": 2,
+    "max_points": 4,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
