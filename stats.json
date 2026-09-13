@@ -2006,9 +2006,6 @@
   "2026-09-11": {
     "vacation": true
   },
-  "pullups": {
-    "2026-09-11": 10
-  },
   "2026-09-12": {
     "morning": {
       "completed": [],
@@ -2035,5 +2032,8 @@
     "max_points": 4,
     "penalty": false,
     "penalty_pushups": 0
+  },
+  "weight": {
+    "2026-09-13": 90.0
   }
 }
