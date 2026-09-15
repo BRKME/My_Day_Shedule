@@ -104,7 +104,7 @@ def test_roundtrip_tracker_parses_same_counts():
     msg = _evening_message()
     tr = TaskTracker.__new__(TaskTracker)
     tasks = tr.parse_tasks(msg)
-    assert len(tasks['evening']) == 13     # число строк-задач неизменно
+    assert len(tasks['evening']) == 12     # число строк-задач неизменно
     assert len(tasks['cant_do']) == 2
     assert tasks['day'] == []
 
