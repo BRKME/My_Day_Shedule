@@ -121,9 +121,9 @@ def test_load_kids_schedule_uses_russian_day_names():
 
 
 def test_split_day_tasks_morning_includes_boundary():
-    tasks = ['a', 'Занятия English', 'b', 'c']
+    tasks = ['a', 'English в дороге', 'b', 'c']
     morning, day = split_day_tasks(tasks)
-    assert morning == ['a', 'Занятия English']
+    assert morning == ['a', 'English в дороге']
     assert day == ['b', 'c']
 
 
@@ -143,4 +143,4 @@ def test_split_day_tasks_no_marker_is_failsafe():
 
 
 def test_morning_boundaries_priority_order():
-    assert MORNING_BOUNDARIES[0].startswith('Занятия English')
+    assert MORNING_BOUNDARIES[0].startswith('English в дороге')

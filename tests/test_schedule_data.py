@@ -102,7 +102,7 @@ def test_morning_split_survives_the_removal():
     sched = load_schedule()
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
         morning, rest = split_day_tasks(sched[day]['день'])
-        assert morning[-1].startswith('Занятия English'), day
+        assert morning[-1].startswith('English в дороге'), day
         assert rest[0].startswith('Включи мозг'), day
 
 
@@ -137,3 +137,20 @@ def test_no_invisible_characters():
                 for c in ('\u200d', '\ufe0f', '\u200b'):
                     assert c not in t, f'{day}/{name}: {t!r}'
                 assert t == t.strip(), f'{day}/{name}: пробел по краям'
+
+
+def test_exercise_states_its_minimum():
+    """Минимум прописан в самом пункте: иначе мозг сравнивает себя с
+    «полной» зарядкой и не начинает вовсе. Пять минут засчитываются сразу."""
+    for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'):
+        first = load_schedule()[day]['день'][0]
+        assert first.startswith('Зарядка') and '5 min' in first, day
+
+
+def test_english_moved_to_the_commute():
+    """English опирается на уже существующую привычку — дорогу — вместо
+    отдельных двадцати минут дома, самого хрупкого пункта утра."""
+    for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
+        tasks = load_schedule()[day]['день']
+        assert any(t.startswith('English в дороге') for t in tasks), day
+        assert not any('YouTube' in t for t in tasks), day
