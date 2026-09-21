@@ -204,7 +204,7 @@ def _morning_message(day='friday', block='morning'):
 
 def test_morning_tasks_normalized():
     msg = _morning_message()
-    assert '• Читать в дороге — 25м · <i>спорт для мозга</i>' in msg
+    assert '• Занятия English на YouTube — 20м' in msg
     assert '(25 min' not in msg                      # старый формат ушёл
     assert '• Взвесится' in msg                  # первая задача утра
 

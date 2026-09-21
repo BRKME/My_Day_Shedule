@@ -85,3 +85,27 @@ def test_weekdays_have_two_distinct_sets_of_each_exercise():
         assert len(pull) == 2 and len(set(pull)) == 2, f'{day}: подтягивания'
         assert len(abs_) == 2 and len(set(abs_)) == 2, f'{day}: пресс'
         assert 'подход 1' in ' '.join(pull) and 'подход 2' in ' '.join(pull)
+
+
+def test_no_reading_on_the_road_in_the_morning():
+    """«Читать в дороге» убрано из утреннего блока 22.09.2026. Вечернее
+    чтение в дороге остаётся — это другая задача."""
+    sched = load_schedule()
+    for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
+        assert not any('Читать в дороге' in t for t in sched[day]['день']), day
+
+
+def test_morning_split_survives_the_removal():
+    """«Читать в дороге» было маркером границы утро/день. После удаления
+    граница — English: утро не должно поглотить дневной блок, а «Включи
+    мозг» должно остаться в дне."""
+    sched = load_schedule()
+    for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
+        morning, rest = split_day_tasks(sched[day]['день'])
+        assert morning[-1].startswith('Занятия English'), day
+        assert rest[0].startswith('Включи мозг'), day
+
+
+def test_saturday_split_is_unchanged():
+    morning, rest = split_day_tasks(load_schedule()['saturday']['день'])
+    assert morning[-1].startswith('Включи мозг')
