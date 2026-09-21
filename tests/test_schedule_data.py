@@ -118,3 +118,10 @@ def test_no_words_lost_to_emoji_stripping():
         for name, tasks in sections.items():
             for t in tasks:
                 assert 'мусор и гнева' not in t, f'{day}/{name}'
+
+
+def test_exercise_opens_the_morning():
+    """Зарядка — первая задача утра с 22.09.2026."""
+    sched = load_schedule()
+    for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'):
+        assert sched[day]['день'][0].startswith('Зарядка'), day
