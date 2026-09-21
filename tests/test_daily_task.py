@@ -19,6 +19,17 @@ from core import (DAILY_TASKS, WEEKEND_CATEGORIES, is_bracelet_day,
                   load_daily_tasks, task_of_the_day)
 
 
+import pytest as _pytest
+
+
+@_pytest.fixture(autouse=True)
+def _programme_on(monkeypatch):
+    """Программа выключена в бою, но механику проверяем включённой:
+    иначе движок отбора остаётся без тестов до следующего включения."""
+    import core
+    monkeypatch.setattr(core, 'PROGRAM_ACTIVE', True)
+
+
 def _run(start, days):
     return [(d, task_of_the_day(d))
             for d in (start + timedelta(days=i) for i in range(days))]

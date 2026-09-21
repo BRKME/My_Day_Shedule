@@ -446,6 +446,11 @@ SATURDAY_NOTE = {
 
 WEEKEND_CATEGORIES = ('Семья', 'Отцовство', 'Друзья')
 
+# Программа выключена 22.09.2026 по решению Александра: блок «Задание дня»
+# и кнопки убраны из утра, рутина осталась. Пул заданий не удалён —
+# вернуть программу можно, поставив True.
+PROGRAM_ACTIVE = False
+
 
 def load_daily_tasks() -> list:
     return _load_json('daily_tasks.json')
@@ -532,6 +537,14 @@ def task_of_the_day(day):
     Выбор детерминирован от даты: текст сообщения и клавиатура собираются
     разными вызовами и обязаны сойтись на одном задании.
     """
+    if not PROGRAM_ACTIVE:
+        return None
+    return _pick_task(day)
+
+
+def _pick_task(day):
+    """Сам выбор задания — отдельно от выключателя программы, чтобы
+    механику можно было проверять и при выключенной программе."""
     if is_bracelet_day(day):
         return None
     if day.weekday() == 6:

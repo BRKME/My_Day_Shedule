@@ -1607,6 +1607,9 @@ class TaskTrackerBot:
         Без стрика: на длинной дистанции один пропуск на 340-й день
         обнуляет год, и человек бросает программу целиком.
         """
+        from core import PROGRAM_ACTIVE
+        if not PROGRAM_ACTIVE:
+            return ''
         answered, done, skipped_cats = 0, 0, []
         for i in range(7):
             key = (day - timedelta(days=i)).strftime("%Y-%m-%d")

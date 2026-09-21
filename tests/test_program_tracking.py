@@ -25,6 +25,18 @@ from core import task_of_the_day
 from tracker_bot import TaskTrackerBot
 
 
+import pytest as _pytest
+
+
+@_pytest.fixture(autouse=True)
+def _programme_on(monkeypatch):
+    """Программа выключена в бою, но механику проверяем включённой:
+    иначе движок отбора остаётся без тестов до следующего включения."""
+    import core
+    monkeypatch.setattr(core, 'PROGRAM_ACTIVE', True)
+
+
+
 @pytest.fixture
 def bot(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
