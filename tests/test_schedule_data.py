@@ -73,20 +73,6 @@ def test_exercises_are_not_duplicated_within_a_day():
             assert len(tasks) == len(set(tasks)), f'{day}/{name}: дубль'
 
 
-def test_weekdays_have_two_distinct_sets_of_each_exercise():
-    """Два подхода задуманы специально, но строки обязаны различаться:
-    одинаковые отмечаются по индексам, и по сообщению не понять, какую
-    именно нажал."""
-    sched = load_schedule()
-    for day in ('monday', 'tuesday', 'wednesday', 'thursday'):
-        tasks = sched[day]['день']
-        pull = [t for t in tasks if 'одтян' in t]
-        abs_ = [t for t in tasks if 'пресс' in t]
-        assert len(pull) == 2 and len(set(pull)) == 2, f'{day}: подтягивания'
-        assert len(abs_) == 2 and len(set(abs_)) == 2, f'{day}: пресс'
-        assert 'подход 1' in ' '.join(pull) and 'подход 2' in ' '.join(pull)
-
-
 def test_no_reading_on_the_road_in_the_morning():
     """«Читать в дороге» убрано из утреннего блока 22.09.2026. Вечернее
     чтение в дороге остаётся — это другая задача."""
@@ -103,12 +89,12 @@ def test_morning_split_survives_the_removal():
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
         morning, rest = split_day_tasks(sched[day]['день'])
         assert morning[-1].startswith('English в дороге'), day
-        assert rest[0].startswith('Включи мозг'), day
+        assert rest[0].startswith('Записать одно главное дело'), day
 
 
 def test_saturday_split_is_unchanged():
     morning, rest = split_day_tasks(load_schedule()['saturday']['день'])
-    assert morning[-1].startswith('Включи мозг')
+    assert morning[-1].startswith('Записать одно главное дело')
 
 
 def test_no_words_lost_to_emoji_stripping():
@@ -154,3 +140,64 @@ def test_english_moved_to_the_commute():
         tasks = load_schedule()[day]['день']
         assert any(t.startswith('English в дороге') for t in tasks), day
         assert not any('YouTube' in t for t in tasks), day
+
+
+# ── Дневной блок, пересборка 22.09.2026 ──────────────────────────────────
+
+WEEKDAYS = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday')
+
+
+def _day_block(day):
+    return split_day_tasks(load_schedule()[day]['день'])[1]
+
+
+def test_one_main_task_replaces_brain_and_goals():
+    """«Выбери главное дело» и «Проверь цели» — одно действие без чёткого
+    конца. Один пункт с понятным финишем: записал — сделано."""
+    for day in WEEKDAYS:
+        block = _day_block(day)
+        assert block[0].startswith('Записать одно главное дело'), day
+        assert not any('Проверь цели' in t for t in block), day
+        assert not any('Включи мозг' in t for t in block), day
+
+
+def test_goals_are_not_daily_anywhere():
+    """Цели квартальные — ежедневные 10 минут на них избыточны."""
+    for day, sections in load_schedule().items():
+        assert not any('Проверь цели' in t for t in sections['день']), day
+
+
+def test_signal_action_replaces_reading():
+    """Задание из SIGNAL всегда одно и конкретное — строка «Завтра»
+    из вчерашней записи. Пункт просит его сделать, а не прочитать."""
+    for day in WEEKDAYS:
+        block = _day_block(day)
+        assert any(t.startswith('Сделать действие дня из SIGNAL') for t in block), day
+        assert not any('задания от психолога' in t for t in block), day
+
+
+def test_kids_investment_only_on_monday():
+    """Перевод детям — раз в неделю. В остальные дни пункт либо висел
+    неотмеченным, либо отмечался по инерции."""
+    for day, sections in load_schedule().items():
+        has = any('200 USD' in t for t in sections['день'])
+        assert has == (day == 'monday'), day
+
+
+def test_exercises_are_one_line_each_with_a_minimum():
+    """Вторые подходы отваливались и каждый раз били по проценту. Одна
+    строка на упражнение, минимум — в тексте, как у зарядки."""
+    for day in ('monday', 'tuesday', 'wednesday', 'thursday'):
+        block = _day_block(day)
+        pull = [t for t in block if 'одтягиван' in t]
+        abs_ = [t for t in block if 'ресс' in t]
+        assert len(pull) == 1 and '2×15' in pull[0], day
+        assert len(abs_) == 1 and '2×21' in abs_[0], day
+        assert all('1 подход засчитывается' in t for t in pull + abs_), day
+
+
+def test_saturday_uses_the_same_main_task_name():
+    """Одно действие не должно называться двумя способами."""
+    tasks = load_schedule()['saturday']['день']
+    assert any(t.startswith('Записать одно главное дело') for t in tasks)
+    assert not any('Включи мозг' in t for t in tasks)
