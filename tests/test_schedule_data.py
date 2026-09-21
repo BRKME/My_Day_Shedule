@@ -109,3 +109,12 @@ def test_morning_split_survives_the_removal():
 def test_saturday_split_is_unchanged():
     morning, rest = split_day_tasks(load_schedule()['saturday']['день'])
     assert morning[-1].startswith('Включи мозг')
+
+
+def test_no_words_lost_to_emoji_stripping():
+    """При чистке эмодзи 👅 заменял слово «язык» — фраза стала «мат это
+    мусор и гнева». Остальные эмодзи были украшением, этот — словом."""
+    for day, sections in load_schedule().items():
+        for name, tasks in sections.items():
+            for t in tasks:
+                assert 'мусор и гнева' not in t, f'{day}/{name}'
