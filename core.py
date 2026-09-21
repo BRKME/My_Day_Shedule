@@ -34,8 +34,9 @@ STATE_KEEP_LAST = 20
 # Приоритет границ утро/день: будни — дорога, суббота — «Мозг» (11.07.2026)
 # Будни — «English в дороге» (с 22.09.2026: English переехал из дома в
 # дорогу; до этого границей были «Занятия English», а ещё раньше «Читать
-# в дороге»), суббота — «Записать одно главное дело» (бывшее «Включи мозг»).
-MORNING_BOUNDARIES = ("English в дороге", "Записать одно главное дело")
+# в дороге»), суббота — «Послушать молитву» (с 22.09.2026, после
+# удаления «главного дела»; до этого — «Включи мозг»).
+MORNING_BOUNDARIES = ("English в дороге", "Послушать молитву")
 
 _EMOJI_RE = re.compile(
     '(?:[\U0001F1E6-\U0001F1FF]{2}'          # флаги — пары regional indicators
@@ -109,33 +110,6 @@ def fmt_dur(minutes: int) -> str:
         return f'{h}ч {m}м'
     return f'{h}ч' if h else f'{m}м'
 
-
-def budget_header(tasks, now, end_hhmm: str = EVENING_END) -> str:
-    """Строка бюджета времени: план vs окно до конца вечера.
-
-    План, который не влезает, тренирует привычку его не выполнять —
-    перегруз показываем сразу, с кандидатом на перенос (самая длинная
-    задача). Строка начинается с '⏱' (не '📊' и не '•' — см. инварианты).
-    """
-    total = sum(task_minutes(t) for t in tasks)
-    eh, em = map(int, end_hhmm.split(':'))
-    window = (eh * 60 + em) - (now.hour * 60 + now.minute)
-    window = max(0, window)
-    head = f'⏱ В плане {fmt_dur(total)} · окно до {end_hhmm} ~{fmt_dur(window)}'
-    over = total - window
-    if over > 0:
-        head += f' · ⚠️ перегруз {fmt_dur(over)}'
-        longest = max(tasks, key=task_minutes, default=None)
-        if longest and task_minutes(longest) > 0:
-            name = re.sub(r'\s*—\s*\d+м.*$', '', longest).strip()
-            head += (f'\n↪️ кандидат на перенос: {name} '
-                     f'({task_minutes(longest)}м)')
-    else:
-        head += f' · запас {fmt_dur(-over)}'
-    return head
-
-
-# ── Разбиение дневного блока ─────────────────────────────────────────────
 
 def split_day_tasks(tasks):
     """Сплит дневного списка на утренний и дневной блок (04.07.2026).

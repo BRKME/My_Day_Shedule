@@ -89,12 +89,12 @@ def test_morning_split_survives_the_removal():
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
         morning, rest = split_day_tasks(sched[day]['день'])
         assert morning[-1].startswith('English в дороге'), day
-        assert rest[0].startswith('Записать одно главное дело'), day
+        assert rest[0].startswith('Сделать действие дня из SIGNAL'), day
 
 
 def test_saturday_split_is_unchanged():
     morning, rest = split_day_tasks(load_schedule()['saturday']['день'])
-    assert morning[-1].startswith('Записать одно главное дело')
+    assert morning[-1].startswith('Послушать молитву')
 
 
 def test_no_words_lost_to_emoji_stripping():
@@ -151,15 +151,6 @@ def _day_block(day):
     return split_day_tasks(load_schedule()[day]['день'])[1]
 
 
-def test_one_main_task_replaces_brain_and_goals():
-    """«Выбери главное дело» и «Проверь цели» — одно действие без чёткого
-    конца. Один пункт с понятным финишем: записал — сделано."""
-    for day in WEEKDAYS:
-        block = _day_block(day)
-        assert block[0].startswith('Записать одно главное дело'), day
-        assert not any('Проверь цели' in t for t in block), day
-        assert not any('Включи мозг' in t for t in block), day
-
 
 def test_goals_are_not_daily_anywhere():
     """Цели квартальные — ежедневные 10 минут на них избыточны."""
@@ -196,8 +187,3 @@ def test_exercises_are_one_line_each_with_a_minimum():
         assert all('1 подход засчитывается' in t for t in pull + abs_), day
 
 
-def test_saturday_uses_the_same_main_task_name():
-    """Одно действие не должно называться двумя способами."""
-    tasks = load_schedule()['saturday']['день']
-    assert any(t.startswith('Записать одно главное дело') for t in tasks)
-    assert not any('Включи мозг' in t for t in tasks)

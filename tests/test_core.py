@@ -128,10 +128,10 @@ def test_split_day_tasks_morning_includes_boundary():
 
 
 def test_split_day_tasks_falls_back_to_brain_marker():
-    """Суббота: дороги нет, граница — «Записать одно главное дело»."""
-    tasks = ['a', 'Записать одно главное дело', 'b']
+    """Суббота: дороги нет, граница — «Послушать молитву»."""
+    tasks = ['a', 'Послушать молитву', 'b']
     morning, day = split_day_tasks(tasks)
-    assert morning == ['a', 'Записать одно главное дело']
+    assert morning == ['a', 'Послушать молитву']
     assert day == ['b']
 
 

@@ -17,7 +17,7 @@ from datetime import datetime
 
 sys.path.insert(0, '.')
 
-from notifier import (PersonalScheduleNotifier, budget_header,
+from notifier import (PersonalScheduleNotifier,
                       normalize_task, task_minutes)
 from tracker_bot import TaskTrackerBot as TaskTracker
 
@@ -67,24 +67,7 @@ def _tasks_5h20():
             '💊 k — 1м', '🙏 l — 5м']
 
 
-def test_budget_header_overload_names_longest_task():
-    now = datetime(2026, 7, 15, 19, 0)     # окно до 23:30 = 4ч 30м
-    hdr = budget_header(_tasks_5h20(), now, end_hhmm="23:30")
-    assert hdr.startswith('⏱')             # не 📊 и не • — инварианты трекера
-    assert '5ч 27м' in hdr
-    assert '4ч 30м' in hdr
-    assert 'перегруз' in hdr and '57м' in hdr
-    assert 'Pet Project' in hdr            # кандидат на перенос
 
-
-def test_budget_header_fits_no_warning():
-    now = datetime(2026, 7, 15, 18, 0)     # окно 5ч 30м > плана
-    hdr = budget_header(_tasks_5h20(), now, end_hhmm="23:30")
-    assert 'перегруз' not in hdr and 'перенос' not in hdr
-    assert 'запас' in hdr
-
-
-# ── роунд-трип с трекером: активный текст не сломан ─────────────────────────
 
 def _notifier():
     import os
@@ -120,16 +103,6 @@ def test_roundtrip_star_highlight_still_works():
     assert any('Pet Project' in l for l in starred)
 
 
-def test_budget_line_survives_progress_update():
-    msg = _evening_message()
-    tr = TaskTracker.__new__(TaskTracker)
-    tasks = tr.parse_tasks(msg)
-    updated = tr.update_original_message_with_progress(
-        msg, tasks, {'morning': [], 'day': [], 'cant_do': [], 'evening': [0]})
-    assert '⏱' in updated                  # шапка бюджета не съедена очисткой
-
-
-# ── страж: расписание не должно возвращаться к перегрузу ────────────────────
 
 def test_no_evening_overload_any_day():
     """16.07: все вечера пн–сб были перегружены (+45…+77м) — план, который
@@ -170,26 +143,6 @@ def test_merge_stats_empty_local():
     assert merge_stats(github, {}) == github
 
 
-def test_budget_window_uses_msk_not_utc():
-    """16.07: VPS в UTC, naive now() завышал окно на 3ч («запас 3ч 3м»
-    при реальных 3м). Рендер обязан считать окно по Europe/Moscow."""
-    from unittest.mock import patch
-    from zoneinfo import ZoneInfo
-    import notifier as nf
-    n = _notifier()
-    real_dt = datetime
-    with patch('notifier.datetime') as dt:
-        # 16:00 UTC == 19:00 MSK; naive now() вернул бы 16:00
-        dt.now = lambda tz=None: real_dt(2026, 7, 16, 19, 0,
-                                         tzinfo=ZoneInfo("Europe/Moscow")) \
-            if tz else real_dt(2026, 7, 16, 16, 0)
-        msg = asyncio.run(n.format_evening_message(
-            '16.07.2026', 'thursday', n.schedule['thursday']))
-    assert '~4ч 30м' in msg          # окно от 19:00 МСК, не от 16:00 UTC
-    assert '3ч' not in msg.split('\n')[1].replace('4ч 30м', '')
-
-
-# ── утренний/дневной рендер в новом стандарте ───────────────────────────────
 
 def _morning_message(day='friday', block='morning'):
     from unittest.mock import patch, AsyncMock
@@ -208,13 +161,6 @@ def test_morning_tasks_normalized():
     assert '(25 min' not in msg                      # старый формат ушёл
     assert '• Взвесится' in msg                  # первая задача утра
 
-
-def test_morning_has_plan_total_line():
-    msg = _morning_message()
-    line = [l for l in msg.split('\n') if l.startswith('⏱')]
-    assert len(line) == 1                            # сумма есть, ровно одна
-    assert 'В плане' in line[0]
-    assert 'окно' not in line[0] and 'запас' not in line[0]  # без окна утром
 
 
 def test_morning_roundtrip_with_tracker():
