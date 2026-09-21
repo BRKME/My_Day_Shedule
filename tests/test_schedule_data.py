@@ -125,3 +125,15 @@ def test_exercise_opens_the_morning():
     sched = load_schedule()
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'):
         assert sched[day]['день'][0].startswith('Зарядка'), day
+
+
+def test_no_invisible_characters():
+    """Семейный эмодзи 👨‍👩‍👧‍👦 склеен невидимыми связками U+200D. При
+    чистке фигуры ушли, а связки остались — строка «FamilyDay» начиналась
+    с трёх невидимых символов."""
+    for day, sections in load_schedule().items():
+        for name, tasks in sections.items():
+            for t in tasks:
+                for c in ('\u200d', '\ufe0f', '\u200b'):
+                    assert c not in t, f'{day}/{name}: {t!r}'
+                assert t == t.strip(), f'{day}/{name}: пробел по краям'
