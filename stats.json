@@ -2078,22 +2078,25 @@
     "day": {
       "completed": [
         0,
-        1
+        1,
+        3
       ],
       "total": 4
     },
     "cant_do": {
-      "completed": [],
+      "completed": [
+        0
+      ],
       "total": 1
     },
     "evening": {
       "completed": [],
       "total": 0
     },
-    "percentage": 50,
-    "points": 2,
+    "percentage": 75,
+    "points": 3,
     "max_points": 4,
-    "penalty": false,
-    "penalty_pushups": 0
+    "penalty": true,
+    "penalty_pushups": 30
   }
 }
