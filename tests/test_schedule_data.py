@@ -88,7 +88,7 @@ def test_morning_split_survives_the_removal():
     sched = load_schedule()
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
         morning, rest = split_day_tasks(sched[day]['день'])
-        assert morning[-1].startswith('English в дороге'), day
+        assert 'English в дороге' in morning[-1], day
         assert rest[0].startswith('Сделать действие дня из SIGNAL'), day
 
 
@@ -138,7 +138,7 @@ def test_english_moved_to_the_commute():
     отдельных двадцати минут дома, самого хрупкого пункта утра."""
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
         tasks = load_schedule()[day]['день']
-        assert any(t.startswith('English в дороге') for t in tasks), day
+        assert any('English в дороге' in t for t in tasks), day
         assert not any('YouTube' in t for t in tasks), day
 
 
@@ -187,3 +187,59 @@ def test_exercises_are_one_line_each_with_a_minimum():
         assert all('1 подход засчитывается' in t for t in pull + abs_), day
 
 
+
+
+def test_english_item_links_to_the_channel():
+    """Скрытая ссылка: кликабелен сам текст пункта, адрес не виден.
+    Трекинговый параметр ?si= из ссылки-шеринга убран."""
+    for day in WEEKDAYS:
+        item = next(t for t in load_schedule()[day]['день'] if 'English в дороге' in t)
+        assert '<a href="https://youtube.com/@englishbyjay.official">' in item, day
+        assert '?si=' not in item
+
+
+def test_preview_stays_on_the_page_of_the_day(monkeypatch):
+    """Telegram превьюшит первую ссылку в сообщении. English стоит выше
+    страницы дня — без явного выбора вместо карточки страницы утром
+    приходила бы карточка YouTube-канала."""
+    import asyncio
+    import json as _j
+    import os
+    from datetime import datetime
+    from unittest.mock import patch
+    os.environ.setdefault('TELEGRAM_TOKEN', 'test-token')
+    os.environ.setdefault('TELEGRAM_CHAT_ID', 'test-chat')
+    from notifier import PersonalScheduleNotifier
+    from core import page_of_the_day, page_url
+
+    n = PersonalScheduleNotifier()
+    captured = {}
+
+    class Resp:
+        status = 200
+        async def json(self): return {'result': {'message_id': 1}}
+        async def text(self): return ''
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+
+    class Sess:
+        def post(self, url, json=None, **kw):
+            captured.setdefault('payloads', []).append(json)
+            return Resp()
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+
+    class FixedDT(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 9, 23, 7, 30, tzinfo=tz)
+
+    monkeypatch.setattr('notifier.aiohttp.ClientSession', lambda *a, **kw: Sess())
+    with patch('notifier.datetime', FixedDT):
+        msg = asyncio.run(n.format_morning_day_message(
+            '23.09.2026', 'wednesday', n.schedule['wednesday'], block='morning'))
+        asyncio.run(n.send_telegram_message(msg, add_progress_button=True,
+                                            with_link_buttons=True))
+    p = captured['payloads'][0]
+    page = page_of_the_day(datetime(2026, 9, 23).date())
+    assert p['link_preview_options']['url'] == page_url(page)

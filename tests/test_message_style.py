@@ -61,4 +61,7 @@ def test_task_lines_start_with_a_letter_not_a_symbol():
         '12.08.2026', 'wednesday', n.schedule['wednesday'], block='morning'))
     for line in msg.splitlines():
         if line.startswith('• '):
-            assert line[2].isalpha(), line
+            # Ссылка — не символ-украшение: проверяем текст без тегов.
+            import re as _re
+            text = _re.sub(r'<[^>]+>', '', line)
+            assert text[2].isalpha(), line

@@ -57,5 +57,5 @@ def test_saturday_split_survives_marker_removal():
 def test_weekday_split_unchanged():
     for day in DAYS[:5]:
         morning, rest = split_day_tasks(load_schedule()[day]['день'])
-        assert morning[-1].startswith('English в дороге'), day
+        assert 'English в дороге' in morning[-1], day
         assert rest[0].startswith('Сделать действие дня из SIGNAL'), day

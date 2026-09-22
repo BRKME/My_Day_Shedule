@@ -950,6 +950,13 @@ class PersonalScheduleNotifier:
                 'parse_mode': 'HTML',
                 'disable_web_page_preview': False
             }
+
+            # Telegram превьюшит первую ссылку в сообщении. English в дороге
+            # стоит выше страницы дня, поэтому без явного выбора утром
+            # вместо карточки страницы приходила бы карточка YouTube.
+            _page = page_of_the_day(self.today_msk())
+            if with_link_buttons and _page and page_url(_page) in message:
+                payload['link_preview_options'] = {'url': page_url(_page)}
             
             if add_progress_button:
                 payload['reply_markup'] = self.create_message_keyboard(
