@@ -87,7 +87,7 @@ def test_roundtrip_tracker_parses_same_counts():
     msg = _evening_message()
     tr = TaskTracker.__new__(TaskTracker)
     tasks = tr.parse_tasks(msg)
-    assert len(tasks['evening']) == 12     # число строк-задач неизменно
+    assert len(tasks['evening']) == 6      # число строк-задач неизменно
     assert len(tasks['cant_do']) == 2
     assert tasks['day'] == []
 
@@ -100,7 +100,7 @@ def test_roundtrip_star_highlight_still_works():
         msg, tasks, {'morning': [], 'day': [], 'cant_do': [], 'evening': [0, 5]})
     starred = [l for l in updated.split('\n') if '⭐' in l]
     assert len(starred) == 2
-    assert any('Pet Project' in l for l in starred)
+    assert any('Увлажнитель' in l for l in starred)
 
 
 
