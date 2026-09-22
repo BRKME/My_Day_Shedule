@@ -2069,5 +2069,31 @@
     "max_points": 8,
     "penalty": false,
     "penalty_pushups": 0
+  },
+  "2026-09-22": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        0,
+        1
+      ],
+      "total": 4
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 1
+    },
+    "evening": {
+      "completed": [],
+      "total": 0
+    },
+    "percentage": 50,
+    "points": 2,
+    "max_points": 4,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
