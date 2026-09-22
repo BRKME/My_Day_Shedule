@@ -1737,13 +1737,19 @@ class TaskTrackerBot:
         # Загружаем статистику. База — СВЕЖАЯ с GitHub (08.07: локальная копия
         # сервера не содержит _tasks, которые пишет notifier из Actions;
         # сохранение с локальной базы затирало их в репо при каждом нажатии).
+        # База — ЛОКАЛЬНАЯ статистика, GitHub лишь добирает недостающее
+        # (22.09.2026). Раньше базой была копия из GitHub целиком: стоило
+        # синку хоть раз не пройти, одна галочка перезаписывала локальный
+        # файл отставшей копией, и пропадали вчерашний день и вес.
         stats = self.load_stats()
         try:
             content = await self._github_get_file("stats.json")
             if content:
-                stats = json.loads(content)
+                remote = {k: v for k, v in json.loads(content).items()
+                          if k not in ('_info', '_format')}
+                stats = merge_stats(remote, stats)
         except Exception as e:
-            logger.warning(f"⚠️ GitHub stats как база недоступен ({e}) — локальная")
+            logger.warning(f"⚠️ GitHub stats недоступен ({e}) — только локальная")
         
         # ЗАПОМИНАЕМ старое количество срывов ДО объединения (для проверки дублирования штрафов)
         previous_cant_do_count = 0

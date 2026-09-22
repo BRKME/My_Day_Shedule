@@ -167,7 +167,18 @@ def merge_stats(github_stats: dict, local_stats: dict) -> dict:
     (бот пишет в него каждое действие); GitHub — реплика, которая может
     отставать (16.07: синк умер с отзывом PAT, репо застряло на 13.07,
     и старая загрузка при рестарте откатила бы прогресс)."""
-    return {**github_stats, **local_stats}
+    merged = {**github_stats, **local_stats}
+    # Служебные поля дня (_tasks, _updated), которые пишет нотификатор
+    # только в GitHub, не теряем и тогда, когда локальная запись дня есть:
+    # её собственные поля побеждают, недостающие служебные добираются.
+    for key, remote in github_stats.items():
+        local = local_stats.get(key)
+        if isinstance(remote, dict) and isinstance(local, dict):
+            extra = {k: v for k, v in remote.items()
+                     if k.startswith('_') and k not in local}
+            if extra:
+                merged[key] = {**local, **extra}
+    return merged
 
 
 def summarize_day(day_data: dict) -> dict:
