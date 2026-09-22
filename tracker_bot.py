@@ -22,6 +22,7 @@ from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
                   task_of_the_day, weight_verdict,
                   is_bracelet_day, page_of_the_day, page_url,
                   parse_ddmmyyyy, entities_to_html,
+                  block_layout, message_block,
                   github_contents_url, github_headers, merge_stats,
                   normalize_task, prune_message_states, summarize_day)
 
@@ -1525,16 +1526,22 @@ class TaskTrackerBot:
         today_key = self.get_today_key()
         stats = self.load_stats()
         
+        # Полоса этого блока в общем списке дня (22.09.2026). Утро и день
+        # пишут в одну секцию 'day', все три блока — в 'cant_do'. Раньше
+        # отметки грузились по номерам строк без сдвига, и утренние №1–2
+        # появлялись отмеченными в дневном блоке.
+        offsets = self.block_offsets(original_message)
+
         # Проверяем есть ли уже данные за сегодня
         if today_key in stats:
-            # Загружаем существующие выполненные задачи
             existing = stats[today_key]
-            completed = {
-                'morning': existing.get('morning', {}).get('completed', []),
-                'day': existing.get('day', {}).get('completed', []),
-                'cant_do': existing.get('cant_do', {}).get('completed', []),
-                'evening': existing.get('evening', {}).get('completed', [])
-            }
+            completed = {'morning': []}
+            for period in ('day', 'cant_do', 'evening'):
+                off = offsets.get(period, 0)
+                n = len(tasks.get(period, []))
+                universe = existing.get(period, {}).get('completed', [])
+                completed[period] = sorted(u - off for u in universe
+                                           if off <= u < off + n)
             logger.info(f"📊 Загружен существующий прогресс за {today_key}")
         else:
             # Новый день, начинаем с нуля
@@ -1544,6 +1551,7 @@ class TaskTrackerBot:
         self.message_state[message_id] = {
             'tasks': tasks,
             'completed': completed,
+            'offsets': offsets,
             'original_text': original_message,  # Сохраняем ЧИСТЫЙ оригинал
             'clean_original': original_message  # Дублируем для безопасности
         }
@@ -1689,6 +1697,13 @@ class TaskTrackerBot:
         """Дата из заголовка сообщения, иначе сегодня."""
         return parse_ddmmyyyy(header, date.today())
 
+    def block_offsets(self, message_text):
+        """Сдвиги секций этого сообщения в общем списке дня."""
+        block = message_block(message_text)
+        layout = block_layout(self._message_date(
+            (message_text or '').split('\n', 1)[0]))
+        return {sec: span[0] for sec, span in layout.get(block, {}).items()}
+
     @staticmethod
     def blocks_fullness(completed_day, day_total, morning_count,
                         completed_evening, evening_total):
@@ -1737,78 +1752,56 @@ class TaskTrackerBot:
 
         # Бинго-триггер (09.07): какие блоки БЫЛИ полными до этого нажатия —
         # чтобы поздравить только за блок, закрытый именно сейчас, без повторов.
-        _rec_day = (stats.get(today_key) or {}).get('day', {})
-        _rec_eve = (stats.get(today_key) or {}).get('evening', {})
-        _mc = (stats.get(today_key) or {}).get('_morning_day_count', 0)
+        # Раскладка блоков дня (22.09.2026). Каждый блок пишет только свою
+        # полосу в общем списке: утро — позиции 0..m, день — m.., «нельзя»
+        # вечера — после утренних и дневных. Раньше отметки объединялись с
+        # сохранёнными по номерам строк: утро протекало в день, «всего»
+        # было максимумом блоков вместо суммы (ложные 100%), а снятая
+        # галочка возвращалась.
+        _hdr = (state.get('clean_original') or state.get('original_text') or '').split('\n', 1)[0]
+        layout = block_layout(self._message_date(_hdr))
+        offsets = state.get('offsets') or self.block_offsets(_hdr)
+        _mc = layout['totals']['morning_count']
+
+        existing = stats.get(today_key) or {}
+        _rec_day = existing.get('day', {})
+        _rec_eve = existing.get('evening', {})
         _prev_full = self.blocks_fullness(
             _rec_day.get('completed', []), _rec_day.get('total', 0), _mc,
             _rec_eve.get('completed', []), _rec_eve.get('total', 0))
-        
-        # ВАЖНО: Объединяем с существующими данными за сегодня!
-        merged_totals = {}  # Сохраняем merged totals отдельно
-        
-        if today_key in stats:
-            # Уже есть данные за сегодня - объединяем
-            existing = stats[today_key]
-            
-            # Объединяем выполненные задачи (убираем дубликаты)
-            for period in ['morning', 'day', 'cant_do', 'evening']:
-                existing_completed = set(existing.get(period, {}).get('completed', []))
-                new_completed = set(state['completed'][period])
-                # Объединяем множества
-                combined_completed = list(existing_completed | new_completed)
-                
-                # Обновляем completed
-                state['completed'][period] = combined_completed
-                
-                # Объединяем total - берём максимум из существующего и нового
-                existing_total = existing.get(period, {}).get('total', 0)
-                new_total = len(state['tasks'].get(period, []))
-                merged_totals[period] = max(existing_total, new_total)
-                
-            logger.info(f"📊 Объединены данные за {today_key}")
-        else:
-            # Нет данных - используем текущие totals
-            for period in ['morning', 'day', 'cant_do', 'evening']:
-                merged_totals[period] = len(state['tasks'].get(period, []))
-        
-        # Считаем общие показатели (ТОЛЬКО день + вечер, БЕЗ morning и cant_do!)
-        total_completed = (
-            len(state['completed']['day']) +
-            len(state['completed']['evening'])
-        )
+
+        universe, merged_totals = {}, {}
+        for period in ('morning', 'day', 'cant_do', 'evening'):
+            off = offsets.get(period, 0)
+            n = len(state['tasks'].get(period, []))
+            saved = set(existing.get(period, {}).get('completed', []))
+            others = {u for u in saved if not off <= u < off + n}
+            universe[period] = sorted(others | {off + i for i in state['completed'][period]})
+            merged_totals[period] = max(layout['totals'].get(period, 0),
+                                        existing.get(period, {}).get('total', 0) if period == 'morning' else 0,
+                                        off + n)
+
+        total_completed = len(universe['day']) + len(universe['evening'])
         total_tasks = merged_totals['day'] + merged_totals['evening']
-        
         percentage = int((total_completed / total_tasks * 100)) if total_tasks > 0 else 0
-        
-        logger.info(f"📊 ПОДСЧЁТ: day={len(state['completed']['day'])}/{merged_totals['day']}, evening={len(state['completed']['evening'])}/{merged_totals['evening']}, total={total_completed}/{total_tasks} ({percentage}%)")
-        
-        # НЕ перезаписываем запись дня целиком: notifier хранит в ней _tasks
-        # (единая вселенная задач для чек-листов утро/день) — затирание ломало
-        # индексацию галочек между блоками. Merge поверх существующего.
-        _day_record = dict(stats.get(today_key) or {})
+
+        logger.info(f"📊 ПОДСЧЁТ: day={len(universe['day'])}/{merged_totals['day']}, "
+                    f"evening={len(universe['evening'])}/{merged_totals['evening']}, "
+                    f"total={total_completed}/{total_tasks} ({percentage}%)")
+
+        # НЕ перезаписываем запись дня целиком: в ней служебные поля
+        # нотификатора. Merge поверх существующего.
+        _day_record = dict(existing)
         _day_record.update({
-            'morning': {
-                'completed': state['completed']['morning'],
-                'total': merged_totals['morning']
-            },
-            'day': {
-                'completed': state['completed']['day'],
-                'total': merged_totals['day']
-            },
-            'cant_do': {
-                'completed': state['completed']['cant_do'],
-                'total': merged_totals['cant_do']
-            },
-            'evening': {
-                'completed': state['completed']['evening'],
-                'total': merged_totals['evening']
-            },
+            period: {'completed': universe[period], 'total': merged_totals[period]}
+            for period in ('morning', 'day', 'cant_do', 'evening')
+        })
+        _day_record.update({
             'percentage': percentage,
             'points': total_completed,
             'max_points': total_tasks,
-            'penalty': len(state['completed']['cant_do']) > 0,
-            'penalty_pushups': len(state['completed']['cant_do']) * 30
+            'penalty': len(universe['cant_do']) > 0,
+            'penalty_pushups': len(universe['cant_do']) * 30
         })
         stats[today_key] = _day_record
         
@@ -1818,7 +1811,7 @@ class TaskTrackerBot:
         
         if save_success:
             # НОВОЕ: Отправляем штрафное сообщение ТОЛЬКО если количество срывов УВЕЛИЧИЛОСЬ
-            current_cant_do_count = len(state['completed']['cant_do'])
+            current_cant_do_count = len(universe['cant_do'])
             
             logger.info(f"⚠️ Штрафы: было={previous_cant_do_count}, стало={current_cant_do_count}")
             
@@ -1826,7 +1819,8 @@ class TaskTrackerBot:
             if current_cant_do_count > previous_cant_do_count:
                 # Получаем названия задач НЕЛЬЗЯ
                 cant_do_tasks = state['tasks']['cant_do']
-                failed_tasks = [cant_do_tasks[i] for i in state['completed']['cant_do']]
+                failed_tasks = [cant_do_tasks[i] for i in state['completed']['cant_do']
+                                if i < len(cant_do_tasks)]
                 
                 # Отправляем штрафное сообщение
                 await self.send_penalty_message(current_cant_do_count, failed_tasks)
@@ -1840,8 +1834,8 @@ class TaskTrackerBot:
             try:
                 import bingo_messages as bingo
                 now_full = self.blocks_fullness(
-                    state['completed']['day'], merged_totals.get('day', 0), _mc,
-                    state['completed']['evening'], merged_totals.get('evening', 0))
+                    universe['day'], merged_totals.get('day', 0), _mc,
+                    universe['evening'], merged_totals.get('evening', 0))
                 newly = [s for s in ('morning', 'day', 'evening')
                          if now_full[s] and not _prev_full.get(s)]
                 perfect_now = all(now_full[s] for s in ('morning', 'day', 'evening'))

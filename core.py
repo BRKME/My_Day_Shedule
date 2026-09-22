@@ -669,6 +669,52 @@ def entities_to_html(text, entities):
     return ''.join(out)
 
 
+# ── Раскладка блоков дня ─────────────────────────────────────────────────
+# Утро, день и вечер пишут отметки в общие ячейки статистики: «задачи дня»
+# (утро + день) и «нельзя» (утро + день + вечер). Чтобы блоки не
+# наступали друг на друга, у каждого своя полоса позиций в общем списке.
+# Размеры берутся из расписания, а не из статистики: нотификаторскую
+# границу трекер затирал своей записью.
+
+_WEEKDAY_KEYS = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday',
+                 'saturday', 'sunday')
+
+
+def message_block(text):
+    """Какой это блок — по эмодзи заголовка."""
+    header = (text or '').split('\n', 1)[0]
+    if '🌙' in header:
+        return 'evening'
+    if '☀️' in header or '☀' in header:
+        return 'day'
+    if '🌅' in header:
+        return 'morning' if 'Доброе утро' in header else 'full'
+    return 'full'
+
+
+def block_layout(day):
+    """Полосы позиций блоков в общем списке и итоговые размеры.
+
+    {блок: {секция: (сдвиг, длина)}, 'totals': {секция: всего}}.
+    'full' — утро и день одним сообщением, начинается с нуля.
+    """
+    sched = load_schedule().get(_WEEKDAY_KEYS[day.weekday()], {})
+    morning, rest = split_day_tasks(sched.get('день', []))
+    m, d = len(morning), len(rest)
+    cm = len(sched.get('нельзя_утро', []))
+    cd = len(sched.get('нельзя_день', []))
+    ce = len(sched.get('нельзя_вечер', []))
+    e = len(sched.get('вечер', []))
+    return {
+        'morning': {'day': (0, m), 'cant_do': (0, cm)},
+        'day': {'day': (m, d), 'cant_do': (cm, cd)},
+        'full': {'day': (0, m + d), 'cant_do': (0, cm + cd)},
+        'evening': {'evening': (0, e), 'cant_do': (cm + cd, ce)},
+        'totals': {'day': m + d, 'cant_do': cm + cd + ce, 'evening': e,
+                   'morning_count': m},
+    }
+
+
 # ── GitHub Contents API ──────────────────────────────────────────────────
 # Транспорт у процессов разный (notifier — requests, tracker_bot — aiohttp),
 # общее здесь только формирование URL и кодирование содержимого.
