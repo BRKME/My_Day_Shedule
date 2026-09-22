@@ -21,7 +21,7 @@ import base64
 from core import (GITHUB_REPO, STATE_KEEP_LAST, get_level as _core_get_level,
                   task_of_the_day, weight_verdict,
                   is_bracelet_day, page_of_the_day, page_url,
-                  parse_ddmmyyyy,
+                  parse_ddmmyyyy, entities_to_html,
                   github_contents_url, github_headers, merge_stats,
                   normalize_task, prune_message_states, summarize_day)
 
@@ -62,6 +62,17 @@ class TaskTrackerBot:
         # {message_id: {'tasks': {...}, 'completed': {...}, 'original_text': '...'}}
         self.message_state = self.load_message_states()
         
+    @staticmethod
+    def message_html(message):
+        """Текст сообщения Telegram с восстановленной разметкой.
+
+        message['text'] — голый текст без форматирования. Раньше трекер
+        перерисовывал сообщение прямо из него, и после первой галочки
+        пропадали курсив, жирный и ссылки. Разметка лежит в entities.
+        """
+        return entities_to_html(message.get('text', ''),
+                                message.get('entities', []))
+
     def parse_tasks(self, message_text):
         """Парсит задачи из сообщения notifier.py"""
         tasks = {
@@ -104,7 +115,11 @@ class TaskTrackerBot:
             
             # Собираем задачи
             if current_section and line.startswith('•'):
-                task_text = line[1:].strip()  # Убираем •
+                # Убираем • и теги: имя задачи идёт на кнопку чек-листа,
+                # а там «<a href=...>» вылезло бы как есть.
+                task_text = re.sub(r'<[^>]+>', '', line[1:]).strip()
+                task_text = (task_text.replace('&lt;', '<').replace('&gt;', '>')
+                             .replace('&quot;', '"').replace('&amp;', '&'))
                 if task_text:
                     tasks[current_section].append(task_text)
         
@@ -1964,7 +1979,7 @@ class TaskTrackerBot:
                 
                 # Проверяем что это наш чат
                 if chat_id == self.chat_id and 'text' in message:
-                    message_text = message['text']
+                    message_text = self.message_html(message)
                     
                     logger.info(f"✅ Chat ID совпал! Проверяю текст...")
                     
@@ -1995,7 +2010,7 @@ class TaskTrackerBot:
                 callback_query_id = callback_query.get('id', '')
                 message = callback_query.get('message', {})
                 message_id = message.get('message_id', 0)
-                message_text = message.get('text', '')
+                message_text = self.message_html(message)
                 
                 logger.info(f"📞 Получен callback: {callback_data}")
                 await self.process_callback(callback_data, callback_query_id, message_id, message_text)
@@ -2085,7 +2100,7 @@ class TaskTrackerBot:
                                 callback_query_id = callback_query.get('id', '')
                                 message = callback_query.get('message', {})
                                 message_id = message.get('message_id', 0)
-                                message_text = message.get('text', '')
+                                message_text = self.message_html(message)
                                 logger.info(f"📞 Получен callback: {callback_data}")
                                 await self.process_callback(callback_data, callback_query_id, message_id, message_text)
                         

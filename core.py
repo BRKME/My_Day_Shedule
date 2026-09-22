@@ -606,6 +606,69 @@ def weight_verdict(current, previous=None):
     return " · ".join(parts)
 
 
+# ── Разметка Telegram → HTML ─────────────────────────────────────────────
+# Трекер перерисовывал сообщение из message['text'] — голого текста без
+# форматирования, — и после первой галочки пропадали курсив, жирный и
+# ссылки. Разметка приходит отдельным списком entities.
+
+_ENTITY_TAGS = {
+    'bold': ('<b>', '</b>'),
+    'italic': ('<i>', '</i>'),
+    'underline': ('<u>', '</u>'),
+    'strikethrough': ('<s>', '</s>'),
+    'spoiler': ('<tg-spoiler>', '</tg-spoiler>'),
+    'code': ('<code>', '</code>'),
+}
+
+
+def _html_escape(s, quote=False):
+    s = s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    return s.replace('"', '&quot;') if quote else s
+
+
+def entities_to_html(text, entities):
+    """Собрать HTML из текста и entities Telegram.
+
+    offset и length в entities — единицы UTF-16, а не символы Python:
+    эмодзи вроде 🌅 занимает две единицы. Поэтому работаем с текстом как
+    с последовательностью UTF-16 единиц и режем по ним, иначе после первого
+    эмодзи все теги съезжают.
+
+    Хэштеги, упоминания и голые URL Telegram размечает сам — их не трогаем.
+    """
+    units = text.encode('utf-16-le')
+
+    def chunk(a, b):
+        return units[a * 2:b * 2].decode('utf-16-le')
+
+    opens, closes = {}, {}
+    for e in entities or []:
+        kind = e.get('type')
+        if kind == 'text_link':
+            tag = (f'<a href="{_html_escape(e.get("url", ""), quote=True)}">', '</a>')
+        elif kind in _ENTITY_TAGS:
+            tag = _ENTITY_TAGS[kind]
+        else:
+            continue
+        start, end = e['offset'], e['offset'] + e['length']
+        # длиннее — открывается раньше и закрывается позже: так вложенные
+        # теги закрываются в правильном порядке
+        opens.setdefault(start, []).append((end, tag[0]))
+        closes.setdefault(end, []).append((start, tag[1]))
+
+    total = len(units) // 2
+    points = sorted({0, total} | set(opens) | set(closes))
+    out = []
+    for i, p in enumerate(points):
+        for _, tag in sorted(closes.get(p, []), key=lambda x: -x[0]):
+            out.append(tag)
+        for _, tag in sorted(opens.get(p, []), key=lambda x: -x[0]):
+            out.append(tag)
+        if i + 1 < len(points):
+            out.append(_html_escape(chunk(p, points[i + 1])))
+    return ''.join(out)
+
+
 # ── GitHub Contents API ──────────────────────────────────────────────────
 # Транспорт у процессов разный (notifier — requests, tracker_bot — aiohttp),
 # общее здесь только формирование URL и кодирование содержимого.
