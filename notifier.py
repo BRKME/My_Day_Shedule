@@ -621,12 +621,72 @@ class PersonalScheduleNotifier:
             
             logger.info(f"✅ Задачи сохранены в stats.json: day={len(tasks.get('day', []))}, evening={len(tasks.get('evening', []))}")
             
-            # Синхронизируем с GitHub — отсюда tracker_bot на VPS берёт задачи дня
-            self.sync_stats_to_github(stats)
+            # В GitHub — только служебные поля сегодняшнего дня, поверх
+            # СВЕЖЕГО содержимого (22.09.2026). Раньше уходил весь снимок,
+            # сделанный при старте запуска, и затирал галочки трекера,
+            # отмеченные, пока шёл запуск.
+            self.sync_today_fields_to_github(today, stats[today])
             
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения задач: {e}")
     
+    def sync_today_fields_to_github(self, today, record):
+        """Записать в GitHub служебные поля дня нотификатора (_tasks и т.п.)
+        поверх свежего stats.json, не трогая ничего другого.
+
+        Версию и содержимое берём одним запросом: между ними никто не
+        вклинится. Если трекер всё-таки успел записать между GET и PUT,
+        GitHub отвергнет устаревшую версию — пробуем ещё раз.
+        """
+        github_token = os.getenv('GITHUB_TOKEN')
+        if not github_token:
+            logger.warning("⚠️ GITHUB_TOKEN не найден, пропускаем синхронизацию")
+            return False
+        fields = {k: v for k, v in record.items() if k.startswith('_')}
+        url = github_contents_url("stats.json", "BRKME/My_Day_Shedule")
+        headers = github_headers(github_token)
+        for attempt in range(2):
+            try:
+                response = requests.get(url, headers=headers, timeout=10)
+                sha, remote = None, {}
+                if response.status_code == 200:
+                    body = response.json()
+                    sha = body.get('sha')
+                    raw = base64.b64decode(body.get('content', '')).decode() if body.get('content') else '{}'
+                    remote = json.loads(raw or '{}')
+                day = remote.setdefault(today, {})
+                existing = day.get('_tasks', {})
+                merged = {}
+                for section in set(existing) | set(fields.get('_tasks', {})):
+                    seen = []
+                    for t in existing.get(section, []) + fields.get('_tasks', {}).get(section, []):
+                        if t not in seen:
+                            seen.append(t)
+                    merged[section] = seen
+                day.update(fields)
+                day['_tasks'] = merged
+                data = {
+                    "message": f"stats: tasks {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                    "content": base64.b64encode(
+                        json.dumps(remote, ensure_ascii=False, indent=2).encode()).decode(),
+                    "branch": "main",
+                }
+                if sha:
+                    data["sha"] = sha
+                put = requests.put(url, headers=headers, json=data, timeout=10)
+                if put.status_code in (200, 201):
+                    logger.info("✅ Служебные поля дня записаны в GitHub")
+                    return True
+                if put.status_code == 409 and attempt == 0:
+                    logger.info("↻ stats.json изменился между чтением и записью — повтор")
+                    continue
+                logger.warning(f"⚠️ GitHub не принял запись: {put.status_code}")
+                return False
+            except Exception as e:
+                logger.warning(f"⚠️ Ошибка синхронизации с GitHub: {e}")
+                return False
+        return False
+
     def sync_stats_to_github(self, stats):
         """Синхронизирует stats.json с GitHub для tracker_bot.py"""
         try:
