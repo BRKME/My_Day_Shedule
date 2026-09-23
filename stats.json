@@ -2119,11 +2119,15 @@
       "total": 6
     },
     "evening": {
-      "completed": [],
+      "completed": [
+        0,
+        4,
+        5
+      ],
       "total": 6
     },
-    "percentage": 30,
-    "points": 4,
+    "percentage": 53,
+    "points": 7,
     "max_points": 13,
     "penalty": false,
     "penalty_pushups": 0
