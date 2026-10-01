@@ -2199,6 +2199,7 @@
       "completed": [
         0,
         1,
+        2,
         3
       ],
       "total": 7
@@ -2213,8 +2214,8 @@
       "completed": [],
       "total": 6
     },
-    "percentage": 23,
-    "points": 3,
+    "percentage": 30,
+    "points": 4,
     "max_points": 13,
     "penalty": true,
     "penalty_pushups": 30
