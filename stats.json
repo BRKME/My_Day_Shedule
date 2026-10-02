@@ -2157,9 +2157,6 @@
     "penalty": false,
     "penalty_pushups": 0
   },
-  "weight": {
-    "2026-09-27": 91.0
-  },
   "2026-09-29": {
     "morning": {
       "completed": [],
@@ -2219,5 +2216,8 @@
     "max_points": 13,
     "penalty": true,
     "penalty_pushups": 30
+  },
+  "pullups": {
+    "2026-10-02": 10
   }
 }
