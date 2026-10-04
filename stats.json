@@ -2217,7 +2217,7 @@
     "penalty": true,
     "penalty_pushups": 30
   },
-  "pullups": {
-    "2026-10-02": 10
+  "weight": {
+    "2026-10-04": 90.0
   }
 }
