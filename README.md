@@ -75,6 +75,22 @@ VPS systemd (myday-bot.service)
 отправке: новый файл попадает в ротацию без правки кода. При недоступности
 API работает fallback-список.
 
+## Задания SIGNAL (10:00)
+
+Отдельное сообщение с договорённостями на день из программы SIGNAL.
+Данные — `data/signal_tasks.json`, по датам МСК:
+
+```json
+{"2026-10-09": {"tasks": ["Утром — йога", "Lilloo: шаги с женой"]}}
+```
+
+Нет даты в файле — сообщение не уходит. Пункты нумеруются эмодзи, без
+`• `, поэтому `tracker_bot` их не трогает и в статистику расписания они не
+попадают. Белый браслет блок не отменяет: это договорённости, а не план.
+
+Запуск — период `signal`. На VPS нужна строка крона в 10:00 МСК, по
+аналогии с остальными: `dispatch.sh signal`.
+
 ## Кроны
 
 GitHub `schedule` не используется: дрейф доходил до 4+ часов (инцидент
@@ -87,7 +103,7 @@ VPS-крон, GitHub Actions только исполняет `workflow_dispatch`
 pip install -r requirements.txt -r requirements-dev.txt
 
 # уведомление вручную
-TELEGRAM_TOKEN=... TELEGRAM_CHAT_ID=... python notifier.py morning   # morning|day|evening|pullups
+TELEGRAM_TOKEN=... TELEGRAM_CHAT_ID=... python notifier.py morning   # morning|day|evening|pullups|weight|signal
 
 # бот
 TELEGRAM_TOKEN=... TELEGRAM_CHAT_ID=... GITHUB_TOKEN=... python tracker_bot.py

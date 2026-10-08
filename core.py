@@ -440,6 +440,33 @@ WEEKEND_CATEGORIES = ('Семья', 'Отцовство', 'Друзья')
 PROGRAM_ACTIVE = False
 
 
+# ── Задания SIGNAL ───────────────────────────────────────────────────────
+# Отдельный блок в 10:00: список договорённостей на день из программы
+# SIGNAL. Данные пишет SIGNAL в data/signal_tasks.json по датам (МСК):
+# {"2026-10-09": {"tasks": ["...", "..."]}}. Нет файла или даты — блок
+# не отправляется, остальной бот этого не замечает.
+
+SIGNAL_TASKS_FILE = 'signal_tasks.json'
+
+
+def load_signal_tasks() -> dict:
+    try:
+        data = _load_json(SIGNAL_TASKS_FILE)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def signal_tasks_of_the_day(day) -> list:
+    """Список заданий SIGNAL на дату или пустой список."""
+    entry = load_signal_tasks().get(day.isoformat())
+    if isinstance(entry, dict):
+        entry = entry.get('tasks')
+    if not isinstance(entry, list):
+        return []
+    return [str(t).strip() for t in entry if str(t).strip()]
+
+
 def load_daily_tasks() -> list:
     return _load_json('daily_tasks.json')
 

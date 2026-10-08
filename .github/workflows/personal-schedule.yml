@@ -16,6 +16,7 @@ on:
           - evening
           - pullups
           - weight
+          - signal
 
 jobs:
   send-notification:
