@@ -26,7 +26,7 @@ from core import (EVENING_END, fmt_dur as _fmt_dur,
 from core import (SATURDAY_NOTE, WEIGHT_GOAL, bracelet_quote,
                   is_bracelet_day, weight_buttons,
                   wisdom_of_the_day,
-                  task_of_the_day,
+                  task_of_the_day, signal_tasks_of_the_day,
                   parse_ddmmyyyy,
                   page_of_the_day, page_url)
 from core import MORNING_BOUNDARIES as _CORE_BOUNDARIES
@@ -1078,6 +1078,48 @@ class PersonalScheduleNotifier:
             f"{q['practice']}"
         )
 
+    SIGNAL_NUMBERS = ('1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣',
+                      '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟')
+
+    def format_signal_message(self, day, tasks):
+        """Блок заданий SIGNAL. Пункты — цифрами-эмодзи, без «• »:
+        tracker_bot парсит задачи по этому маркеру, и задания SIGNAL не
+        должны попасть в статистику расписания."""
+        day_ru = self.DAY_NAMES_MAP.get(
+            ['monday', 'tuesday', 'wednesday', 'thursday', 'friday',
+             'saturday', 'sunday'][day.weekday()], '')
+        esc = lambda t: (t.replace('&', '&amp;').replace('<', '&lt;')
+                         .replace('>', '&gt;'))
+        lines = [f"📋 <b>SIGNAL · {day_ru} {day.strftime('%d.%m')}</b>", ""]
+        for i, task in enumerate(tasks):
+            num = self.SIGNAL_NUMBERS[i] if i < len(self.SIGNAL_NUMBERS) else f"{i + 1}."
+            lines.append(f"{num} {esc(task)}")
+            lines.append("")
+        return "\n".join(lines).rstrip()
+
+    async def send_signal_message(self):
+        day = self.today_msk()
+        tasks = signal_tasks_of_the_day(day)
+        if not tasks:
+            logger.info("📋 SIGNAL: на сегодня заданий нет — не отправляем")
+            return True
+        url = f"https://api.telegram.org/bot{self.telegram_token}/sendMessage"
+        payload = {'chat_id': self.chat_id,
+                   'text': self.format_signal_message(day, tasks),
+                   'parse_mode': 'HTML',
+                   'disable_web_page_preview': True}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, timeout=10) as response:
+                    if response.status != 200:
+                        logger.error("❌ SIGNAL: ошибка API")
+                        return False
+            logger.info("✅ SIGNAL отправлен")
+            return True
+        except Exception as e:
+            logger.error(f"❌ SIGNAL: {e}")
+            return False
+
     async def send_message_for_period(self, period):
         date_str, day_of_week, schedule = self.get_today_schedule()
         ss_content = None
@@ -1088,6 +1130,11 @@ class PersonalScheduleNotifier:
         # Дата по МСК: Actions живут в UTC, и «какой сегодня день» обязано
         # совпадать с тем, что видит человек (наивный now() уже давал
         # трёхчасовую ошибку в бюджете вечера, баг 16.07).
+        # SIGNAL — договорённости из программы, а не план расписания:
+        # белый браслет их не отменяет.
+        if period == 'signal':
+            return await self.send_signal_message()
+
         _today = self.today_msk()
         if is_bracelet_day(_today):
             if period != 'morning':
@@ -1195,8 +1242,8 @@ if __name__ == "__main__":
     # weight добавили, а сюда забыли — и скрипт выходил с ошибкой ещё до
     # отправки. На это стоит тест.
     if len(sys.argv) != 2 or sys.argv[1] not in ('morning', 'day', 'evening',
-                                                 'pullups', 'weight'):
+                                                 'pullups', 'weight', 'signal'):
         print("❌ Использование: python notifier.py "
-              "<morning|day|evening|pullups|weight>")
+              "<morning|day|evening|pullups|weight|signal>")
         sys.exit(1)
     asyncio.run(main(sys.argv[1]))
