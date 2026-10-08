@@ -2295,7 +2295,9 @@
       "total": 7
     },
     "cant_do": {
-      "completed": [],
+      "completed": [
+        0
+      ],
       "total": 6
     },
     "evening": {
@@ -2305,7 +2307,7 @@
     "percentage": 23,
     "points": 3,
     "max_points": 13,
-    "penalty": false,
-    "penalty_pushups": 0
+    "penalty": true,
+    "penalty_pushups": 30
   }
 }
