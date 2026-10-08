@@ -106,11 +106,16 @@ def test_no_words_lost_to_emoji_stripping():
                 assert 'мусор и гнева' not in t, f'{day}/{name}'
 
 
+# Утро йоги по четвергам (08.10.2026): в четверг вместо зарядки — йога,
+# остальные правила те же — первая задача утра и минимум в 5 минут.
+EXERCISE = {'thursday': 'Йога'}
+
+
 def test_exercise_opens_the_morning():
-    """Зарядка — первая задача утра с 22.09.2026."""
+    """Зарядка — первая задача утра с 22.09.2026; в четверг — йога."""
     sched = load_schedule()
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'):
-        assert sched[day]['день'][0].startswith('Зарядка'), day
+        assert sched[day]['день'][0].startswith(EXERCISE.get(day, 'Зарядка')), day
 
 
 def test_no_invisible_characters():
@@ -130,7 +135,7 @@ def test_exercise_states_its_minimum():
     «полной» зарядкой и не начинает вовсе. Пять минут засчитываются сразу."""
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'):
         first = load_schedule()[day]['день'][0]
-        assert first.startswith('Зарядка') and '5 min' in first, day
+        assert first.startswith(EXERCISE.get(day, 'Зарядка')) and '5 min' in first, day
 
 
 def test_english_moved_to_the_commute():
