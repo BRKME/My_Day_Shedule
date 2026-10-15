@@ -157,7 +157,7 @@ def _morning_message(day='friday', block='morning'):
 
 def test_morning_tasks_normalized():
     msg = _morning_message()
-    assert 'English в дороге</a> · <i>аудио</i>' in msg
+    assert 'Sound British</a> · <i>аудио</i>' in msg
     assert '(25 min' not in msg                      # старый формат ушёл
     assert '• Взвесится' in msg                  # первая задача утра
 
