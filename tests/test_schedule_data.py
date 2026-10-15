@@ -200,6 +200,7 @@ def test_english_item_links_to_the_channel():
     for day in WEEKDAYS:
         item = next(t for t in load_schedule()[day]['день'] if 'English в дороге' in t)
         assert '<a href="https://youtube.com/@englishbyjay.official">' in item, day
+        assert '<a href="https://youtube.com/@soundbritish">' in item, day
         assert '?si=' not in item
 
 
