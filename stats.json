@@ -2354,5 +2354,30 @@
   },
   "pullups": {
     "2026-10-16": 10
+  },
+  "2026-10-17": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        3
+      ],
+      "total": 5
+    },
+    "cant_do": {
+      "completed": [],
+      "total": 4
+    },
+    "evening": {
+      "completed": [],
+      "total": 5
+    },
+    "percentage": 10,
+    "points": 1,
+    "max_points": 10,
+    "penalty": false,
+    "penalty_pushups": 0
   }
 }
