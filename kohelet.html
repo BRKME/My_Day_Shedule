@@ -9,15 +9,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --color-bg: #1a1408;
-            --color-surface: #faf7f0;
-            --color-accent: #8b6914;
-            --color-accent-light: #b8862a;
-            --color-accent-soft: #f4ecd8;
-            --color-text: #2a2418;
-            --color-text-muted: #6b5d42;
-            --font-heading: 'Raleway', sans-serif;
-            --font-body: 'Raleway', sans-serif;
+            --color-bg: #101316;
+            --color-surface: #f6f7f8;
+            --color-accent: #3f464d;
+            --color-accent-light: #78828c;
+            --color-accent-soft: #e5e7ea;
+            --color-text: #1b2229;
+            --color-text-muted: #5f6b76;
+            --font-main: 'Raleway', sans-serif;
         }
 
         * {
@@ -27,7 +26,7 @@
         }
 
         body {
-            font-family: var(--font-body);
+            font-family: var(--font-main);
             background: var(--color-bg);
             color: var(--color-text);
             line-height: 1.7;
@@ -36,333 +35,494 @@
         }
 
         .container {
-            max-width: 720px;
+            max-width: 760px;
             margin: 0 auto;
             background: var(--color-surface);
             border-radius: 4px;
-            padding: 48px 40px;
+            padding: 48px 44px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
         }
 
         .header {
             text-align: center;
             margin-bottom: 40px;
-            padding-bottom: 32px;
-            border-bottom: 1px solid var(--color-accent-soft);
         }
 
-        .header h1 {
-            font-family: var(--font-heading);
-            font-size: 32px;
-            font-weight: 600;
-            color: var(--color-accent);
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
+        .column-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 24px;
         }
 
-        .header .subtitle {
-            color: var(--color-text-muted);
-            font-size: 15px;
-            font-weight: 400;
-            font-style: italic;
+        .column-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--color-accent);
+            fill: none;
+            stroke-width: 1.5;
         }
 
-        .intro {
-            background: var(--color-accent-soft);
-            border-left: 3px solid var(--color-accent);
-            padding: 20px 24px;
-            margin-bottom: 32px;
-            border-radius: 0 4px 4px 0;
-        }
-
-        .intro p {
+        h1 {
+            font-family: var(--font-main);
+            font-size: 2.2rem;
+            font-weight: 500;
             color: var(--color-text);
-            font-size: 15px;
+            letter-spacing: 0.01em;
+            margin-bottom: 16px;
+        }
+
+        h1 span {
+            display: block;
+            font-size: 1.7rem;
+            font-weight: 400;
+            color: var(--color-text-muted);
+            margin-top: 8px;
+        }
+
+        .subtitle {
+            background: var(--color-accent-soft);
+            padding: 20px 24px;
+            border-radius: 3px;
+            border-left: 3px solid var(--color-accent);
+            font-size: 1.6rem;
+            font-weight: 400;
+            color: var(--color-text);
+        }
+
+        .section {
+            margin: 44px 0;
+        }
+
+        .section-title {
+            font-family: var(--font-main);
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--color-accent-soft);
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 4px;
+            padding: 24px;
+            border-left: 3px solid var(--color-accent-light);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h3 {
+            font-family: var(--font-main);
+            font-size: 1.7rem;
+            font-weight: 500;
+            color: var(--color-accent);
             margin-bottom: 12px;
         }
 
-        .intro p:last-child {
-            margin-bottom: 0;
+        .card p {
+            font-size: 1.6rem;
+            color: var(--color-text);
         }
 
-        .intro strong {
+        .card.not-mine {
+            border-left-color: var(--color-text-muted);
+            background: #f2f4f6;
+        }
+
+        .card.not-mine h3 {
+            color: var(--color-text-muted);
+        }
+
+        .principle-box {
+            background: var(--color-accent-soft);
+            border-radius: 4px;
+            padding: 32px;
+            margin: 36px 0;
+        }
+
+        .principle-box h2 {
+            font-family: var(--font-main);
+            font-size: 1.7rem;
             color: var(--color-accent);
-            font-weight: 600;
+            margin-bottom: 12px;
         }
 
-        .principle {
-            padding: 24px 0;
+        .principle-box > p {
+            color: var(--color-text);
+            margin-bottom: 20px;
+        }
+
+        .principle-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .principle-item {
+            background: #fff;
+            padding: 12px 20px;
+            border-radius: 3px;
+            font-size: 1.6rem;
+            color: var(--color-text);
+            border-bottom: 2px solid var(--color-accent-light);
+        }
+
+        .quote {
+            text-align: center;
+            padding: 36px;
+            background: var(--color-accent);
+            color: #fff;
+            border-radius: 4px;
+            margin: 40px 0;
+        }
+
+        .quote p {
+            font-family: var(--font-main);
+            font-size: 1.7rem;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .quote .author {
+            display: block;
+            margin-top: 16px;
+            font-size: 1.5rem;
+            font-weight: 400;
+            opacity: 0.75;
+        }
+
+        .practice {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            padding: 20px 0;
             border-bottom: 1px solid var(--color-accent-soft);
-            transition: padding-left 0.2s ease;
         }
 
-        .principle:last-of-type {
+        .practice:last-child {
             border-bottom: none;
         }
 
-        .principle:hover {
-            padding-left: 6px;
+        .practice-time {
+            flex-shrink: 0;
+            width: 44px;
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            padding-top: 2px;
+            white-space: nowrap;
         }
 
-        .principle-header {
+        .practice-body h3 {
+            font-family: var(--font-main);
+            font-size: 1.65rem;
+            font-weight: 500;
+            color: var(--color-text);
+            margin-bottom: 6px;
+        }
+
+        .practice-body p {
+            font-size: 1.6rem;
+            color: var(--color-text);
+        }
+
+        .daily {
+            background: #fff;
+            border-radius: 4px;
+            padding: 32px;
+            margin: 36px 0;
+            border: 1px solid var(--color-accent-soft);
+        }
+
+        .daily h2 {
+            font-family: var(--font-main);
+            font-size: 1.6rem;
+            color: var(--color-accent);
+            margin-bottom: 24px;
+        }
+
+        .daily-item {
             display: flex;
-            align-items: baseline;
+            align-items: flex-start;
             gap: 16px;
+            margin: 16px 0;
+            font-size: 1.6rem;
+            color: var(--color-text);
+        }
+
+        .daily-item::before {
+            content: '';
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            background: var(--color-accent-light);
+            border-radius: 50%;
+            margin-top: 8px;
+        }
+
+        .daily-item strong {
+            color: var(--color-accent);
+        }
+
+        .daily-result {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--color-accent-soft);
+            font-family: var(--font-main);
+            font-size: 1.7rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            text-align: center;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 44px;
+            padding-top: 24px;
+            border-top: 1px solid var(--color-accent-soft);
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: var(--color-accent-soft);
+            color: var(--color-accent);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 1.6rem;
+            font-weight: 500;
+        }
+
+        .footer-icons {
+            color: var(--color-text-muted);
+            font-size: 1.7rem;
+        }
+
+        .audio-player {
+            background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 16px rgba(63, 70, 77, 0.3);
+        }
+
+        .audio-player .audio-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             margin-bottom: 12px;
         }
 
-        .principle-number {
-            display: inline-block;
-            min-width: 32px;
+        .audio-player .play-icon {
+            font-size: 1.4rem;
+        }
+
+        .audio-player .audio-title {
+            color: #fff;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+        }
+
+        .practice-body p + p {
+            margin-top: 10px;
+        }
+
+        .practice-body strong {
             color: var(--color-accent);
             font-weight: 600;
-            font-size: 18px;
-            font-family: var(--font-heading);
-        }
-
-        .principle-title {
-            font-family: var(--font-heading);
-            font-size: 19px;
-            font-weight: 600;
-            color: var(--color-text);
-            line-height: 1.3;
-        }
-
-        .principle-description {
-            color: var(--color-text);
-            font-size: 15px;
-            margin-left: 48px;
-            line-height: 1.7;
-        }
-
-        .principle-description p {
-            margin-bottom: 10px;
-        }
-
-        .principle-description p:last-child {
-            margin-bottom: 0;
         }
 
         .example {
             margin-top: 14px;
-            padding: 12px 16px;
+            padding: 14px 18px;
             background: var(--color-accent-soft);
-            border-radius: 4px;
-            font-size: 14px;
+            border-radius: 3px;
+            font-size: 1.5rem;
             color: var(--color-text-muted);
-            line-height: 1.6;
         }
 
         .example strong {
             color: var(--color-accent);
+        }
+
+        .header .subtitle {
+            text-align: left;
+        }
+
+        .subtitle p + p {
+            margin-top: 12px;
+        }
+
+        .subtitle strong {
+            color: var(--color-accent);
             font-weight: 600;
         }
 
-        .quote {
-            margin-top: 40px;
-            padding: 28px 24px;
-            background: var(--color-bg);
-            color: var(--color-accent-soft);
-            border-radius: 4px;
-            text-align: center;
-            font-style: italic;
-        }
-
-        .quote p {
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-
-        .quote p:last-child {
-            margin-bottom: 0;
-        }
-
-        .quote .author {
-            font-size: 13px;
-            font-style: normal;
-            color: var(--color-accent-light);
-            margin-top: 12px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
         @media (max-width: 600px) {
-            body {
-                padding: 16px 8px;
-            }
-
             .container {
                 padding: 32px 20px;
             }
 
-            .header h1 {
-                font-size: 26px;
+            h1 {
+                font-size: 1.9rem;
             }
 
-            .principle {
-                padding: 20px 0;
+            .practice {
+                flex-direction: column;
+                gap: 6px;
             }
 
-            .principle-title {
-                font-size: 17px;
+            .practice-time {
+                width: auto;
+                white-space: normal;
             }
-
-            .principle-description {
-                margin-left: 0;
-                margin-top: 8px;
-            }
-
-            .principle-header {
-                flex-wrap: wrap;
-            }
-        }
-
-        .audio-block {
-            background: var(--color-accent-soft);
-            border: 1px solid var(--color-accent-light);
-            border-radius: 12px;
-            padding: 18px 22px;
-            margin: 26px 0;
-        }
-        .audio-block .audio-label {
-            font-family: var(--font-heading);
-            font-size: 0.85rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--color-accent);
-            margin-bottom: 10px;
-        }
-        .audio-block audio {
-            width: 100%;
-            display: block;
-            accent-color: var(--color-accent);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Экклезиаст · Chelek</h1>
-            <div class="subtitle">Бери свою долю здесь и сейчас</div>
-        </div>
+<div class="container">
 
-        <div class="intro">
+    <div class="header">
+        <div class="column-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 3h12M6 21h12"/>
+                <path d="M7 3c0 5 5 6 5 9s-5 4-5 9"/>
+                <path d="M17 3c0 5-5 6-5 9s5 4 5 9"/>
+            </svg>
+        </div>
+        <h1>Экклезиаст · Chelek</h1>
+        <div class="subtitle">
+            <p>Бери свою долю здесь и сейчас.</p>
             <p>Экклезиаст — это еврейская мудрость: она учит: планируй и действуй, но получай радость по ходу пути, а не откладывай на потом.</p>
             <p>Не ищи глобального смысла — единственное, что ценно: <strong>есть, пить, наслаждаться трудом и жизнью с любимым человеком здесь и сейчас</strong>.</p>
         </div>
+    </div>
 
-        <div class="audio-block">
-            <div class="audio-label">Слушать · 3 мин</div>
-            <audio controls preload="metadata" src="audio/eclisiast.mp3"></audio>
+    <div class="audio-player">
+        <div class="audio-header">
+            <span class="play-icon">🎧</span>
+            <span class="audio-title">Слушать · 3 мин</span>
         </div>
+        <audio controls preload="metadata" src="audio/eclisiast.mp3"></audio>
+    </div>
 
-        <div class="principle">
-            <div class="principle-header">
-                <span class="principle-number">1</span>
-                <div class="principle-title">Про ROI</div>
-            </div>
-            <div class="principle-description">
+    <div class="section">
+        <div class="practice">
+            <div class="practice-time">1</div>
+            <div class="practice-body">
+                <h3>Про ROI</h3>
                 <p>ROI на короткой дистанции есть. На длинной — всегда ноль.</p>
                 <p>Смерть не смотрит на доходность. Поэтому не строй стратегию, которая требует бессмертия. Пенсионный план — хорошо. План «вот разбогатею и заживу» — самообман.</p>
-                <div class="example">
-                    <strong>Пример.</strong> Ты откладываешь отпуск на «когда стану директором». А через три года — рак. Бери свой отпуск сейчас. Маленький, но настоящий.
-                </div>
+                <div class="example"><strong>Пример.</strong> Ты откладываешь отпуск на «когда стану директором». А через три года — рак. Бери свой отпуск сейчас. Маленький, но настоящий.</div>
             </div>
         </div>
 
-        <div class="principle">
-            <div class="principle-header">
-                <span class="principle-number">2</span>
-                <div class="principle-title">Про мудрость</div>
-            </div>
-            <div class="principle-description">
+        <div class="practice">
+            <div class="practice-time">2</div>
+            <div class="practice-body">
+                <h3>Про мудрость</h3>
                 <p>Мудрость не даёт бессмертия. Но она снижает количество глупых потерь.</p>
                 <p>Это страховка, а не ракета. Она не поднимает потолок — она поднимает пол.</p>
-                <div class="example">
-                    <strong>Пример.</strong> Умный не вложит всё в «гарантированный доход 300%». Глупый — вложит. В итоге оба умрут. Но умный умрёт, не будучи нищим последние 10 лет жизни.
-                </div>
+                <div class="example"><strong>Пример.</strong> Умный не вложит всё в «гарантированный доход 300%». Глупый — вложит. В итоге оба умрут. Но умный умрёт, не будучи нищим последние 10 лет жизни.</div>
             </div>
         </div>
 
-        <div class="principle">
-            <div class="principle-header">
-                <span class="principle-number">3</span>
-                <div class="principle-title">Про накопление</div>
-            </div>
-            <div class="principle-description">
+        <div class="practice">
+            <div class="practice-time">3</div>
+            <div class="practice-body">
+                <h3>Про накопление</h3>
                 <p><strong>Умно:</strong> накопить подушку на 3–6 месяцев. Безопасность = свобода.</p>
                 <p><strong>Глупо:</strong> копить всю жизнь на «что-то большое», отказывая себе в малом.</p>
                 <p><strong>Правило:</strong> сначала буфер, потом дивиденды здесь и сейчас. Всё сверху — опционально.</p>
-                <div class="example">
-                    <strong>Пример.</strong> Ты 10 лет копишь на квартиру, ешь доширак. Экклезиаст скажет: лучше снимать комнату и иногда ходить в кафе. Потому что эти 10 лет — не подготовка к жизни. Это и есть жизнь.
-                </div>
+                <div class="example"><strong>Пример.</strong> Ты 10 лет копишь на квартиру, ешь доширак. Экклезиаст скажет: лучше снимать комнату и иногда ходить в кафе. Потому что эти 10 лет — не подготовка к жизни. Это и есть жизнь.</div>
             </div>
         </div>
 
-        <div class="principle">
-            <div class="principle-header">
-                <span class="principle-number">4</span>
-                <div class="principle-title">Про тайминг</div>
-            </div>
-            <div class="principle-description">
+        <div class="practice">
+            <div class="practice-time">4</div>
+            <div class="practice-body">
+                <h3>Про тайминг</h3>
                 <p>Мудрость не в том, чтобы всегда действовать. Мудрость — в том, чтобы действовать вовремя.</p>
                 <p>Если сейчас не время петь — не пой. Если рынок падает — не покупай только потому, что «надо инвестировать». Не борись с сезоном. Сей, когда время сеять. Отдыхай, когда время отдыхать.</p>
             </div>
         </div>
 
-        <div class="principle">
-            <div class="principle-header">
-                <span class="principle-number">5</span>
-                <div class="principle-title">Про диверсификацию</div>
-            </div>
-            <div class="principle-description">
+        <div class="practice">
+            <div class="practice-time">5</div>
+            <div class="practice-body">
+                <h3>Про диверсификацию</h3>
                 <p>Диверсификация — не про жадность. Она про то, чтобы одна случайность не превратила твою жизнь в руины.</p>
-                <div class="example">
-                    <strong>Пример.</strong> Ты вложил всё в один бизнес. Приходит ковид — бизнес умер, ты умер финансово. А если бы у тебя были: бизнес + фриланс + аренда + сбережения — ты бы просто пересел на другой поток. Не разорился.
-                </div>
+                <div class="example"><strong>Пример.</strong> Ты вложил всё в один бизнес. Приходит ковид — бизнес умер, ты умер финансово. А если бы у тебя были: бизнес + фриланс + аренда + сбережения — ты бы просто пересел на другой поток. Не разорился.</div>
             </div>
         </div>
 
-        <div class="principle">
-            <div class="principle-header">
-                <span class="principle-number">6</span>
-                <div class="principle-title">Про Chelek (твоя ежедневная доля)</div>
-            </div>
-            <div class="principle-description">
+        <div class="practice">
+            <div class="practice-time">6</div>
+            <div class="practice-body">
+                <h3>Про Chelek (твоя ежедневная доля)</h3>
                 <p><strong>Chelek</strong> (חלק) — это то, что у тебя нельзя отнять. Не зарплата, не квартира, не портфель акций. А вкус еды сейчас, удовлетворение от сделанной работы сегодня, тепло разговора в эту минуту.</p>
-                <div class="example">
-                    <strong>Пример.</strong> Ты готовишь ужин. Можно думать: «как надоело, ещё 30 лет этого». А можно в этот же момент сказать: «я нарезаю помидор, я жив, у меня есть нож и доска, сейчас я буду есть». Это Chelek — бесплатно и всегда с тобой.
-                </div>
+                <div class="example"><strong>Пример.</strong> Ты готовишь ужин. Можно думать: «как надоело, ещё 30 лет этого». А можно в этот же момент сказать: «я нарезаю помидор, я жив, у меня есть нож и доска, сейчас я буду есть». Это Chelek — бесплатно и всегда с тобой.</div>
             </div>
         </div>
 
-        <div class="principle">
-            <div class="principle-header">
-                <span class="principle-number">7</span>
-                <div class="principle-title">Про случай</div>
-            </div>
-            <div class="principle-description">
+        <div class="practice">
+            <div class="practice-time">7</div>
+            <div class="practice-body">
+                <h3>Про случай</h3>
                 <p>Случай — это неустранимый фактор реальности, при котором любые усилия и планы не гарантируют результата, потому что в любой момент вмешиваются неконтролируемые обстоятельства или необратимые изменения, и побеждает не тот, кто всё предусмотрел, а тот, кто сохраняет спокойствие и адаптируется.</p>
             </div>
         </div>
 
-        <div class="principle">
-            <div class="principle-header">
-                <span class="principle-number">8</span>
-                <div class="principle-title">Про репутацию</div>
-            </div>
-            <div class="principle-description">
+        <div class="practice">
+            <div class="practice-time">8</div>
+            <div class="practice-body">
+                <h3>Про репутацию</h3>
                 <p>Репутация — это актив, который работает на тебя каждый день, даже когда вы не работаете.</p>
             </div>
         </div>
-
-        <div class="quote">
-            <p>Бери дивиденды по ходу, а не в конце.</p>
-            <p>Делай, но не строй вечное.</p>
-            <div class="author">Коэлет</div>
-        </div>
     </div>
+
+    <div class="quote">
+        <p>Бери дивиденды по ходу, а не в конце.<br>Делай, но не строй вечное.</p>
+        <span class="author">Коэлет</span>
+    </div>
+
+    <div class="footer">
+        <div class="tags">
+            <span class="tag">доля</span>
+            <span class="tag">время</span>
+            <span class="tag">буфер</span>
+            <span class="tag">случай</span>
+            <span class="tag">репутация</span>
+        </div>
+        <div class="footer-icons">Экклезиаст</div>
+    </div>
+
+</div>
 </body>
 </html>
