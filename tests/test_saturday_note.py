@@ -60,7 +60,8 @@ def test_note_adds_no_tasks():
     с «• », и лишний буллет сдвинул бы индексы прогресса."""
     b = TaskTrackerBot()
     with_note = b.parse_tasks(_morning('saturday', '08.08.2026'))
-    assert len(with_note['day']) == 3      # столько же, сколько до ремарки
+    # 5 задач расписания утра (с 30.10 цветы и LP — в утре), ни одной лишней
+    assert len(with_note['day']) == 5
     assert SATURDAY_NOTE['quote'] not in ' '.join(with_note['day'])
 
 

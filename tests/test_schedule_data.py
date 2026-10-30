@@ -39,16 +39,19 @@ def test_italic_tags_are_balanced():
                 assert t.count('<i>') == t.count('</i>'), f'{day}/{name}: {t}'
 
 
-def test_working_days_have_morning_boundary():
-    """Без маркера границы весь день схлопывается в утреннее сообщение."""
+def test_no_day_block_anywhere():
+    """Дневной блок снят 30.10.2026: его не отмечали, а важные из него были
+    только подтягивания (теперь — строка SIGNAL по будням). Всё до границы
+    утра включительно, после неё — пусто: дневное сообщение не уходит."""
     sched = load_schedule()
     for day in DAYS:
         tasks = sched[day]['день']
         if len(tasks) <= 1:
             continue                       # воскресенье — FamilyDay без задач
         morning, rest = split_day_tasks(tasks)
-        assert morning, f'{day}: пустой утренний блок'
-        assert rest, f'{day}: маркер границы утро/день потерян'
+        assert morning == tasks, f'{day}: граница утра потеряна'
+        assert not rest, f'{day}: дневной блок вернулся'
+        assert not sched[day]['нельзя_день'], f'{day}: дневные запреты переедут в утро'
 
 
 def test_kids_schedule_entries_have_required_fields():
@@ -82,14 +85,12 @@ def test_no_reading_on_the_road_in_the_morning():
 
 
 def test_morning_split_survives_the_removal():
-    """«Читать в дороге» было маркером границы утро/день. После удаления
-    граница — English: утро не должно поглотить дневной блок, а «Включи
-    мозг» должно остаться в дне."""
+    """Граница утра в будни — English."""
     sched = load_schedule()
     for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday'):
         morning, rest = split_day_tasks(sched[day]['день'])
         assert 'English в дороге' in morning[-1], day
-        assert rest[0].startswith('Сделать действие дня из SIGNAL'), day
+        assert not rest, day
 
 
 def test_saturday_split_is_unchanged():
@@ -163,13 +164,12 @@ def test_goals_are_not_daily_anywhere():
         assert not any('Проверь цели' in t for t in sections['день']), day
 
 
-def test_signal_action_replaces_reading():
-    """Задание из SIGNAL всегда одно и конкретное — строка «Завтра»
-    из вчерашней записи. Пункт просит его сделать, а не прочитать."""
-    for day in WEEKDAYS:
-        block = _day_block(day)
-        assert any(t.startswith('Сделать действие дня из SIGNAL') for t in block), day
-        assert not any('задания от психолога' in t for t in block), day
+def test_signal_action_is_not_duplicated_in_schedule():
+    """Пункт «Сделать действие дня из SIGNAL» дублировал само сообщение
+    SIGNAL и снят вместе с дневным блоком (30.10.2026)."""
+    for day, sections in load_schedule().items():
+        assert not any('SIGNAL' in t and 'действие дня' in t
+                       for t in sections['день']), day
 
 
 def test_kids_investment_only_on_monday():
@@ -180,16 +180,10 @@ def test_kids_investment_only_on_monday():
         assert has == (day == 'monday'), day
 
 
-def test_exercises_are_one_line_each_with_a_minimum():
-    """Вторые подходы отваливались и каждый раз били по проценту. Одна
-    строка на упражнение, минимум — в тексте, как у зарядки."""
-    for day in ('monday', 'tuesday', 'wednesday', 'thursday'):
-        block = _day_block(day)
-        pull = [t for t in block if 'одтягиван' in t]
-        abs_ = [t for t in block if 'ресс' in t]
-        assert len(pull) == 1 and '2×15' in pull[0], day
-        assert len(abs_) == 1 and '2×21' in abs_[0], day
-        assert all('1 подход засчитывается' in t for t in pull + abs_), day
+def test_pullups_moved_from_schedule_to_signal():
+    """Подтягивания — в SIGNAL по будням; пресс снят (30.10.2026)."""
+    for day, sections in load_schedule().items():
+        assert not any('одтягиван' in t or 'Пресс' in t for t in sections['день']), day
 
 
 

@@ -472,7 +472,9 @@ class PersonalScheduleNotifier:
                      'day': '☀️ Дневные задачи · день',
                      'full': '📋 Дневные задачи'}[block]
             content += f"<b>{title}:</b>\n"
-            if block in ('day', 'full') and day_of_week == 'saturday':
+            # Дневного блока нет (30.10) — ремарка конца месяца уходит в утро
+            photo_blocks = ('day', 'full') if d_tasks else ('morning', 'full')
+            if block in photo_blocks and day_of_week == 'saturday':
                 today = datetime.now()
                 last_saturday_day = self.get_last_day_of_month(today.year, today.month, 5)
                 if today.day == last_saturday_day:
@@ -1080,6 +1082,7 @@ class PersonalScheduleNotifier:
 
     SIGNAL_NUMBERS = ('1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣',
                       '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟')
+    SIGNAL_PULLUPS = '💪 Подтягивания 2×15'
 
     def format_signal_message(self, day, tasks):
         """Блок заданий SIGNAL. Пункты — цифрами-эмодзи, без «• »:
@@ -1095,6 +1098,10 @@ class PersonalScheduleNotifier:
             num = self.SIGNAL_NUMBERS[i] if i < len(self.SIGNAL_NUMBERS) else f"{i + 1}."
             lines.append(f"{num} {esc(task)}")
             lines.append("")
+        # Дневной блок снят 30.10.2026: из него важны были только
+        # подтягивания — по будням они живут постоянной строкой SIGNAL.
+        if day.weekday() < 5:
+            lines.append(self.SIGNAL_PULLUPS)
         return "\n".join(lines).rstrip()
 
     async def send_signal_message(self):

@@ -30,7 +30,26 @@ sys.path.insert(0, '.')
 os.environ.setdefault('TELEGRAM_TOKEN', 'test-token')
 os.environ.setdefault('TELEGRAM_CHAT_ID', 'test-chat')
 
+import core
 from core import block_layout, message_block
+
+# С 30.10.2026 в живом расписании дневного блока нет. Механика изоляции
+# блоков в трекере осталась — проверяем её на замороженном расписании
+# с дневным блоком (tests/fixtures/schedule_with_day_block.json).
+_FIXTURE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        'fixtures', 'schedule_with_day_block.json')
+
+
+@pytest.fixture(autouse=True)
+def legacy_schedule(tmp_path_factory, monkeypatch):
+    import shutil
+    data = tmp_path_factory.mktemp('data')
+    for name in os.listdir(core.DATA_DIR):
+        src = os.path.join(core.DATA_DIR, name)
+        if os.path.isfile(src):
+            shutil.copy(src, data / name)
+    shutil.copy(_FIXTURE, data / 'schedule.json')
+    monkeypatch.setattr(core, 'DATA_DIR', str(data))
 
 WED = date(2026, 9, 23)          # среда: утро 4 + 1 нельзя, день 3 + 3 нельзя
 

@@ -40,22 +40,18 @@ def test_no_main_task_item_anywhere():
             assert not any('главное дело' in t for t in tasks), f'{day}/{name}'
 
 
-def test_signal_item_wording():
-    for day in DAYS[:5]:
-        hit = [t for t in load_schedule()[day]['день'] if 'SIGNAL' in t]
-        assert hit and 'вчера пообещал себе' in hit[0], day
-
-
-def test_saturday_split_survives_marker_removal():
-    """«Записать одно главное дело» было маркером границы в субботе.
-    Без него всё утро и день слиплись бы в одно сообщение."""
+def test_saturday_morning_keeps_flowers_and_lp():
+    """С 30.10.2026 дневного блока нет: цветы и LP — в субботнем утре,
+    граница утра по-прежнему «Послушать молитву»."""
     morning, rest = split_day_tasks(load_schedule()['saturday']['день'])
     assert morning[-1].startswith('Послушать молитву')
-    assert rest and rest[0].startswith('Полить цветы')
+    assert not rest
+    assert any(t.startswith('Полить цветы') for t in morning)
+    assert any(t.startswith('LP %') for t in morning)
 
 
 def test_weekday_split_unchanged():
     for day in DAYS[:5]:
         morning, rest = split_day_tasks(load_schedule()[day]['день'])
         assert 'English в дороге' in morning[-1], day
-        assert rest[0].startswith('Сделать действие дня из SIGNAL'), day
+        assert not rest, day

@@ -71,3 +71,15 @@ def test_signal_period_registered_in_cli_and_workflow():
 def test_data_file_is_valid_json():
     with open(os.path.join('data', 'signal_tasks.json'), encoding='utf-8') as f:
         assert isinstance(json.load(f), dict)
+
+
+def test_pullups_line_on_weekdays_only():
+    """Дневной блок снят 30.10.2026 — подтягивания живут строкой SIGNAL
+    с понедельника по пятницу, без «• » (не задача трекера)."""
+    from notifier import PersonalScheduleNotifier
+    n = PersonalScheduleNotifier()
+    fri = n.format_signal_message(date(2026, 10, 30), ['Йога'])
+    sat = n.format_signal_message(date(2026, 10, 31), ['Йога'])
+    assert fri.splitlines()[-1] == '💪 Подтягивания 2×15'
+    assert 'Подтягивания' not in sat
+    assert not any(line.startswith('• ') for line in fri.splitlines())
