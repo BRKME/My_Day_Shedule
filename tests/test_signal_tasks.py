@@ -83,3 +83,21 @@ def test_pullups_line_on_weekdays_only():
     assert fri.splitlines()[-1] == '💪 Подтягивания 2×15'
     assert 'Подтягивания' not in sat
     assert not any(line.startswith('• ') for line in fri.splitlines())
+
+
+def test_no_pullups_check_on_weekends(monkeypatch):
+    """В выходные подтягиваний нет — и зачёта с кнопками тоже."""
+    from notifier import PersonalScheduleNotifier
+    n = PersonalScheduleNotifier()
+    sent = []
+
+    async def fake_send():
+        sent.append(True)
+        return True
+    monkeypatch.setattr(n, 'send_pullups_message', fake_send)
+    for day, expected in (('saturday', 0), ('sunday', 0), ('monday', 1)):
+        sent.clear()
+        monkeypatch.setattr(n, 'get_today_schedule',
+                            lambda d=day: ('01.11.2026', d, n.schedule[d]))
+        assert asyncio.run(n.send_message_for_period('pullups')) is True
+        assert len(sent) == expected, day

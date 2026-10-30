@@ -1225,7 +1225,11 @@ class PersonalScheduleNotifier:
             return await self.send_weight_message()
 
         elif period == 'pullups':
-            # Отдельная логика для подтягиваний
+            # Отдельная логика для подтягиваний. В выходные подтягиваний
+            # нет (его правило 30.10.2026) — зачёт не отправляется.
+            if day_of_week in ('saturday', 'sunday'):
+                logger.info("💪 Выходной — зачёт по подтягиваниям не отправляется")
+                return True
             return await self.send_pullups_message()
         else:
             logger.error(f"❌ Неизвестный период: {period}")
