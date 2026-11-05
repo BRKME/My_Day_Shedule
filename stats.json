@@ -2513,5 +2513,34 @@
     "max_points": 10,
     "penalty": true,
     "penalty_pushups": 30
+  },
+  "2026-11-05": {
+    "morning": {
+      "completed": [],
+      "total": 0
+    },
+    "day": {
+      "completed": [
+        0,
+        1,
+        2
+      ],
+      "total": 4
+    },
+    "cant_do": {
+      "completed": [
+        0
+      ],
+      "total": 3
+    },
+    "evening": {
+      "completed": [],
+      "total": 6
+    },
+    "percentage": 30,
+    "points": 3,
+    "max_points": 10,
+    "penalty": true,
+    "penalty_pushups": 30
   }
 }
