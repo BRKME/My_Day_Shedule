@@ -1082,7 +1082,7 @@ class PersonalScheduleNotifier:
 
     SIGNAL_NUMBERS = ('1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣',
                       '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟')
-    SIGNAL_PULLUPS = '💪 Подтягивания 2×15'
+    SIGNAL_PULLUPS = '💪 Подтягивания 2×15 + отжимания 2×20'
 
     def format_signal_message(self, day, tasks):
         """Блок заданий SIGNAL. Пункты — цифрами-эмодзи, без «• »:

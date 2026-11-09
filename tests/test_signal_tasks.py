@@ -80,7 +80,7 @@ def test_pullups_line_on_weekdays_only():
     n = PersonalScheduleNotifier()
     fri = n.format_signal_message(date(2026, 10, 30), ['Йога'])
     sat = n.format_signal_message(date(2026, 10, 31), ['Йога'])
-    assert fri.splitlines()[-1] == '💪 Подтягивания 2×15'
+    assert fri.splitlines()[-1] == '💪 Подтягивания 2×15 + отжимания 2×20'
     assert 'Подтягивания' not in sat
     assert not any(line.startswith('• ') for line in fri.splitlines())
 
