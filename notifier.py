@@ -1083,7 +1083,7 @@ class PersonalScheduleNotifier:
     SIGNAL_NUMBERS = ('1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣',
                       '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟')
     SIGNAL_PULLUPS = '💪 Подтягивания 2×15 + отжимания 2×20'
-    SIGNAL_ENGLISH = '🇬🇧 Английский 20–30 минут'
+    SIGNAL_ENGLISH = '🇬🇧 Английский с ИИ — 25 минут разговора'
 
     def format_signal_message(self, day, tasks):
         """Блок заданий SIGNAL. Пункты — цифрами-эмодзи, без «• »:
@@ -1102,9 +1102,11 @@ class PersonalScheduleNotifier:
         # Дневной блок снят 30.10.2026: из него важны были только
         # подтягивания — по будням они живут постоянной строкой SIGNAL.
         if day.weekday() < 5:
-            # Английский по будням — цель с 11.11.2026 (после отказа J&J).
-            lines.append(self.SIGNAL_ENGLISH)
             lines.append(self.SIGNAL_PULLUPS)
+        # Английский: по будням — в утренней рутине (не в SIGNAL);
+        # по субботам — разговор с ИИ 25 минут (решение 11.11.2026).
+        if day.weekday() == 5:
+            lines.append(self.SIGNAL_ENGLISH)
         return "\n".join(lines).rstrip()
 
     async def send_signal_message(self):
